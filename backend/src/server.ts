@@ -9,9 +9,11 @@ const server = app.listen(env.port, '127.0.0.1', (error?: Error) => {
 });
 
 server.on('error', (error: NodeJS.ErrnoException) => {
-  console.error(error.code === 'EADDRINUSE'
-    ? `No se pudo iniciar la API: el puerto ${env.port} ya está en uso.`
-    : `No se pudo iniciar la API: ${error.message}`);
+  console.error(
+    error.code === 'EADDRINUSE'
+      ? `No se pudo iniciar la API: el puerto ${env.port} ya está en uso.`
+      : `No se pudo iniciar la API: ${error.message}`,
+  );
   void pool.end().finally(() => process.exit(1));
 });
 
@@ -29,13 +31,16 @@ function shutdown(signal: NodeJS.Signals): void {
   timeout.unref();
 
   server.close((error) => {
-    void pool.end().then(() => {
-      clearTimeout(timeout);
-      process.exitCode = error ? 1 : 0;
-    }).catch((poolError: unknown) => {
-      console.error('No se pudo cerrar el pool:', poolError);
-      process.exit(1);
-    });
+    void pool
+      .end()
+      .then(() => {
+        clearTimeout(timeout);
+        process.exitCode = error ? 1 : 0;
+      })
+      .catch((poolError: unknown) => {
+        console.error('No se pudo cerrar el pool:', poolError);
+        process.exit(1);
+      });
   });
 }
 

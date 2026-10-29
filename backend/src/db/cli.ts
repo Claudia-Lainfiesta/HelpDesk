@@ -12,6 +12,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : 'No se pudo completar el comando de base de datos.');
+  console.error(
+    error instanceof Error ? error.message : 'No se pudo completar el comando de base de datos.',
+  );
   process.exitCode = 1;
 });

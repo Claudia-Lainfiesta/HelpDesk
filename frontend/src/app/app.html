@@ -20,7 +20,12 @@
       }
     </div>
 
-    <button type="button" class="mt-5 rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50" (click)="checkHealth()" [disabled]="apiStatus() === 'loading'">
+    <button
+      type="button"
+      class="mt-5 rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+      (click)="checkHealth()"
+      [disabled]="apiStatus() === 'loading'"
+    >
       Comprobar conexión
     </button>
   </section>

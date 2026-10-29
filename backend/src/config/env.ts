@@ -20,7 +20,9 @@ function httpOrigin(value: string): string {
     }
     return value;
   } catch {
-    throw new Error('FRONTEND_ORIGIN debe ser un origen HTTP(S) sin ruta, por ejemplo http://localhost:4200.');
+    throw new Error(
+      'FRONTEND_ORIGIN debe ser un origen HTTP(S) sin ruta, por ejemplo http://localhost:4200.',
+    );
   }
 }
 
@@ -35,13 +37,18 @@ try {
   const url = new URL(databaseUrl);
   if (
     !['postgres:', 'postgresql:'].includes(url.protocol) ||
-    !url.hostname || !url.username || !url.password || url.pathname.length <= 1 ||
+    !url.hostname ||
+    !url.username ||
+    !url.password ||
+    url.pathname.length <= 1 ||
     /[<>]/.test(databaseUrl)
   ) {
     throw new Error();
   }
 } catch {
-  throw new Error('DATABASE_URL debe ser una URL PostgreSQL válida con usuario, contraseña, servidor y base de datos.');
+  throw new Error(
+    'DATABASE_URL debe ser una URL PostgreSQL válida con usuario, contraseña, servidor y base de datos.',
+  );
 }
 
 const nodeEnv = required('NODE_ENV', 'development');

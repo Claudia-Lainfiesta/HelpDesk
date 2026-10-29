@@ -2,7 +2,12 @@ import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import { env } from '../config/env.js';
 import {
-  ensureMigrationTable, inTransaction, loadMigrations, migrate, seedFile, verifyMigrations,
+  ensureMigrationTable,
+  inTransaction,
+  loadMigrations,
+  migrate,
+  seedFile,
+  verifyMigrations,
 } from './migrations.js';
 
 // El mismo lock de sesión cubre migrate, status, reset y seed, incluso entre transacciones.
@@ -10,13 +15,20 @@ export const advisoryLockKeys = [20261029, 4] as const;
 
 export function assertLocalDevelopment(nodeEnv: string, databaseUrl: string): void {
   const url = new URL(databaseUrl);
-  if (nodeEnv !== 'development' || !['localhost', '127.0.0.1'].includes(url.hostname) ||
-      ['host', 'hostaddr', 'service'].some((key) => url.searchParams.has(key))) {
-    throw new Error('Operación rechazada: reset y seed solo se permiten con NODE_ENV=development y DATABASE_URL en localhost o 127.0.0.1, sin redirecciones de host.');
+  if (
+    nodeEnv !== 'development' ||
+    !['localhost', '127.0.0.1'].includes(url.hostname) ||
+    ['host', 'hostaddr', 'service'].some((key) => url.searchParams.has(key))
+  ) {
+    throw new Error(
+      'Operación rechazada: reset y seed solo se permiten con NODE_ENV=development y DATABASE_URL en localhost o 127.0.0.1, sin redirecciones de host.',
+    );
   }
 }
 
-export async function withDatabaseLock(action: (client: pg.Client) => Promise<void>): Promise<void> {
+export async function withDatabaseLock(
+  action: (client: pg.Client) => Promise<void>,
+): Promise<void> {
   const client = new pg.Client({
     connectionString: env.databaseUrl,
     connectionTimeoutMillis: 5000,
@@ -66,16 +78,22 @@ export async function runDatabaseCommand(command: string): Promise<void> {
     if (command === 'status') {
       for (const migration of migrations) {
         const row = byFilename.get(migration.filename);
-        console.log(`${row ? 'APLICADA ' : 'PENDIENTE'}  ${migration.filename}${row ? `  ${row.applied_at.toISOString()}` : ''}`);
+        console.log(
+          `${row ? 'APLICADA ' : 'PENDIENTE'}  ${migration.filename}${row ? `  ${row.applied_at.toISOString()}` : ''}`,
+        );
       }
-      console.log(`${applied.length} aplicada(s), ${migrations.length - applied.length} pendiente(s).`);
+      console.log(
+        `${applied.length} aplicada(s), ${migrations.length - applied.length} pendiente(s).`,
+      );
       return;
     }
     if (migrations.some((migration) => !byFilename.has(migration.filename))) {
       throw new Error('Hay migraciones pendientes. Ejecuta npm run db:migrate antes del seed.');
     }
     const sql = await readFile(seedFile, 'utf8');
-    await inTransaction(client, async () => { await client.query(sql); });
+    await inTransaction(client, async () => {
+      await client.query(sql);
+    });
     console.log('Datos de desarrollo cargados (seed idempotente).');
   });
 }

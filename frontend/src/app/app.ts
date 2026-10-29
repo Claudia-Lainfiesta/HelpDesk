@@ -26,7 +26,8 @@ export class App {
 
   protected checkHealth(): void {
     this.apiStatus.set('loading');
-    this.http.get<HealthResponse>(`${environment.apiBaseUrl}/health`)
+    this.http
+      .get<HealthResponse>(`${environment.apiBaseUrl}/health`)
       .pipe(timeout(5000), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (health) => {

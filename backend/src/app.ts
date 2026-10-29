@@ -10,7 +10,11 @@ export const app = express();
 
 app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({ origin: env.frontendOrigin }));
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, origin === env.frontendOrigin),
+  }),
+);
 app.use(express.json({ limit: '100kb' }));
 app.use('/api/health', healthRouter);
 app.use(notFound);

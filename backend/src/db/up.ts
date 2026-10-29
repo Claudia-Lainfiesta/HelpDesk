@@ -26,13 +26,16 @@ async function main(): Promise<void> {
 
   // podman-compose 1.6 no admite filtrar por servicio en `compose ps`.
   const ids = (await podmanOutput(['compose', 'ps', '-q']))
-    .split(/\r?\n/).filter((id) => /^[a-f0-9]{12,64}$/.test(id));
+    .split(/\r?\n/)
+    .filter((id) => /^[a-f0-9]{12,64}$/.test(id));
   const postgresIds: string[] = [];
   for (const id of ids) {
-    const labels = JSON.parse(await podmanOutput([
-      'inspect', '--format', '{{json .Config.Labels}}', id,
-    ])) as Record<string, string>;
-    if ((labels['com.docker.compose.service'] ?? labels['io.podman.compose.service']) === 'postgres') {
+    const labels = JSON.parse(
+      await podmanOutput(['inspect', '--format', '{{json .Config.Labels}}', id]),
+    ) as Record<string, string>;
+    if (
+      (labels['com.docker.compose.service'] ?? labels['io.podman.compose.service']) === 'postgres'
+    ) {
       postgresIds.push(id);
     }
   }
@@ -43,18 +46,22 @@ async function main(): Promise<void> {
   const deadline = Date.now() + 90000;
 
   while (Date.now() < deadline) {
-    const state = JSON.parse(await podmanOutput([
-      'inspect', '--format', '{{json .State}}', containerId,
-    ])) as { Running: boolean; Status: string; Health?: { Status?: string } };
+    const state = JSON.parse(
+      await podmanOutput(['inspect', '--format', '{{json .State}}', containerId]),
+    ) as { Running: boolean; Status: string; Health?: { Status?: string } };
     if (!state.Running) {
-      throw new Error(`PostgreSQL no está corriendo (estado: ${state.Status}). Revisa npm run db:logs.`);
+      throw new Error(
+        `PostgreSQL no está corriendo (estado: ${state.Status}). Revisa npm run db:logs.`,
+      );
     }
     if (state.Health?.Status === 'healthy') {
       console.log('PostgreSQL está healthy y disponible en 127.0.0.1:5432.');
       return;
     }
     if (!state.Health?.Status || state.Health.Status === 'unhealthy') {
-      throw new Error('PostgreSQL no tiene un healthcheck válido o está unhealthy. Revisa npm run db:logs.');
+      throw new Error(
+        'PostgreSQL no tiene un healthcheck válido o está unhealthy. Revisa npm run db:logs.',
+      );
     }
     await delay(1000);
   }

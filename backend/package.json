@@ -3,13 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.23.1" },
+  "engines": {
+    "node": ">=22.23.1"
+  },
   "packageManager": "npm@10.9.8",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "db:up": "tsx src/db/up.ts",
     "db:down": "podman compose down",
     "db:logs": "podman compose logs -f postgres",
@@ -19,7 +21,14 @@
     "db:reset": "tsx src/db/cli.ts reset",
     "db:seed:dev": "tsx src/db/cli.ts seed",
     "test:db": "tsx --test test/db-tools.test.ts",
-    "test:server": "tsx --test test/server.test.ts"
+    "test:server": "tsx --test test/server.test.ts",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -29,11 +38,20 @@
     "pg": "^8.16.0"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.15.0",
+    "@types/supertest": "7.2.1",
+    "eslint": "10.13.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "supertest": "7.3.1",
     "tsx": "^4.20.0",
-    "typescript": "~6.0.2"
+    "typescript": "~6.0.2",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
   }
 }

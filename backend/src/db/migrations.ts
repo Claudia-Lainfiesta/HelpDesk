@@ -32,7 +32,11 @@ export async function loadMigrations(directory = migrationsDirectory): Promise<M
     }
     prefixes.add(prefix);
     const bytes = await readFile(new URL(filename, directory));
-    migrations.push({ filename, sql: bytes.toString('utf8'), checksum: createHash('sha256').update(bytes).digest('hex') });
+    migrations.push({
+      filename,
+      sql: bytes.toString('utf8'),
+      checksum: createHash('sha256').update(bytes).digest('hex'),
+    });
   }
   return migrations;
 }
@@ -49,7 +53,10 @@ export async function ensureMigrationTable(client: Client): Promise<void> {
   `);
 }
 
-export async function verifyMigrations(client: Client, migrations: Migration[]): Promise<AppliedMigration[]> {
+export async function verifyMigrations(
+  client: Client,
+  migrations: Migration[],
+): Promise<AppliedMigration[]> {
   const { rows } = await client.query<AppliedMigration>(
     'SELECT filename, checksum, applied_at FROM public.schema_migrations ORDER BY filename',
   );
@@ -57,10 +64,14 @@ export async function verifyMigrations(client: Client, migrations: Migration[]):
   for (const applied of rows) {
     const file = files.get(applied.filename);
     if (!file) {
-      throw new Error(`Falta el archivo de una migración aplicada: ${applied.filename}. Restaura el archivo original.`);
+      throw new Error(
+        `Falta el archivo de una migración aplicada: ${applied.filename}. Restaura el archivo original.`,
+      );
     }
     if (file.checksum !== applied.checksum) {
-      throw new Error(`Checksum distinto en ${applied.filename}: las migraciones aplicadas son inmutables. Restaura el original y crea una migración nueva.`);
+      throw new Error(
+        `Checksum distinto en ${applied.filename}: las migraciones aplicadas son inmutables. Restaura el original y crea una migración nueva.`,
+      );
     }
   }
   return rows;
@@ -86,13 +97,16 @@ export async function migrate(client: Client, migrations: Migration[]): Promise<
     try {
       await inTransaction(client, async () => {
         await client.query(migration.sql);
-        await client.query('INSERT INTO public.schema_migrations (filename, checksum) VALUES ($1, $2)', [
-          migration.filename, migration.checksum,
-        ]);
+        await client.query(
+          'INSERT INTO public.schema_migrations (filename, checksum) VALUES ($1, $2)',
+          [migration.filename, migration.checksum],
+        );
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'error SQL';
-      throw new Error(`Falló ${migration.filename}; se revirtió su transacción: ${message}`, { cause: error });
+      throw new Error(`Falló ${migration.filename}; se revirtió su transacción: ${message}`, {
+        cause: error,
+      });
     }
     console.log(`Aplicada: ${migration.filename}`);
     count++;
@@ -100,15 +114,26 @@ export async function migrate(client: Client, migrations: Migration[]): Promise<
   console.log(count ? `${count} migración(es) aplicada(s).` : 'Sin migraciones pendientes.');
 }
 
-export async function createMigration(name: string, directory = migrationsDirectory): Promise<string> {
-  const slug = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+export async function createMigration(
+  name: string,
+  directory = migrationsDirectory,
+): Promise<string> {
+  const slug = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
   if (!slug) throw new Error('Indica un nombre: npm run db:new -- agregar_campo.');
   await mkdir(directory, { recursive: true });
   const migrations = await loadMigrations(directory);
   const next = Math.max(0, ...migrations.map((file) => Number(file.filename.slice(0, 4)))) + 1;
   if (next > 9999) throw new Error('Se agotó la numeración de cuatro dígitos.');
   const filename = `${String(next).padStart(4, '0')}_${slug}.sql`;
-  await writeFile(new URL(filename, directory), `-- ${slug}\n-- El ejecutor administra la transacción; no incluyas BEGIN ni COMMIT.\n\n`, { flag: 'wx' });
+  await writeFile(
+    new URL(filename, directory),
+    `-- ${slug}\n-- El ejecutor administra la transacción; no incluyas BEGIN ni COMMIT.\n\n`,
+    { flag: 'wx' },
+  );
   return filename;
 }

@@ -30,15 +30,30 @@ espaciado y tipografía.
 ## Verificación
 
 ```bash
+npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+npm run typecheck
+npm test
+npm run test:watch
+npm run check
 npx ng version
-npm run build
-npx tsc --project tsconfig.spec.json --noEmit
-npm test -- --watch=false
 curl -i http://localhost:4200/api/health
 ```
 
-La compilación queda en `dist/HelpDesk/browser/`. Se mantienen las versiones y
-resoluciones del lockfile original; su único cambio es el nombre del proyecto.
+`check` ejecuta lint, format:check, typecheck, test y build en ese orden y se
+detiene ante el primer fallo. `npm test` hace una sola ejecución; usa
+`test:watch` durante el desarrollo. `format` escribe cambios y `format:check`
+solo los verifica. ESLint usa la configuración flat generada por angular-eslint 22,
+incluidos los chequeos de accesibilidad de las plantillas.
+
+La compilación queda en `dist/HelpDesk/browser/`. Se conservan las versiones de
+Angular, TypeScript y Tailwind del lockfile original. Node debe ser >=22.23.1;
+`.nvmrc` fija 22.23.1 para el equipo y CI. Si usas nvm: `nvm install` y `nvm use`.
+
+Consulta la [guía de contribución](../Documentacion/Guia-de-contribucion.md) para
+las ramas, pull requests y comprobaciones del equipo.
 
 ## Editor
 

@@ -39,7 +39,9 @@ describe('App', () => {
     expect(button.disabled).toBe(false);
     button.click();
     http.expectOne('/api/health').flush({
-      status: 'ok', service: 'helpdesk-api', time: '2026-10-29T12:00:00Z',
+      status: 'ok',
+      service: 'helpdesk-api',
+      time: '2026-10-29T12:00:00Z',
     });
     await fixture.whenStable();
     expect(page.textContent).toContain('API conectada');

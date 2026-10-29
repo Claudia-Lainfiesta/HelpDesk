@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+package-lock.json
+.env
+.env.*
+# Los checksums de las migraciones aplicadas son inmutables.
+db/migrations/
+# Prettier no incluye un parser SQL.
+**/*.sql

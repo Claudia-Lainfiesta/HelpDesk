@@ -8,8 +8,8 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, nex
   }
 
   console.error('Error no controlado:', error);
-  const status = error instanceof SyntaxError && 'status' in error && error.status === 400
-    ? 400 : 500;
+  const status =
+    error instanceof SyntaxError && 'status' in error && error.status === 400 ? 400 : 500;
   res.status(status).json({
     status: 'error',
     message: status === 400 ? 'JSON inválido.' : 'Error interno del servidor.',
