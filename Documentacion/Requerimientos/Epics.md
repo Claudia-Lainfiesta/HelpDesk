@@ -4,7 +4,7 @@
 
 El sistema centralizará la atención de solicitudes de soporte de los solicitantes de una sola empresa. Permitirá registrar, asignar, atender y resolver tickets con trazabilidad, controlar tiempos de atención y generar información para mejorar el servicio.
 
-Toda persona que utilice la aplicación será un usuario de la empresa y tendrá uno o más de estos roles: solicitante, agente de soporte, supervisor o administrador, según sus permisos y capacidades. No se contempla atención a clientes, proveedores, usuarios de otras empresas ni organizaciones externas.
+Las cuentas pertenecen a empleados de la empresa y cada usuario tiene un solo rol a la vez: solicitante, agente de soporte, supervisor o administrador. No se contempla atención a clientes, proveedores ni usuarios de otras empresas. Para la auditoría, un tercero externo acude presencialmente y usa localmente las credenciales de los usuarios; no tiene cuenta propia ni constituye un quinto rol.
 
 La comunicación directa entre solicitantes y agentes se realizará mediante Telegram en ambas direcciones, integrada con los tickets del HelpDesk. Las notificaciones importantes y relevantes se enviarán tanto en la aplicación principal como por Telegram a los destinatarios autorizados. Telegram es un canal tecnológico externo; su uso no incorpora usuarios externos a la empresa.
 
@@ -20,7 +20,7 @@ La propuesta original cubre las capacidades principales de un HelpDesk, pero mez
 | 2 | Portal del solicitante | Describe una interfaz, pero debe expresar el valor para el solicitante: registrar solicitudes y consultar su atención. Se integra con la captura para abarcar esa experiencia completa. |
 | 3 | Ciclo de vida y seguimiento del ticket | Es el núcleo operativo y debe conservarse. Necesita distinguir estados, transiciones e historial de las reglas de asignación, los SLA y el envío de notificaciones. |
 | 4 | Asignación y distribución | Es esencial para que cada solicitud tenga un responsable. Debe precisar la relación entre equipos, niveles y agentes, sin asumir algoritmos avanzados de distribución desde el inicio. |
-| 5 | Prioridades, SLA y escalamiento | Agrupa capacidades relacionadas y conviene mantenerlas juntas. Faltan definiciones de impacto, urgencia, primera respuesta, resolución, horarios y pausas. Un cambio de prioridad no debe borrar un incumplimiento previo. |
+| 5 | Prioridades, SLA y escalamiento | Agrupa capacidades relacionadas y conviene mantenerlas juntas. Faltan definiciones de impacto, urgencia, resolución, horarios y pausas; la primera respuesta es el primer cambio a «En proceso», obtenido del historial de estados. Un cambio de prioridad no debe borrar un incumplimiento previo. |
 | 6 | Usuarios, roles y accesos | Es necesaria, pero debe centrarse en usuarios y permisos internos. Se debe diferenciar la administración de identidades y autorizaciones de los controles técnicos de seguridad de la épica transversal. |
 | 7 | Notificaciones y comunicación | Debe distinguir conversación bidireccional por Telegram, notas internas y avisos automáticos. Las notificaciones relevantes requieren envío por la aplicación y por Telegram, con trazabilidad por canal, control de destinatarios y manejo de fallos. Las notas internas permanecen restringidas dentro del HelpDesk. |
 | 8 | Base de conocimiento | Aporta autoservicio, pero no debe limitarse a almacenar artículos. Necesita búsqueda, revisión, publicación y mantenimiento del contenido para evitar respuestas obsoletas. |
@@ -78,26 +78,26 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 ### EP-02. Gestión del ciclo de vida y seguimiento del ticket
 
-**Descripción:** Gestionar cada ticket desde su creación hasta su resolución y cierre, conservando un registro de las acciones realizadas. El sistema organizará el trabajo mediante estados y transiciones controladas, de modo que los participantes conozcan la situación del caso, las acciones pendientes y la solución aplicada.
+**Descripción:** Gestionar cada ticket desde su creación hasta su resolución y cierre, conservando un registro de las acciones realizadas. El sistema organizará el trabajo mediante estados elegidos explícitamente, sin restricciones de transición y con permisos por rol, de modo que los participantes conozcan la situación del caso, las acciones pendientes y la solución aplicada.
 
 **Actores principales:** Agentes de soporte, supervisores y solicitantes en las acciones habilitadas para ellos.
 
 **Papel de cada rol:**
 
-- **Agente:** lleva el ticket desde su registro hasta su resolución: actualiza el estado, registra actividades, pide información al solicitante, deja el caso en espera cuando corresponde, documenta la solución y resuelve.
-- **Supervisor:** consulta el historial de los casos dentro de su alcance; quién puede cerrar o cancelar queda por definir.
+- **Agente:** lleva el ticket desde su registro hasta su resolución: actualiza el estado, registra actividades, pide información al solicitante, deja el caso en espera cuando corresponde, documenta la solución, resuelve y cierra los tickets que terminaron con éxito.
+- **Supervisor:** consulta el historial de los casos dentro de su alcance y es el único rol que puede cancelar un ticket, con motivo, cuando se decide no continuar.
 - **Solicitante:** aporta la información que se le pide, puede solicitar la reapertura y consulta la solución; no cambia estados.
-- **Administrador:** no ejecuta el flujo; los estados y transiciones los configura mediante EP-09.
+- **Administrador:** no ejecuta el flujo; los estados y sus permisos se configuran mediante EP-09, sin imponer un recorrido entre estados.
 
 **Alcance funcional:**
 
-- Gestionar estados y transiciones autorizadas. Como referencia inicial: nuevo, asignado, en atención, en espera, resuelto, cerrado y cancelado.
+- Gestionar los seis estados acordados: Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado. El estado se elige explícitamente, sin restricciones de transición; el agente cierra y solo el supervisor cancela.
 - Registrar actividades de atención, cambios relevantes y sus responsables y fechas.
 - Documentar la solución antes de resolver el ticket y aplicar las condiciones de cierre.
 - Gestionar solicitudes de información, cancelaciones y reaperturas con su justificación.
-- Conservar el historial del caso y mostrar cada información según los permisos del usuario.
+- Conservar el historial del caso, incluido quién cambió cada estado, de cuál a cuál y cuándo, y mostrar cada información según los permisos del usuario.
 
-**Límites:** Los estados definitivos y sus transiciones se validarán durante el refinamiento. EP-09 permite configurarlos; esta épica ejecuta y valida el flujo. No calcula SLA ni decide reglas de asignación.
+**Límites:** Los seis estados y la selección sin restricciones de transición están acordados. EP-09 configura sus permisos; esta épica comprueba los permisos y las condiciones propias de cada acción. El historial aporta la primera entrada en «En proceso» para EP-04, sin una columna aparte de primera respuesta. No calcula SLA ni decide reglas de asignación.
 
 **Resultado esperado:** Cada ticket tiene una situación identificable y una historia de atención que permite reconstruir cómo se resolvió.
 
@@ -136,21 +136,21 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 **Papel de cada rol:**
 
-- **Agente:** atiende sus tickets según la prioridad y los vencimientos de SLA, y su primera respuesta por Telegram es el evento que se mide.
-- **Supervisor:** identifica los tickets en riesgo o fuera de tiempo, recibe los escalamientos y decide la intervención; quién puede ajustar prioridades o aplicar excepciones queda por definir.
+- **Agente:** atiende sus tickets según la prioridad y los vencimientos de SLA; la primera respuesta se acredita con el primer cambio a «En proceso», calculado desde el historial de estados de EP-02.
+- **Supervisor:** identifica los tickets en riesgo o fuera de tiempo, recibe los escalamientos, decide la intervención, ajusta prioridades y concede excepciones de tiempo de SLA.
 - **Administrador:** define las prioridades, los SLA, los horarios y las reglas de escalamiento mediante EP-09, con permisos específicos.
 - **Solicitante:** no elige la prioridad ni los tiempos de su solicitud.
 
 **Alcance funcional:**
 
-- Determinar la prioridad mediante criterios definidos de impacto y urgencia, con ajustes justificados por personal autorizado.
+- Determinar la prioridad mediante criterios definidos de impacto y urgencia, con ajustes justificados por el supervisor.
 - Calcular los vencimientos de primera respuesta y resolución según el SLA aplicable.
 - Considerar horarios laborales, días no laborables y reglas explícitas de pausa y reanudación.
 - Identificar tickets próximos a vencer y tickets que incumplieron sus tiempos comprometidos.
 - Activar escalamiento hacia supervisores o niveles de atención según las reglas definidas.
 - Conservar el historial de prioridad, SLA, pausas e incumplimientos para su revisión.
 - Generar avisos relevantes de riesgo, incumplimiento y escalamiento para su envío mediante EP-06 tanto en la aplicación como en Telegram.
-- Registrar la primera respuesta de atención realizada por el agente a través de la integración con Telegram según el criterio de SLA acordado; las notificaciones automáticas no cuentan como respuesta del agente.
+- Calcular la primera respuesta a partir del primer cambio a «En proceso» registrado en el historial de estados de EP-02, sin una columna aparte y sin reiniciarla al volver a ese estado. Las notificaciones automáticas, las notas internas y los mensajes de Telegram no cuentan. Queda pendiente precisar cómo se cuenta si el cambio lo hace alguien distinto del agente asignado.
 
 **Límites:** EP-09 administra parámetros y calendarios; esta épica aplica las reglas y mide los tiempos. EP-06 entrega las alertas y EP-03 ejecuta las transferencias que correspondan. Los valores de SLA y el tratamiento de reaperturas o cambios de prioridad quedan pendientes de definición.
 
@@ -171,7 +171,7 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 - Gestionar altas, actualizaciones y desactivación de cuentas de usuarios.
 - Autenticar a los usuarios y gestionar el acceso a sus cuentas.
-- Asignar roles de solicitante, agente de soporte, supervisor y administrador, permitiendo combinaciones autorizadas.
+- Asignar a cada usuario un único rol vigente: solicitante, agente de soporte, supervisor o administrador.
 - Asociar agentes y supervisores con equipos y niveles de soporte cuando corresponda.
 - Restringir acciones y visibilidad de tickets, reportes, artículos y configuración según permisos.
 - Conservar la referencia histórica a usuarios desactivados en los registros existentes.
@@ -223,8 +223,8 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 - **Solicitante:** busca y consulta los artículos que tiene permitidos para resolver dudas por su cuenta.
 - **Agente:** redacta borradores, prepara artículos a partir de soluciones de soporte sin incluir datos sensibles y relaciona artículos con tickets.
-- **Revisión y publicación:** las realizan las personas que se autoricen mediante permisos (EP-05); no se presupone que todo agente pueda publicar. Quién ocupa este papel queda por definir.
-- **Supervisor y administrador:** no tienen un papel propio en esta épica salvo que se les otorguen esos permisos.
+- **Revisión:** el supervisor revisa los artículos antes de su publicación.
+- **Publicación:** el administrador publica los artículos revisados por el supervisor.
 
 **Alcance funcional:**
 
@@ -256,7 +256,7 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 - Consultar indicadores de tickets recibidos, pendientes, resueltos, cerrados y reabiertos.
 - Analizar carga por equipo o agente, categorías frecuentes y evolución de la demanda.
 - Medir tiempos de primera respuesta y resolución, así como cumplimiento e incumplimiento de SLA.
-- Utilizar la marca de tiempo de la primera respuesta del agente para calcular tiempos de respuesta, sin contar notificaciones automáticas como respuestas.
+- Obtener la primera respuesta del primer cambio a «En proceso» en el historial de estados de EP-02, según EP-04. No se reinicia con entradas posteriores ni depende de una columna aparte; las notificaciones automáticas, notas internas y mensajes de Telegram no cuentan.
 - Filtrar información por período, categoría, prioridad, equipo y otros criterios autorizados.
 - Solicitar una valoración voluntaria de la atención al concluir el caso, con comentario opcional.
 - Presentar resultados de satisfacción junto con el volumen y la tasa de respuesta de las encuestas.
@@ -281,7 +281,7 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 **Alcance funcional:**
 
 - Administrar categorías, subcategorías y opciones de clasificación de solicitudes.
-- Configurar estados y transiciones permitidas dentro de las capacidades del sistema.
+- Mantener los seis estados acordados y sus permisos por rol, con selección explícita y sin restricciones de transición.
 - Mantener equipos, niveles de atención y reglas básicas de enrutamiento.
 - Configurar prioridades, objetivos de SLA, horarios, días no laborables y reglas de escalamiento.
 - Administrar plantillas de notificación y respuestas frecuentes.
@@ -297,14 +297,14 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 **Descripción:** Proteger la información del HelpDesk, registrar acciones relevantes y permitir su recuperación ante fallos. Esta épica es transversal: sus controles se incorporarán desde el inicio en todos los módulos y tendrán entregables propios para verificar la confidencialidad, integridad y disponibilidad del sistema.
 
-**Actores principales:** Administradores, personal autorizado para auditoría y responsables internos de operación tecnológica.
+**Actores principales:** Supervisor y administrador como roles técnicos de auditoría y respaldo; en la práctica, un auditor externo realiza las comprobaciones presencialmente en la empresa, con acceso local y las credenciales de los usuarios, sin cuenta propia ni rol nuevo.
 
 **Papel de cada rol:**
 
-- **Administrador:** opera los controles de seguridad con permisos específicos; ser administrador no concede acceso a los registros de auditoría ni a los secretos.
-- **Personal autorizado para auditoría:** revisa los registros de acciones sensibles. Es un papel que hoy no corresponde a ninguno de los cuatro roles y queda por definir.
-- **Responsables de operación tecnológica:** gestionan respaldos y restauraciones; queda por definir si son administradores con permiso o personas ajenas a la aplicación.
-- **Solicitante, agente y supervisor:** se benefician de estos controles; no tienen funciones propias en esta épica.
+- **Administrador:** opera los controles de seguridad y dispone de las funciones técnicas de auditoría y respaldo, sin acceso indiscriminado a secretos.
+- **Supervisor:** dispone de las funciones técnicas de auditoría y respaldo dentro de su alcance.
+- **Auditor externo:** por seguridad realiza la auditoría y los respaldos presencialmente, entrando localmente con las credenciales de los usuarios. No tiene una cuenta propia ni es un quinto rol.
+- **Solicitante y agente:** se benefician de estos controles; sus roles no incluyen funciones de auditoría o respaldo.
 
 **Alcance funcional y técnico:**
 
@@ -326,16 +326,16 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 ## 4. Criterios comunes y decisiones pendientes
 
-Las siguientes definiciones deberán resolverse al convertir las épicas en historias de usuario:
+Las decisiones cerradas el 29-oct-2026 están en [Decisiones-de-producto.md](../Decisiones-de-producto.md). Las siguientes definiciones siguen pendientes al convertir las épicas en historias de usuario:
 
 - **Accesos:** Matriz de permisos por rol, equipo y relación con el ticket, incluida la visibilidad de notas internas, adjuntos y reportes.
-- **Flujo:** Estados definitivos, transiciones autorizadas y condiciones de espera, cancelación, resolución, cierre y reapertura.
+- **Flujo:** Los seis estados, la selección sin restricciones de transición, el cierre por el agente y la cancelación solo por el supervisor ya están acordados. Falta precisar condiciones de espera, contenido de la solución, posible confirmación previa al cierre y reglas de reapertura.
 - **Atención:** Categorías, equipos, niveles, responsables y criterios de asignación y escalamiento.
 - **Tiempos:** Matriz de impacto y urgencia, objetivos de SLA, horarios, pausas y efecto de los cambios sobre tickets en curso.
 - **Integración con Telegram:** El canal está decidido. Falta concretar y validar el mecanismo de conversación bidireccional, la vinculación verificable de identidades, la identificación del ticket en cada conversación, el tratamiento de archivos y los reintentos ante fallos. Telegram no se incorpora como canal de creación de tickets.
 - **Notificaciones por ambos canales:** Precisar el catálogo de eventos importantes y relevantes y sus destinatarios. Todos los eventos incluidos deberán generar notificaciones en la aplicación y en Telegram. Definir el manejo operativo de cuentas sin vinculación, caídas del canal y envíos pendientes.
 - **Identidad:** Necesidad de conexión con un directorio de usuarios.
-- **Medición:** Fórmulas de indicadores, momento de envío de encuestas y tratamiento de casos reabiertos. Definir el evento y la marca de tiempo que acreditan la primera respuesta del agente mediante Telegram y cómo se reflejan las incidencias del canal en los SLA, sin confundir notificaciones automáticas con atención efectiva.
+- **Medición:** Fórmulas de indicadores, momento de envío de encuestas y tratamiento de casos reabiertos. La primera respuesta es el primer cambio a «En proceso», calculado desde el historial de estados de EP-02, sin una columna aparte ni reinicios; no cuentan notificaciones automáticas, notas internas ni mensajes de Telegram. Queda pendiente cómo contar esa primera vez cuando el cambio lo hace alguien distinto del agente asignado.
 - **Protección y continuidad:** Retención de tickets, archivos y auditoría; objetivos y pruebas de respaldo y recuperación.
 
 La numeración identifica las épicas y no representa un orden de implementación. EP-05 y EP-10 deben acompañar el desarrollo de las capacidades operativas desde el inicio. La accesibilidad, usabilidad, rendimiento y confiabilidad deberán expresarse como requisitos de calidad medibles que apliquen a las épicas pertinentes.

@@ -30,7 +30,8 @@ FROM (VALUES
   ('Ejemplo: aplicación no abre', 'La herramienta de trabajo se cierra al iniciar.', 'Software', 'en_proceso'),
   ('Ejemplo: conexión intermitente', 'La conexión se interrumpe; se espera una prueba del solicitante.', 'Redes e internet', 'en_espera'),
   ('Ejemplo: acceso restablecido', 'Se restableció el acceso; se espera confirmación del solicitante.', 'Accesos y cuentas', 'resuelto'),
-  ('Ejemplo: consulta atendida', 'Se atendió la consulta y el solicitante confirmó el cierre.', 'Otros', 'cerrado')
+  ('Ejemplo: consulta atendida', 'Se atendió la consulta y el solicitante confirmó el cierre.', 'Otros', 'cerrado'),
+  ('Ejemplo: solicitud registrada por error', 'Se decidió no continuar porque la solicitud se registró por error.', 'Otros', 'cancelado')
 ) AS sample(subject, description, category_name, status_code)
 JOIN categories ON lower(categories.name) = lower(sample.category_name)
 JOIN ticket_statuses ON ticket_statuses.code = sample.status_code

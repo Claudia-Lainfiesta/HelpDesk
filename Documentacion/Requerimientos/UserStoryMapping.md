@@ -4,7 +4,7 @@
 
 Este documento reúne progresivamente las historias de usuario del proyecto y las organiza según el recorrido de sus usuarios. La fuente de alcance es [Epics.md](Epics.md). Actualmente se desarrollan **EP-01: Registro de solicitudes y portal del solicitante**, **EP-02: Gestión del ciclo de vida y seguimiento del ticket**, **EP-03: Asignación y distribución del trabajo**, **EP-04: Gestión de prioridades, SLA y escalamiento**, **EP-05: Gestión de usuarios, roles y accesos**, **EP-06: Comunicación bidireccional por Telegram y notificaciones**, **EP-07: Base de conocimiento y autoservicio**, **EP-08: Reportes, tableros y satisfacción del solicitante**, **EP-09: Administración y configuración del servicio** y **EP-10: Seguridad, auditoría y recuperación de la información**.
 
-**Estado:** propuesta para revisión y refinamiento. Las entregas sugeridas no constituyen compromisos de implementación. Las decisiones pendientes deben resolverse antes de implementar las historias afectadas.
+**Estado:** propuesta para revisión y refinamiento. Las entregas sugeridas no constituyen compromisos de implementación. Las decisiones de S0-08 cerradas el 29-oct-2026 se registran en [Decisiones-de-producto.md](../Decisiones-de-producto.md); los demás pendientes deben resolverse antes de implementar las historias afectadas.
 
 - **Identificador:** `HU-EE-NN`, donde `EE` corresponde al número de la épica y `NN` identifica la historia dentro de ella. Por ejemplo, `HU-02-01` es la primera historia de EP-02. Los identificadores se conservarán al incorporar nuevas épicas.
 - **Estilo de las historias:** lenguaje natural, claro y cercano. Cada historia explica quién necesita algo, qué podrá hacer y para qué le servirá, sin exigir una fórmula fija. Este estilo se mantendrá al desarrollar las siguientes épicas.
@@ -58,7 +58,7 @@ Cuando un solicitante necesita ayuda, puede registrar su problema en el portal i
 
 - El solicitante debe haber iniciado sesión y tener su cuenta habilitada. Las categorías disponibles son las que el servicio permite usar.
 - Si falta un dato obligatorio, contiene solo espacios o la categoría no es válida, el portal señala qué debe corregirse antes de crear el ticket.
-- La solicitud queda a nombre del solicitante, con un identificador único, fecha de creación y el estado inicial acordado. La confirmación permite abrir su detalle.
+- La solicitud queda a nombre del solicitante, con una referencia única `TK-XXXXXX` de seis dígitos, fecha de creación y estado Creado. La confirmación permite abrir su detalle.
 - Si el registro falla y el ticket no se crea, se informa el problema y se conservan los textos ingresados para volver a intentarlo.
 
 Propuesta para la entrega 1. Se apoya en EP-02 para crear el ticket, EP-05 para identificar al solicitante, EP-09 para las categorías y EP-10 para proteger la información. Los avisos del registro corresponden a EP-06.
@@ -203,7 +203,7 @@ Esta historia queda fuera de las entregas propuestas hasta confirmar que se habi
 | D-01 | Aprobar categorías iniciales, longitudes de asunto y descripción y cualquier obligatoriedad adicional por categoría. | HU-01-01, HU-01-10 |
 | D-02 | Definir tipos, tamaños, cantidad y validaciones de archivos, además del comportamiento del envío si falla una carga. | HU-01-02 |
 | D-03 | Confirmar filtros, orden inicial del listado y zona horaria del servicio. | HU-01-03, HU-01-04 |
-| D-04 | Establecer estados visibles y matriz de información autorizada, incluida la identificación del equipo o agente, actividades y archivos. | HU-01-05, HU-01-06, HU-01-08 |
+| D-04 | Los seis estados están acordados; falta completar la matriz de información autorizada y su visibilidad, incluida la identificación del equipo o agente, actividades y archivos. | HU-01-05, HU-01-06, HU-01-08 |
 | D-05 | Definir vinculación, mecanismo de acceso a Telegram y tratamiento de casos sin agente o con conversación no disponible por su estado. | HU-01-07 |
 | D-06 | Acordar estados, plazo, aprobación y manejo de peticiones repetidas para reapertura. | HU-01-09 |
 | D-07 | Confirmar si se habilita el registro en nombre de otro solicitante y qué agentes pueden usarlo. | HU-01-10 |
@@ -218,12 +218,12 @@ Que soporte pueda llevar cada solicitud desde su registro hasta su resolución y
 
 Participan agentes de soporte y supervisores con acceso al caso. Los solicitantes intervienen en las acciones que el servicio les permita realizar, como aportar información o pedir que se retome la atención.
 
-Se toman como referencia los estados nuevo, asignado, en atención, en espera, resuelto, cerrado y cancelado. Todavía falta acordar cuáles se usarán y qué cambios se permitirán entre ellos; la lista no obliga a que todos los tickets recorran todos los estados.
+Los estados acordados son Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado. Se eligen explícitamente, sin restricciones de transición ni pasos obligatorios. El agente cierra los tickets terminados con éxito; solo el supervisor puede cancelarlos cuando se decide no continuar.
 
 ### Alcance y relación con otras épicas
 
 - EP-01 cubre la experiencia del solicitante al registrar y consultar sus solicitudes. Aquí se desarrolla el trabajo necesario para atenderlas y conservar su historia.
-- EP-02 aplica los cambios de estado; EP-09 permite configurar las reglas y EP-05 determina quién puede ejecutar cada acción.
+- EP-02 aplica los cambios de estado; EP-09 mantiene el catálogo y sus permisos, sin restricciones de transición, y EP-05 determina quién puede ejecutar cada acción.
 - La asignación de equipos y agentes pertenece a EP-03. Cambiar de estado no concede permisos ni asigna por sí solo un responsable.
 - EP-04 calcula los tiempos y aplica las reglas de SLA. Poner un caso en espera no supone automáticamente que su tiempo deje de contar.
 - La conversación con el solicitante ocurre en Telegram mediante EP-06. El portal no incorpora un chat y recibir un mensaje no cambia automáticamente el estado del ticket.
@@ -250,18 +250,18 @@ Estas entregas son una propuesta de organización, no versiones independientes d
 
 #### HU-02-01 — Actualizar el estado de un ticket
 
-El agente puede indicar en qué situación se encuentra una solicitud para que quienes participan en ella sepan si ya se está atendiendo, está pendiente de algo o ha llegado a otra etapa del proceso. El sistema le ofrece los cambios que puede realizar según el estado actual y sus permisos.
+El agente puede indicar en qué situación se encuentra una solicitud para que quienes participan en ella sepan si ya se está atendiendo, está pendiente de algo o ha llegado a otra etapa del proceso. El sistema le permite elegir explícitamente el estado, sin restricciones de origen y destino, respetando sus permisos.
 
 **Para revisar con el equipo:**
 
-- Cada ticket comienza con el estado inicial acordado y conserva un único estado vigente.
-- Solo se aceptan cambios permitidos por las reglas del servicio y por el acceso de la persona al caso, incluso cuando la operación se intenta mediante un acceso directo.
+- Cada ticket comienza en Creado y conserva un único estado vigente entre los seis acordados.
+- No se impone una secuencia de estados. Se comprueban el acceso al caso y los permisos de la acción, incluso mediante un acceso directo: el agente cierra y solo el supervisor cancela.
 - Antes de aceptar el cambio, se comprueba que se cumplen sus condiciones, como tener una solución documentada para resolver el caso.
 - Cada cambio confirmado conserva el estado anterior, el nuevo, la persona o proceso que lo realizó y la fecha, junto con el motivo cuando corresponda.
 - Si otra persona ya cambió el estado mientras el agente revisaba el ticket, se informa la situación y se pide revisar los datos vigentes antes de continuar. No se sobrescribe el cambio anterior sin advertencia.
 - Si la operación falla, no se presenta el cambio como completado ni se deja un estado sin su registro correspondiente en el historial.
 
-Propuesta para la entrega 1. EP-09 define las reglas configurables, EP-05 y EP-10 controlan los accesos y EP-06 entrega los avisos aplicables. Las historias siguientes detallan las condiciones de algunos cambios. Falta acordar los estados definitivos y quién puede realizar cada transición.
+Propuesta para la entrega 1. EP-09 define las reglas configurables, EP-05 y EP-10 controlan los accesos y EP-06 entrega los avisos aplicables. Las historias siguientes detallan las condiciones de algunos cambios. Los seis estados y la selección sin restricciones de transición ya están acordados; falta completar los demás permisos y condiciones de las acciones.
 
 #### HU-02-02 — Registrar el trabajo realizado en una solicitud
 
@@ -297,13 +297,13 @@ Cuando no puede avanzar, el agente puede dejar el caso en espera explicando qué
 
 **Para revisar con el equipo:**
 
-- El paso a espera solo está disponible desde los estados permitidos y exige un motivo que explique qué impide continuar.
+- El agente puede elegir En espera sin restricciones de transición y debe indicar un motivo que explique qué impide continuar.
 - El historial conserva el motivo, la fecha y la persona que dejó el caso en espera.
-- Al retomar el trabajo, se aplica un cambio permitido y queda constancia de cuándo se retomó, quién lo hizo y qué permitió continuar.
+- Al retomar el trabajo, se elige explícitamente el estado y queda constancia de cuándo se retomó, quién lo hizo y qué permitió continuar.
 - La información sobre la espera respeta los permisos del solicitante y del equipo de soporte.
 - Los tiempos de atención se tratan según EP-04. La espera no pausa el SLA por el solo hecho de cambiar el estado.
 
-Propuesta para la entrega 2. Complementa HU-02-01 y HU-02-03; utiliza las reglas de EP-09 y se relaciona con EP-04. Falta acordar los motivos de espera, los estados desde los que se puede entrar o salir y qué esperas afectan los tiempos del servicio.
+Propuesta para la entrega 2. Complementa HU-02-01 y HU-02-03; utiliza las reglas de EP-09 y se relaciona con EP-04. Falta acordar los motivos de espera y qué esperas afectan los tiempos del servicio; no hay restricciones de transición para entrar o salir de En espera.
 
 #### HU-02-05 — Documentar la solución y resolver el ticket
 
@@ -312,7 +312,7 @@ Cuando termina de atender el problema, el agente explica qué hizo y cuál fue e
 **Para revisar con el equipo:**
 
 - La solución debe contener una explicación; no se permite resolver un ticket con el campo vacío o compuesto solo por espacios.
-- Solo una persona autorizada puede resolver el caso y únicamente desde un estado que permita ese cambio.
+- Solo una persona autorizada puede resolver el caso; no se restringe el estado de origen, pero se comprueban las condiciones de la solución.
 - La solución, la persona que la registró y la fecha de resolución quedan asociadas al ticket y disponibles en su historial.
 - La explicación destinada al solicitante no debe exponer notas internas ni archivos restringidos. El contenido se presenta según los permisos acordados.
 - Marcar el ticket como resuelto no equivale a cerrarlo ni a afirmar que el solicitante aceptó la solución.
@@ -321,31 +321,31 @@ Propuesta para la entrega 1. Complementa la consulta de solución de HU-01-08 y 
 
 #### HU-02-06 — Cerrar un ticket cuando termina su atención
 
-El personal autorizado puede cerrar una solicitud cuando se cumplen las condiciones acordadas para darla por concluida. El cierre permite distinguir los casos que ya terminaron su proceso de aquellos que tienen una solución pero todavía esperan una acción final.
+El agente puede cerrar una solicitud cuando su atención terminó con éxito y se cumplen las condiciones acordadas. Cerrado distingue ese resultado de Cancelado, que significa que se decidió no continuar.
 
 **Para revisar con el equipo:**
 
-- El cierre solo se realiza desde un estado permitido y después de comprobar las condiciones definidas para el servicio.
+- El cierre lo realiza el agente, sin restricciones de transición y después de comprobar las condiciones definidas para el servicio.
 - Si falta una condición, se explica qué está pendiente y el ticket conserva su estado actual.
-- El historial registra la fecha de cierre y la persona o proceso que lo ejecutó.
-- Cerrar el caso no elimina su solución, sus actividades ni la comunicación conservada. La consulta posterior sigue las reglas de acceso y retención.
+- El historial registra la fecha de cierre y el agente que lo ejecutó.
+- Cerrar el caso no elimina su solución, sus actividades ni las referencias de comunicación; el HelpDesk no conserva el contenido de los mensajes. La consulta posterior sigue las reglas de acceso y retención.
 - Leer una solución o recibir una notificación no se interpreta por sí solo como aceptación del solicitante ni como autorización para cerrar.
 
-Propuesta para la entrega 1. Se apoya en HU-02-01, HU-02-05 y las reglas de EP-09. Falta decidir quién puede cerrar, si se necesita confirmación del solicitante y si habrá cierre automático; no se presupone un plazo ni un mecanismo automático.
+Propuesta para la entrega 1. Se apoya en HU-02-01, HU-02-05 y las reglas de EP-09. El agente es quien cierra. Falta decidir si se necesita confirmación previa del solicitante; no se presupone un plazo de confirmación.
 
 #### HU-02-07 — Cancelar una solicitud con una razón clara
 
-Cuando una solicitud ya no debe continuar, una persona autorizada puede cancelarla explicando el motivo. Por ejemplo, podría haberse registrado por error o haber dejado de ser necesaria, si esas razones son aceptadas por el servicio.
+Cuando una solicitud ya no debe continuar, solo el supervisor puede cancelarla explicando el motivo. Por ejemplo, podría haberse registrado por error o haber dejado de ser necesaria, si esas razones son aceptadas por el servicio.
 
 **Para revisar con el equipo:**
 
-- La cancelación requiere un motivo y solo se permite en los estados y para los roles que se acuerden.
+- La cancelación requiere un motivo y solo la realiza el supervisor. El solicitante no cancela directamente y no se restringe el estado de origen.
 - El sistema comprueba los permisos y las condiciones antes de cancelar, también si la operación se intenta mediante un acceso directo.
 - El historial conserva quién canceló, cuándo lo hizo y por qué. Las actividades y los archivos anteriores no se eliminan por cancelar el ticket.
 - Un caso cancelado se identifica como tal; no se presenta como resuelto ni se inventa una solución.
 - Si la cancelación no está permitida, el portal explica el impedimento y mantiene el estado actual.
 
-Propuesta para la entrega 2. Utiliza HU-02-01, HU-02-09 y las reglas de EP-05 y EP-09. EP-06 gestiona los avisos aplicables. Falta acordar los motivos admitidos y si el solicitante podrá cancelar directamente, pedir una revisión o no tendrá esa opción.
+Propuesta para la entrega 2. Utiliza HU-02-01, HU-02-09 y las reglas de EP-05 y EP-09. EP-06 gestiona los avisos aplicables. El solicitante no cancela directamente. Falta precisar el catálogo de motivos y si podrá pedir una revisión al supervisor.
 
 #### HU-02-08 — Gestionar la reapertura de una solicitud
 
@@ -368,7 +368,7 @@ El agente o supervisor autorizado puede revisar el recorrido de una solicitud pa
 
 **Para revisar con el equipo:**
 
-- El historial reúne el registro inicial, las actividades y los cambios relevantes, con sus fechas y responsables, en un orden que permita reconstruir la atención.
+- El historial reúne el registro inicial, las actividades y los cambios relevantes, con sus fechas y responsables, en un orden que permita reconstruir la atención. Cada cambio de estado conserva quién lo hizo, de cuál a cuál y cuándo; HU-04-04 consulta ese historial para calcular la primera entrada en En proceso, sin una columna aparte.
 - Las soluciones, esperas, cancelaciones y reaperturas conservan sus motivos y antecedentes cuando correspondan. Una nueva etapa no borra las anteriores.
 - Los cambios originados en otras funciones, como la asignación de EP-03, se incorporan con su referencia al caso; el historial no ejecuta esas acciones.
 - Cada persona ve solo el contenido que tiene permitido consultar. Ser agente, supervisor o administrador no concede por sí solo acceso a todos los casos.
@@ -393,11 +393,11 @@ Se continúa la numeración de decisiones de EP-01. Cuando una definición ya ex
 
 | ID | Decisión necesaria | Historias afectadas |
 | --- | --- | --- |
-| D-10 | Definir estados inicial y finales, cambios permitidos, condiciones y roles que pueden ejecutarlos. Complementa D-04 sobre lo que ve el solicitante. | HU-02-01, HU-02-04 a HU-02-08 |
+| D-10 | Acordado: Creado es inicial; Cerrado y Cancelado son finales; se elige entre los seis estados sin restricciones de transición. El agente cierra y solo el supervisor cancela. Falta completar los demás permisos y condiciones de las acciones. Complementa D-04 sobre lo que ve el solicitante. | HU-02-01, HU-02-04 a HU-02-08 |
 | D-11 | Acordar qué actividades se registran, quién puede verlas y cómo corregirlas sin perder antecedentes. | HU-02-02, HU-02-09 |
 | D-12 | Definir cuándo se considera atendida una petición de información y qué motivos permiten dejar un caso en espera o retomarlo. Coordinar su efecto sobre SLA con EP-04. | HU-02-03, HU-02-04 |
-| D-13 | Acordar el contenido necesario de la solución, su corrección posterior y las condiciones de cierre, incluida una posible confirmación o automatización. | HU-02-05, HU-02-06 |
-| D-14 | Definir motivos y estados que permiten cancelar, y si el solicitante puede hacerlo directamente o necesita revisión. | HU-02-07 |
+| D-13 | El agente cierra los tickets terminados con éxito. Falta acordar el contenido necesario de la solución, su corrección posterior y si se necesita confirmación previa del solicitante. | HU-02-05, HU-02-06 |
+| D-14 | Acordado: solo el supervisor cancela, con motivo y sin restricciones de transición; el solicitante no cancela directamente. Falta precisar el catálogo de motivos y si podrá solicitar una revisión. | HU-02-07 |
 | D-06, ampliación | Resolver las reglas de reapertura ya pendientes en EP-01 y acordar el estado de destino, la asignación y el efecto en los tiempos. | HU-02-08; HU-01-09 |
 | D-08, seguimiento | Confirmar cuáles de estos cambios son eventos relevantes, sus destinatarios y los avisos por aplicación y Telegram. | Historias que originen eventos de atención |
 | D-09, seguimiento | Aplicar la retención y los objetivos de calidad acordados al historial, las soluciones y los archivos. | HU-02-02, HU-02-05, HU-02-09 |
@@ -623,7 +623,7 @@ Participan agentes de soporte, supervisores y responsables autorizados de las po
 - La primera respuesta y la resolución son compromisos distintos. Una notificación automática no cuenta como respuesta del agente, y cerrar un ticket no equivale a registrar su primera resolución.
 - EP-02 aporta los cambios de estado, las esperas, las soluciones y las reaperturas. Estar en espera no pausa los tiempos por sí solo y reabrir no los reinicia automáticamente.
 - EP-04 identifica cuándo corresponde escalar. EP-03 realiza las reasignaciones o transferencias necesarias y EP-06 entrega los avisos por aplicación y Telegram.
-- EP-06 aporta la evidencia de la comunicación del agente por Telegram. Se debe acordar qué evento y fecha acreditan una respuesta, sin confundir envío, entrega y lectura.
+- La primera respuesta es el primer cambio a En proceso, calculado con el historial de estados de EP-02, sin una columna aparte ni dependencia de Telegram. Solo cuenta la primera vez; las entradas posteriores no la reinician. No cuentan notificaciones automáticas, notas internas ni mensajes de Telegram.
 - EP-08 utiliza los datos para reportes e indicadores. Aquí se controla la situación de cada caso y se conserva la evidencia de cumplimiento o atraso.
 - EP-05 y EP-10 controlan los permisos y protegen la información desde la primera entrega.
 
@@ -641,7 +641,7 @@ El equipo primero establece la importancia y los compromisos del caso, después 
 
 **Valor de la entrega 2:** se incorporan los ajustes de prioridad, las pausas permitidas y la activación de escalamientos, conservando los antecedentes.
 
-Estas entregas son una propuesta de organización, no una autorización para aplicar políticas incompletas. Si el SLA inicial incluye pausas, ajustes de prioridad o escalamiento, las historias correspondientes deben acompañar la primera entrega. El cálculo de horarios y días no laborables forma parte de HU-04-03 desde el inicio. Los avisos relevantes necesitan ambos canales de EP-06 y la primera respuesta necesita evidencia de la integración con Telegram.
+Estas entregas son una propuesta de organización, no una autorización para aplicar políticas incompletas. Si el SLA inicial incluye pausas, ajustes de prioridad o escalamiento, las historias correspondientes deben acompañar la primera entrega. El cálculo de horarios y días no laborables forma parte de HU-04-03 desde el inicio. Los avisos relevantes necesitan ambos canales de EP-06; la primera respuesta depende del historial de estados de HU-02-01 y HU-02-09, no de Telegram.
 
 ### 5.2. Historias de usuario
 
@@ -661,17 +661,17 @@ Propuesta para la entrega 1. EP-09 define los criterios y EP-05 controla quién 
 
 #### HU-04-02 — Ajustar la prioridad con una explicación
 
-Si cambia la situación del problema o la evaluación inicial no refleja su importancia, una persona autorizada puede ajustar la prioridad explicando la razón. El equipo puede reconocer el cambio y entender cómo afecta los compromisos del caso.
+Si cambia la situación del problema o la evaluación inicial no refleja su importancia, el supervisor puede ajustar la prioridad explicando la razón. El equipo puede reconocer el cambio y entender cómo afecta los compromisos del caso.
 
 **Para revisar con el equipo:**
 
-- El ajuste requiere un motivo con contenido y permiso para realizarlo. Se distingue entre corregir impacto o urgencia y aplicar una excepción autorizada a la prioridad calculada.
+- El ajuste requiere un motivo con contenido y lo realiza el supervisor. Se distingue entre corregir impacto o urgencia y aplicar una excepción a la prioridad calculada; el supervisor también concede las excepciones de tiempo de SLA.
 - Se conservan la prioridad anterior, la nueva, el motivo, la fecha y quién hizo el cambio, junto con los datos de evaluación que correspondan.
 - El efecto sobre el SLA se aplica según la política acordada. Se conserva el vencimiento anterior y se muestra el nuevo cuando haya un recálculo.
 - Un cambio de prioridad no borra un incumplimiento previo ni reinicia el tiempo transcurrido por suposición.
 - Si alguien ya modificó la prioridad mientras se revisaba el caso, se informa la situación y se pide revisar el dato vigente antes de reemplazarlo.
 
-Propuesta para la entrega 2. Complementa HU-04-01, HU-04-03 y HU-04-10. EP-09 define el efecto del cambio y EP-06 entrega los avisos aplicables. Falta acordar quién puede hacer excepciones y cómo se calculan los tiempos al aumentar o disminuir la prioridad.
+Propuesta para la entrega 2. Complementa HU-04-01, HU-04-03 y HU-04-10. EP-09 define el efecto del cambio y EP-06 entrega los avisos aplicables. El supervisor concede las excepciones; falta acordar cómo se calculan los tiempos al aumentar o disminuir la prioridad.
 
 #### HU-04-03 — Conocer las fechas límite de atención
 
@@ -681,7 +681,7 @@ El agente o supervisor puede consultar qué compromiso de primera respuesta y de
 
 - Se identifica la política de SLA aplicable al caso y se calculan por separado los vencimientos de primera respuesta y resolución.
 - El cálculo utiliza el evento de inicio, los objetivos, la zona horaria, los horarios laborales y los días no laborables acordados. Fuera del horario aplicable solo se cuenta tiempo si la política así lo establece.
-- Cuando corresponda, se incorporan las pausas válidas de HU-04-06. Los ajustes y reaperturas se tratan según reglas expresas, no como un reinicio automático.
+- Cuando corresponda, se incorporan las pausas válidas de HU-04-06. Las excepciones de tiempo las concede el supervisor y quedan justificadas en el historial de HU-04-10. Los ajustes y reaperturas se tratan según reglas expresas; la primera respuesta nunca se reinicia.
 - Se conservan la política y el calendario utilizados para poder explicar el resultado, aunque la configuración cambie después.
 - Si falta una política válida o hay reglas incompatibles sin una precedencia definida, se indica que el cálculo no está disponible y requiere revisión. No se muestra un vencimiento inventado ni un cumplimiento confirmado.
 - Un cambio de equipo o agente no altera por sí solo el inicio del conteo ni elimina tiempo ya consumido.
@@ -690,18 +690,18 @@ Propuesta para la entrega 1. EP-09 aporta políticas y calendarios; EP-02 los ev
 
 #### HU-04-04 — Reconocer la primera respuesta de atención
 
-El equipo puede comprobar cuándo un agente dio la primera respuesta de atención al solicitante por Telegram. Esa evidencia permite evaluar el compromiso de respuesta sin confundir un aviso automático con una intervención real de soporte.
+El equipo puede comprobar cuándo el ticket pasó por primera vez a En proceso. Ese primer cambio de estado acredita la primera respuesta de atención y se calcula a partir del historial de estados, sin depender de Telegram ni de una columna aparte.
 
 **Para revisar con el equipo:**
 
-- La respuesta debe provenir de un agente autorizado, estar asociada al ticket correcto y cumplir el criterio de atención que acuerde el servicio.
-- Se conserva únicamente el autor y la fecha del evento que acredita la respuesta según la política aprobada, sin guardar el contenido del mensaje. No se sustituye esa fecha por la del procesamiento posterior si son distintas.
-- Los avisos automáticos, las notas internas, los mensajes del solicitante y los reintentos de un mismo mensaje no cuentan como una nueva primera respuesta.
-- Un envío pendiente o fallido no se presenta como respuesta acreditada si no cumple el evento requerido. Tampoco se afirma que el solicitante leyó el mensaje sin evidencia.
+- Se utiliza el primer cambio confirmado a En proceso del ticket, registrado mediante HU-02-01 y consultable en HU-02-09. El historial identifica quién lo hizo, el estado anterior, el nuevo y cuándo ocurrió.
+- Se toma la fecha del cambio registrada en el historial, no la del procesamiento posterior. No se mantiene una columna independiente para acreditar la primera respuesta.
+- Solo cuenta la primera vez: volver a otro estado y luego a En proceso, o reabrir el ticket, no reinicia esa primera respuesta.
+- Las notificaciones automáticas, las notas internas y los mensajes de Telegram, incluidos sus reintentos, no cuentan. Un ticket sin cambio confirmado a En proceso no tiene una primera respuesta acreditada.
 - La respuesta se compara con el vencimiento correspondiente. Si llegó tarde, se registra como realizada fuera de tiempo; atender después no elimina el atraso.
-- Si la integración informa tarde un evento de respuesta anterior, se revisa el cálculo con su fecha válida y se conserva la explicación de cualquier corrección. No se toma simplemente el primer evento procesado como el primero ocurrido.
+- Si se incorpora tarde un cambio válido al historial, se utiliza la fecha en que ocurrió y se conserva la explicación de cualquier corrección; no se confunde el orden de procesamiento con el de los hechos.
 
-Propuesta para la entrega 1. Utiliza la comunicación de EP-06 y las identidades de EP-05. Falta acordar qué contenido cuenta como atención, qué evento acredita la respuesta y cómo afectan al SLA las incidencias de Telegram.
+Propuesta para la entrega 1. Depende del registro y la consulta del historial de estados de HU-02-01 y HU-02-09, con identidades y permisos de EP-05; no depende de EP-06. Queda pendiente cómo se cuenta exactamente la primera vez en En proceso cuando el cambio lo hace alguien distinto del agente asignado.
 
 #### HU-04-05 — Conocer si la resolución cumplió el tiempo comprometido
 
@@ -730,7 +730,7 @@ El equipo puede distinguir las esperas que detienen un compromiso de tiempo de a
 - Una pausa posterior a un incumplimiento no elimina el atraso que ya ocurrió.
 - El equipo puede consultar si el conteo está activo o pausado y por qué, dentro de sus permisos.
 
-Propuesta para la entrega 2, o para la primera si la política inicial admite pausas. Se coordina con la espera de HU-02-04 y utiliza las reglas de EP-09. Falta definir causas, autorizaciones, eventos de reanudación y si se permite corregir una pausa, conservando siempre el registro de la corrección.
+Propuesta para la entrega 2, o para la primera si la política inicial admite pausas. Se coordina con la espera de HU-02-04 y utiliza las reglas de EP-09. Falta definir causas, permisos de las pausas ordinarias, eventos de reanudación y si se permite corregir una pausa, conservando siempre el registro de la corrección. Las excepciones de tiempo las concede el supervisor.
 
 #### HU-04-07 — Identificar solicitudes en riesgo o fuera de tiempo
 
@@ -785,7 +785,7 @@ El agente, supervisor o responsable autorizado puede revisar qué prioridad y SL
 
 - El historial conserva las evaluaciones y ajustes de prioridad, políticas y calendarios aplicados, vencimientos, pausas, reanudaciones, respuestas, resoluciones, incumplimientos y escalamientos que correspondan al caso.
 - Cada cambio identifica su fecha, la persona o proceso responsable y el motivo cuando aplique. Los recálculos mantienen el resultado anterior y explican el nuevo.
-- Se pueden relacionar los resultados con los eventos que los sustentan, como la respuesta integrada de Telegram, la resolución o la transferencia solicitada por escalamiento.
+- Se pueden relacionar los resultados con los eventos que los sustentan, como el primer cambio a En proceso del historial de EP-02, la resolución o la transferencia solicitada por escalamiento.
 - Cambiar una prioridad, política o calendario no reescribe silenciosamente la historia ni elimina un incumplimiento ocurrido bajo el compromiso anterior.
 - Si se corrige un dato erróneo o se incorpora evidencia tardía válida, quedan visibles la corrección, su fundamento y el resultado anterior. No se confunde una corrección documentada con borrar antecedentes.
 - La consulta respeta los permisos y no expone mensajes o archivos restringidos a quien solo puede ver datos de tiempos.
@@ -797,13 +797,13 @@ Propuesta para la entrega 1, ampliándose con los eventos de las siguientes entr
 | Capacidad de EP-04 | Historias que la cubren | Relación con otras épicas |
 | --- | --- | --- |
 | Prioridad por impacto y urgencia y ajustes justificados | HU-04-01, HU-04-02 | Criterios de EP-09 y permisos de EP-05 |
-| Vencimientos de primera respuesta y resolución | HU-04-03, HU-04-04, HU-04-05 | Configuración de EP-09, atención de EP-02 y comunicación de EP-06 |
+| Vencimientos de primera respuesta y resolución | HU-04-03, HU-04-04, HU-04-05 | Configuración de EP-09 e historial y atención de EP-02 |
 | Horarios, días no laborables, pausas y reanudaciones | HU-04-03, HU-04-06 | Calendarios de EP-09 y esperas de HU-02-04 |
 | Detección de riesgo e incumplimiento | HU-04-07 | Datos operativos del ticket; indicadores posteriores de EP-08 |
 | Escalamiento a supervisores o niveles de atención | HU-04-08 | Transferencias de HU-03-07 y reglas de EP-09 |
 | Historial de prioridad, SLA, pausas e incumplimientos | HU-04-10 | Historial de HU-02-09 y protección de EP-10 |
 | Avisos relevantes por aplicación y Telegram | HU-04-09 | Entrega de EP-06 y permisos de EP-05 |
-| Primera respuesta del agente por Telegram, sin contar avisos automáticos | HU-04-04 | Comunicación de EP-06 |
+| Primera respuesta por el primer cambio a En proceso, sin contar avisos, notas ni Telegram | HU-04-04 | Historial de estados de HU-02-01 y HU-02-09 |
 
 ### 5.4. Lo que falta acordar con el equipo
 
@@ -811,12 +811,12 @@ Los valores y las reglas siguientes deben definirse con los responsables del ser
 
 | ID | Decisión necesaria | Historias afectadas |
 | --- | --- | --- |
-| D-23 | Acordar la matriz de impacto y urgencia, prioridades resultantes, evaluación inicial y permisos para ajustes o excepciones. | HU-04-01, HU-04-02 |
+| D-23 | El supervisor ajusta prioridades y concede excepciones de tiempo. Falta acordar la matriz de impacto y urgencia, prioridades resultantes y evaluación inicial. | HU-04-01, HU-04-02 |
 | D-24 | Definir las políticas aplicables, su precedencia, los objetivos de primera respuesta y resolución y el evento de inicio de cada conteo. Precisar cómo se trata un evento ocurrido exactamente al vencer. | HU-04-03, HU-04-04, HU-04-05 |
 | D-25 | Acordar zona horaria, horarios laborales, días no laborables y efecto de cambios de política o calendario sobre casos existentes. | HU-04-03, HU-04-06, HU-04-10 |
-| D-26 | Definir qué respuesta del agente cuenta como atención, qué evento y fecha la acreditan y cómo se tratan fallos de Telegram o evidencia recibida tarde. | HU-04-04 |
+| D-26 | Acordado: primera respuesta = primer cambio a En proceso, calculado con el historial de estados de EP-02, sin columna aparte, reinicios ni dependencia de Telegram. Pendiente: cómo contar esa primera vez si el cambio lo hace alguien distinto del agente asignado. | HU-04-04 |
 | D-27 | Acordar qué pausas afectan a cada compromiso, quién puede aplicarlas o corregirlas y qué eventos reanudan el conteo. Complementa D-12 sobre esperas. | HU-04-06; HU-02-04 |
-| D-28 | Definir el efecto de cambios de prioridad, cancelaciones y reaperturas sobre cada compromiso, conservando resultados anteriores. Complementa D-06 sobre reapertura y D-14 sobre cancelación. | HU-04-02, HU-04-03, HU-04-05 |
+| D-28 | Definir el efecto de cambios de prioridad, cancelaciones y reaperturas sobre los demás compromisos, conservando resultados anteriores; la primera respuesta no se reinicia. Complementa D-06 sobre reapertura y D-14 sobre cancelación. | HU-04-02, HU-04-03, HU-04-05 |
 | D-29 | Acordar umbrales de riesgo y frecuencia de detección de vencimientos. | HU-04-07 |
 | D-30 | Definir reglas, niveles, acciones y repetición de escalamientos, y qué ocurre si una acción pendiente deja de corresponder. Coordinar con D-21 sobre transferencias. | HU-04-08 |
 | D-31 | Acordar permisos y procedimiento para corregir datos de tiempos, con fundamento e historial de los resultados anteriores. | HU-04-04, HU-04-06, HU-04-10 |
@@ -833,8 +833,8 @@ Participan todos los usuarios que usan el sistema y los administradores o respon
 
 ### Alcance y relación con otras épicas
 
-- Las cuentas corresponden a usuarios de una sola empresa. No se incluye registro público ni acceso para clientes, proveedores u otras organizaciones.
-- Los roles de referencia son solicitante, agente de soporte, supervisor y administrador. Se pueden combinar cuando las reglas lo autoricen; el alcance también depende del equipo y de la relación con cada caso.
+- Las cuentas corresponden a empleados de una sola empresa. No se incluye registro público ni cuentas para clientes, proveedores u otras organizaciones. El auditor externo entra presencialmente y de forma local con las credenciales de los usuarios, sin cuenta propia ni rol nuevo; véanse las consideraciones de S0-08.
+- Cada usuario tiene un solo rol a la vez: solicitante, agente de soporte, supervisor o administrador. El alcance también depende del equipo y de la relación con cada caso.
 - EP-05 administra identidades, roles y asociaciones con equipos. EP-09 configura los equipos y niveles, y EP-03 decide la asignación operativa de tickets.
 - Cada función de las otras épicas debe comprobar los permisos vigentes. Ocultar una opción en pantalla no sustituye la comprobación al consultar datos o ejecutar una acción.
 - EP-05 verifica la vinculación entre el usuario y su identidad de Telegram. EP-06 utiliza esa vinculación para la conversación y los avisos, sin convertir Telegram en un canal de creación de tickets.
@@ -917,17 +917,17 @@ Propuesta para la entrega 1. Se coordina con EP-10 y HU-05-03. Falta acordar el 
 
 #### HU-05-05 — Asignar y ajustar roles según la responsabilidad del usuario
 
-El administrador con permiso puede asignar los roles que necesita un usuario para realizar su trabajo. Por ejemplo, una persona puede atender solicitudes como agente y también registrar sus propias necesidades como solicitante, si esa combinación está autorizada.
+El administrador con permiso puede asignar o cambiar el rol que necesita un usuario para realizar su trabajo. Cada usuario tiene un solo rol vigente; no se combinan roles simultáneamente.
 
 **Para revisar con el equipo:**
 
-- Se pueden asignar los roles de solicitante, agente de soporte, supervisor y administrador, con las combinaciones que permita la empresa.
+- Se asigna exactamente uno de los roles de solicitante, agente de soporte, supervisor o administrador.
 - Antes de guardar, se comprueba que quien hace el cambio tenga permiso para conceder o retirar esos roles. Tener acceso a la administración no permite ampliar sus propios privilegios sin autorización.
-- Se registra la combinación anterior, la nueva, la persona que la modificó, la fecha y el motivo del cambio.
+- Se registra el rol anterior, el nuevo, la persona que lo modificó, la fecha y el motivo del cambio.
 - Los permisos resultantes se aplican también a las siguientes operaciones de una sesión ya abierta. Una pantalla que quedó abierta no conserva una autorización retirada.
-- Las combinaciones de roles respetan las restricciones de acceso acordadas. El rol de administrador no implica lectura indiscriminada de tickets, mensajes o archivos.
+- El rol vigente respeta las restricciones de acceso acordadas. El rol de administrador no implica lectura indiscriminada de tickets, mensajes o archivos.
 
-Propuesta para la entrega 1. Se complementa con HU-05-06 y HU-05-07 y la auditoría de EP-10. Falta acordar la matriz de roles, las combinaciones permitidas, quién puede administrar cada rol y cómo se resuelven permisos que entren en conflicto.
+Propuesta para la entrega 1. Se complementa con HU-05-06 y HU-05-07 y la auditoría de EP-10. El rol único ya está acordado. Falta completar la matriz de permisos, quién puede administrar cada rol y cómo se resuelven permisos que entren en conflicto.
 
 #### HU-05-06 — Asociar agentes y supervisores con equipos y niveles de soporte
 
@@ -935,7 +935,7 @@ El administrador autorizado puede indicar en qué equipos y niveles participa un
 
 **Para revisar con el equipo:**
 
-- Se seleccionan equipos y niveles habilitados en EP-09 y se comprueba que la asociación sea válida para los roles del usuario.
+- Se seleccionan equipos y niveles habilitados en EP-09 y se comprueba que la asociación sea válida para el rol del usuario.
 - Las asociaciones determinan el alcance que corresponda según las reglas de acceso; pertenecer a un equipo no concede automáticamente todas las acciones sobre sus tickets.
 - Se conserva el cambio de pertenencia, con su fecha, autor y motivo. Las participaciones anteriores siguen identificables cuando sean necesarias para la trazabilidad.
 - Al retirar una asociación, se revisan los accesos vigentes y se identifican los tickets cuya responsabilidad necesita atención. No se transfieren silenciosamente a otro agente.
@@ -945,14 +945,14 @@ Propuesta para la entrega 1. Se relaciona con HU-03-01, HU-03-03, HU-03-06 y HU-
 
 #### HU-05-07 — Acceder únicamente a las funciones y datos autorizados
 
-El usuario puede consultar y utilizar lo que le corresponde según sus roles, equipos y relación con cada caso. Esto le permite trabajar sin acceder a información de otras personas que no necesita conocer.
+El usuario puede consultar y utilizar lo que le corresponde según su rol, equipos y relación con cada caso. Esto le permite trabajar sin acceder a información de otras personas que no necesita conocer.
 
 **Para revisar con el equipo:**
 
 - Las reglas distinguen entre ver información y realizar acciones. Poder consultar un ticket no permite necesariamente asignarlo, cambiar su prioridad, cancelarlo o modificar sus datos.
 - En «Mis solicitudes» el solicitante consulta sus propios casos. El acceso operativo a otros tickets depende de permisos específicos; lo mismo ocurre con reportes, artículos y configuración.
 - Las restricciones se aplican también a archivos, búsquedas, cantidades, exportaciones y accesos mediante enlaces directos. No basta con ocultar botones o registros en pantalla.
-- Las notas internas y sus archivos permanecen restringidos al personal autorizado. La combinación de roles no debe exponerlas a un solicitante sin permiso para ese contenido.
+- Las notas internas y sus archivos permanecen restringidos al personal autorizado. Un cambio de rol no debe exponerlas a un solicitante sin permiso para ese contenido.
 - Se comprueba la autorización vigente al consultar o modificar información y antes de registrar o reenviar contenido mediante la integración. Una asignación anterior o una vinculación de Telegram no sustituyen ese permiso.
 - Si se retira un rol, una asociación o un permiso, las siguientes operaciones respetan el cambio y no continúan usando el acceso anterior por una sesión o enlace conservado.
 
@@ -1008,7 +1008,7 @@ Propuesta para la entrega 2 y parte necesaria de cualquier uso de Telegram. Se c
 | --- | --- | --- |
 | Altas, actualizaciones y desactivación de usuarios | HU-05-01, HU-05-02, HU-05-08 | Protección y auditoría de EP-10; redistribución de EP-03 |
 | Autenticación y gestión del acceso a la cuenta | HU-05-03, HU-05-04 | Controles de sesiones y recuperación de EP-10 |
-| Roles y combinaciones autorizadas | HU-05-05 | Acciones de todas las épicas |
+| Un único rol vigente por usuario | HU-05-05 | Acciones de todas las épicas |
 | Asociación con equipos y niveles de soporte | HU-05-06 | Estructura de EP-09 y asignación de EP-03 |
 | Visibilidad y acciones según permisos | HU-05-07 | Tickets, reportes, artículos, configuración e integración |
 | Referencias históricas a usuarios desactivados | HU-05-02, HU-05-08 | Historial de HU-02-09 y HU-03-09 |
@@ -1024,7 +1024,7 @@ Estas definiciones deben mantener coherencia con los permisos que ya se dejaron 
 | D-32 | Acordar la fuente de identidad de usuarios, los datos obligatorios y únicos, el mecanismo de alta y la necesidad de directorio corporativo o inicio de sesión único. | HU-05-01, HU-05-02, HU-05-03 |
 | D-33 | Definir qué datos se editan en el HelpDesk, quién puede corregirlos y qué fuente prevalece cuando existe directorio corporativo. | HU-05-02 |
 | D-34 | Acordar autenticación, duración y cierre de sesiones, recuperación de acceso, asistencia autorizada y efecto de la recuperación sobre sesiones existentes. | HU-05-03, HU-05-04 |
-| D-35 | Completar la matriz de roles y permisos, combinaciones válidas, administración de privilegios y resolución de conflictos. Incluir casos donde un agente o supervisor sea también solicitante. | HU-05-05, HU-05-07 |
+| D-35 | Acordado: un único rol vigente por usuario. Falta completar la matriz de permisos, administración de privilegios y resolución de conflictos, y precisar cómo registra sus propias solicitudes un agente o supervisor sin combinar roles. | HU-05-05, HU-05-07 |
 | D-36 | Definir pertenencia a varios equipos o niveles y efecto de los cambios sobre accesos y asignaciones. Complementa D-17 y D-20. | HU-05-06 |
 | D-37 | Acordar autorización de bajas, atención de casos pendientes y posible reactivación con revisión de accesos. Coordinar con D-20. | HU-05-08 |
 | D-38 | Definir verificación de Telegram, relación permitida entre identidades y cuentas, resolución de conflictos y asistencia ante pérdida de acceso a la identidad anterior. Complementa D-05. | HU-05-09, HU-05-10 |
@@ -1110,7 +1110,7 @@ El agente puede responder por Telegram a un solicitante para orientarlo, pedir a
 - Los reintentos de la misma respuesta no generan envíos duplicados ni se cuentan como respuestas adicionales de atención.
 - Comunicar una solución por Telegram no marca por sí solo el ticket como resuelto. La resolución se registra mediante HU-02-05.
 
-Propuesta para la entrega 1. Se relaciona con HU-04-04 para acreditar la primera respuesta y con HU-06-07, HU-06-09 y HU-06-10. El mecanismo de conversación debe permitir esta dirección además de los mensajes del solicitante.
+Propuesta para la entrega 1. Se relaciona con HU-06-07, HU-06-09 y HU-06-10. No acredita la primera respuesta de HU-04-04, que se obtiene del historial de estados de EP-02. El mecanismo de conversación debe permitir esta dirección además de los mensajes del solicitante.
 
 #### HU-06-04 — Compartir archivos durante la atención
 
@@ -1184,7 +1184,7 @@ El personal autorizado puede revisar si un mensaje o aviso sigue pendiente, fue 
 - La consulta protege datos personales, contenido restringido y credenciales. Tener permiso para supervisar fallos no habilita la lectura completa de cualquier ticket.
 - Si el resultado de un intento es incierto, se indica esa incertidumbre para su tratamiento; no se marca como éxito ni se presupone un fallo seguro.
 
-Propuesta para la entrega 1. Se relaciona con la evidencia de HU-04-04 y los avisos de HU-04-09. EP-10 protege los registros y EP-09 define los parámetros operativos. Falta acordar los estados de procesamiento y quién puede revisar cada nivel de detalle.
+Propuesta para la entrega 1. Se relaciona con los avisos de HU-04-09; sus resultados de envío no acreditan la primera respuesta de HU-04-04. EP-10 protege los registros y EP-09 define los parámetros operativos. Falta acordar los estados de procesamiento y quién puede revisar cada nivel de detalle.
 
 #### HU-06-10 — Recuperar envíos pendientes sin repetir contenido
 
@@ -1212,7 +1212,7 @@ Propuesta para la entrega 1. Se apoya en HU-06-07 y HU-06-09. EP-09 configura in
 | Notas internas restringidas al HelpDesk | HU-06-06 | Historial de HU-02-09 y permisos de HU-05-07 |
 | Selección de destinatarios autorizados y vigentes | HU-06-07 | Responsables de HU-03-10, identidades de EP-05 y reglas de EP-09 |
 | Notificaciones relevantes por ambos canales | HU-06-08 | Eventos de tickets, asignación y SLA; catálogo de EP-09 |
-| Seguimiento independiente de procesamiento y envío | HU-06-09 | Evidencia de HU-04-04 y protección de EP-10 |
+| Seguimiento independiente de procesamiento y envío | HU-06-09 | Avisos de HU-04-09 y protección de EP-10; no acredita la primera respuesta |
 | Reintentos y prevención de duplicados | HU-06-10 | Configuración de EP-09 y recuperación de EP-10 |
 | Disponibilidad de avisos en la aplicación ante fallos de Telegram | HU-06-08, HU-06-09, HU-06-10 | Vinculaciones de EP-05 y continuidad de EP-10 |
 
@@ -1238,13 +1238,13 @@ Telegram ya está elegido como canal. Las decisiones pendientes concretan cómo 
 
 Que los solicitantes puedan encontrar instrucciones y respuestas confiables para resolver dudas frecuentes, y que soporte pueda reutilizar lo aprendido al atender solicitudes. El contenido se prepara, revisa y mantiene para que siga siendo útil y no exponga información de los casos de origen.
 
-Participan solicitantes que consultan artículos, agentes que los redactan y personas autorizadas para revisarlos, publicarlos y mantenerlos. Estas responsabilidades se asignan mediante los permisos de EP-05; no se presupone que todo agente pueda publicar directamente.
+Participan solicitantes que consultan artículos, agentes que los redactan, supervisores que los revisan y administradores que los publican. Los demás permisos de mantenimiento se precisan mediante EP-05.
 
 ### Alcance y relación con otras épicas
 
 - La base de conocimiento es interna para los solicitantes de la empresa. No se incluye un portal público ni generación automática de respuestas.
 - Se distinguen artículos generales para solicitantes y contenido restringido al soporte autorizado. Un artículo publicado no es necesariamente visible para todos.
-- Los borradores y las revisiones no se presentan como instrucciones publicadas. El equipo debe acordar quién puede revisar y publicar y qué cambios necesitan una nueva revisión.
+- Los borradores y las revisiones no se presentan como instrucciones publicadas. Revisa el supervisor y publica el administrador; falta acordar qué cambios necesitan una nueva revisión.
 - EP-02 aporta soluciones documentadas que pueden servir como referencia. Convertirlas en artículos requiere preparar contenido reutilizable y excluir información personal o sensible; no se copia un ticket completo a la base de conocimiento.
 - Relacionar un artículo con un ticket no concede acceso al ticket ni al artículo a quien no tenga permiso, y tampoco resuelve el caso automáticamente.
 - La consulta de conocimiento no obliga al solicitante a crear un ticket ni elimina la posibilidad de registrar su necesidad mediante EP-01.
@@ -1312,7 +1312,7 @@ Propuesta para la entrega 1. Se relaciona con HU-07-04 y HU-07-06. Falta acordar
 
 #### HU-07-04 — Revisar un artículo antes de publicarlo
 
-La persona encargada de revisar puede comprobar que un artículo sea claro, correcto y apropiado para sus destinatarios. Si necesita cambios, puede explicar qué debe corregirse para que el autor lo prepare antes de publicarlo.
+El supervisor puede comprobar que un artículo sea claro, correcto y apropiado para sus destinatarios. Si necesita cambios, puede explicar qué debe corregirse para que el autor lo prepare antes de publicarlo.
 
 **Para revisar con el equipo:**
 
@@ -1320,13 +1320,13 @@ La persona encargada de revisar puede comprobar que un artículo sea claro, corr
 - La revisión considera la claridad de las instrucciones, su vigencia, la audiencia y la ausencia de información personal o sensible que no deba publicarse.
 - La decisión queda registrada con responsable y fecha. Si se devuelve para corrección, se conserva una explicación útil para el autor.
 - La aprobación corresponde al contenido revisado. Modificarlo después no permite presentar los cambios como aprobados sin aplicar las reglas de revisión acordadas.
-- Aprobar una revisión no publica el artículo automáticamente, salvo que el equipo acuerde expresamente una acción conjunta y quien la ejecute tenga ambos permisos.
+- La aprobación del supervisor no publica el artículo automáticamente; la publicación corresponde al administrador.
 
-Propuesta para la entrega 1. Se apoya en HU-07-03 y HU-07-05. Falta acordar los responsables, las condiciones de aprobación y si se permite que una misma persona redacte, revise y publique.
+Propuesta para la entrega 1. Se apoya en HU-07-03 y HU-07-05. Revisa el supervisor y publica el administrador. Falta acordar las condiciones de aprobación y cómo participa el autor en las correcciones.
 
 #### HU-07-05 — Publicar un artículo aprobado
 
-La persona autorizada puede poner un artículo revisado a disposición de sus destinatarios. El equipo sabe qué contenido quedó publicado y los solicitantes pueden encontrarlo sin acceder a borradores todavía pendientes de revisión.
+El administrador puede poner un artículo revisado por el supervisor a disposición de sus destinatarios. El equipo sabe qué contenido quedó publicado y los solicitantes pueden encontrarlo sin acceder a borradores todavía pendientes de revisión.
 
 **Para revisar con el equipo:**
 
@@ -1429,7 +1429,7 @@ Las definiciones siguientes concretan la organización editorial y la consulta d
 | ID | Decisión necesaria | Historias afectadas |
 | --- | --- | --- |
 | D-47 | Acordar campos obligatorios, categorías, palabras clave, criterios de búsqueda y orden de resultados. Definir si las categorías se comparten con los tickets. | HU-07-01, HU-07-03 |
-| D-48 | Definir quién redacta, revisa y publica, las condiciones de aprobación y si una persona puede asumir varias de estas responsabilidades. Coordinar con D-35. | HU-07-03, HU-07-04, HU-07-05 |
+| D-48 | Acordado: redacta el agente, revisa el supervisor y publica el administrador. Falta acordar las condiciones de aprobación y la colaboración del autor en las correcciones. Coordinar con D-35. | HU-07-03, HU-07-04, HU-07-05 |
 | D-49 | Acordar las audiencias permitidas y el alcance por equipo o nivel del contenido restringido, junto con los permisos para cambiar su visibilidad. | HU-07-02, HU-07-06 |
 | D-50 | Definir cómo se relacionan artículos y versiones con tickets y cómo se consultan referencias cuando el contenido cambia o se retira. | HU-07-07, HU-07-09, HU-07-10 |
 | D-51 | Acordar la referencia al caso de origen y la revisión que excluye información personal o sensible antes de publicar una solución reutilizada. | HU-07-08 |
@@ -1450,7 +1450,7 @@ Participan supervisores y responsables del servicio con permisos de consulta, y 
 - EP-08 consulta y presenta la información operativa; no cambia estados, responsables, prioridades ni políticas para mejorar un resultado mostrado.
 - EP-02 aporta el recorrido del ticket, sus soluciones, cierres y reaperturas. EP-03 aporta la distribución del trabajo; su vista operativa de carga se complementa aquí con el análisis del servicio.
 - EP-04 aporta los compromisos y la evidencia de primera respuesta, resolución, pausas e incumplimientos. Los reportes utilizan esas reglas y no inventan un cálculo alternativo de SLA.
-- Las respuestas del agente por Telegram se acreditan conforme a EP-04 mediante su marca de tiempo, sin conservar el contenido del mensaje. Las notificaciones automáticas y los mensajes reprocesados no cuentan como nuevas intervenciones del agente.
+- La primera respuesta se calcula conforme a EP-04 desde el primer cambio a En proceso del historial de estados de EP-02, sin columna aparte ni reinicios. Las notificaciones automáticas, las notas internas y los mensajes de Telegram no cuentan.
 - Las encuestas son voluntarias y admiten un comentario opcional. Una encuesta sin respuesta no equivale a satisfacción ni a insatisfacción.
 - EP-05 y EP-10 controlan el acceso a indicadores, detalles, comentarios y exportaciones. Las consultas y cantidades deben respetar el alcance autorizado.
 - Las fórmulas, los períodos, la población incluida y el tratamiento de esperas y reaperturas deben acordarse antes de implementar los indicadores. No se presuponen metas, escalas de satisfacción ni comparaciones de productividad.
@@ -1540,7 +1540,7 @@ El responsable puede revisar cuánto tarda el servicio en responder y resolver l
 **Para revisar con el equipo:**
 
 - Los tiempos provienen de los eventos y reglas de EP-04, con los horarios, pausas y unidades acordados. La consulta indica si utiliza tiempo de servicio o tiempo transcurrido de calendario.
-- La primera respuesta se acredita con la marca de tiempo de la intervención válida del agente por Telegram. Los avisos automáticos, mensajes del solicitante y reprocesamientos no se cuentan como nuevas respuestas.
+- La primera respuesta utiliza el primer cambio a En proceso registrado en el historial de estados de EP-02. No se reinicia y no cuentan avisos automáticos, notas internas ni mensajes de Telegram.
 - La resolución utiliza el evento válido de EP-02; el cierre posterior no sustituye su fecha.
 - Los casos sin respuesta o resolución todavía se distinguen de los ya completados. Su falta de duración final no se convierte en cero ni se mezcla silenciosamente con los tiempos terminados.
 - Cada resultado agregado identifica cuántos casos o ciclos se incluyeron y qué datos se excluyeron o no pudieron calcularse. No se publica un promedio, mediana u otra medida sin definir su fórmula y población.
@@ -1632,7 +1632,7 @@ Propuesta para la entrega 2. Aplica HU-05-07 y los controles de EP-10. Falta aco
 | Carga por equipo o agente, categorías y evolución de la demanda | HU-08-03, HU-08-04 | Asignaciones de EP-03 y categorías de EP-09 |
 | Tiempos de primera respuesta y resolución | HU-08-05 | Evidencia y reglas de EP-04 |
 | Cumplimiento e incumplimiento de SLA | HU-08-06 | Resultados e historial de EP-04 |
-| Tiempos de respuesta por Telegram sin contar avisos ni reprocesamientos | HU-08-05 | HU-04-04 y comunicación de EP-06 |
+| Primera respuesta por el primer cambio a En proceso, sin reinicios ni dependencia de Telegram | HU-08-05 | HU-04-04 e historial de estados de EP-02 |
 | Filtros por período, categoría, prioridad, equipo y criterios autorizados | HU-08-02 | Datos operativos y permisos de EP-05 |
 | Valoración voluntaria y comentario opcional al concluir el caso | HU-08-07, HU-08-08 | Conclusión de EP-02 y avisos de EP-06 |
 | Satisfacción con volumen y tasa de respuesta | HU-08-09 | Encuestas válidas y resultados de entrega de EP-06 |
@@ -1707,17 +1707,17 @@ Propuesta para la entrega 1. Se relaciona con HU-01-01, HU-03-08 y las consultas
 
 #### HU-09-02 — Configurar los estados y los cambios permitidos
 
-El responsable del servicio puede definir qué estados utiliza el HelpDesk y qué pasos se permiten entre ellos. Así el flujo refleja la operación acordada sin dejar que cada persona cambie un caso a cualquier situación.
+El responsable del servicio mantiene los seis estados acordados y sus permisos por rol. El estado se elige explícitamente, sin restricciones de transición ni un recorrido obligatorio.
 
 **Para revisar con el equipo:**
 
-- Se identifican el estado inicial, los estados de conclusión y los cambios admitidos dentro de las capacidades soportadas por el sistema.
-- Cada cambio conserva las condiciones y referencias de autorización necesarias. Configurar una transición no concede a un usuario el permiso para ejecutarla.
+- Se mantienen Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado. Creado es inicial; Cerrado y Cancelado son finales.
+- Cada acción conserva sus condiciones y referencias de autorización: el agente cierra y solo el supervisor cancela. Configurar un estado no concede permiso para ejecutarla.
 - Las reglas no permiten omitir condiciones obligatorias, como documentar una solución antes de resolver un caso, ni confundir resolución, cierre y cancelación.
-- Se valida que los estados y destinos existan y que la configuración no deje casos activos sin una continuación válida según el flujo aprobado.
+- Se valida que el estado elegido sea uno de los seis acordados. No se restringen los destinos según el estado de origen; se comprueban los permisos y las condiciones propias de la acción.
 - Antes de modificar o desactivar un estado utilizado, se define qué ocurre con los tickets que ya están en él. No se cambia su estado de forma silenciosa ni se borra su historial.
 
-Propuesta para la entrega 1. EP-02 ejecuta y valida las transiciones y EP-05 controla los permisos. Retoma D-10 y las decisiones de espera, cierre, cancelación y reapertura. No incluye un diseñador libre de procesos o condiciones arbitrarias.
+Propuesta para la entrega 1. EP-02 ejecuta los cambios y EP-05 controla los permisos, sin restricciones de transición. Retoma D-10 y las condiciones pendientes de espera, solución, confirmación de cierre y reapertura. No incluye un diseñador libre de procesos o condiciones arbitrarias.
 
 #### HU-09-03 — Mantener la estructura de equipos y niveles
 
@@ -1841,7 +1841,7 @@ Propuesta para la entrega 1 y condición común a todas las historias de EP-09. 
 | Capacidad de EP-09 | Historias que la cubren | Relación con otras épicas |
 | --- | --- | --- |
 | Categorías, subcategorías y clasificación | HU-09-01 | Registro de EP-01, distribución de EP-03 y análisis de EP-08 |
-| Estados y transiciones permitidas | HU-09-02 | Ejecución del ciclo de vida en EP-02 |
+| Seis estados con selección explícita y permisos por rol | HU-09-02 | Ejecución del ciclo de vida en EP-02 |
 | Equipos, niveles y reglas básicas de enrutamiento | HU-09-03, HU-09-04 | Asignación de EP-03 y pertenencia de agentes y supervisores de EP-05 |
 | Prioridades y criterios de evaluación | HU-09-05 | Aplicación de HU-04-01 y HU-04-02 |
 | SLA, horarios y días no laborables | HU-09-06 | Cálculos de EP-04 e indicadores de EP-08 |
@@ -1859,7 +1859,7 @@ Las reglas de negocio pendientes en las épicas anteriores se resuelven una sola
 | D-63 | Definir permisos de configuración por área y distinguir administración de catálogos, políticas, credenciales y consulta operativa. Coordinar con D-35. | Todas las historias pertinentes |
 | D-64 | Acordar vigencia, alcance sobre casos existentes y pendientes, conservación de versiones y aplicación conjunta de cambios relacionados. | HU-09-10 y los catálogos o políticas afectados |
 | D-65 | Definir profundidad de subcategorías, reglas de nombres y tratamiento de clasificación histórica al reorganizar opciones. Coordinar con D-01, D-47 y D-55. | HU-09-01 |
-| D-66 | Precisar qué condiciones y relaciones pueden configurarse para estados, equipos y reglas, dentro de las capacidades reales del sistema. Retomar D-10, D-16, D-17 y D-22. | HU-09-02, HU-09-03, HU-09-04 |
+| D-66 | Los seis estados se eligen sin restricciones de transición. Falta precisar los demás permisos y condiciones de las acciones y las relaciones configurables de equipos y reglas. Retomar D-10, D-16, D-17 y D-22. | HU-09-02, HU-09-03, HU-09-04 |
 | D-67 | Acordar campos permitidos en plantillas, vista previa, uso de respuestas frecuentes y efecto de cambios de texto sobre envíos pendientes. Complementa D-08 y D-40. | HU-09-08 |
 | D-68 | Definir parámetros operativos de Telegram, comprobación de funcionamiento, sustitución de credenciales y manejo de pendientes durante los cambios. Complementa D-45 y D-46. | HU-09-09 |
 | D-23 a D-30, seguimiento | Llevar a configuración los criterios de prioridad, políticas y calendarios de SLA, pausas, umbrales y escalamientos acordados, sin cambiar su significado. | HU-09-05, HU-09-06, HU-09-07 |
@@ -1871,7 +1871,7 @@ Las reglas de negocio pendientes en las épicas anteriores se resuelven una sola
 
 Que la información del HelpDesk permanezca protegida, que las acciones sensibles puedan revisarse y que el servicio pueda recuperarse ante un fallo. La protección debe comprobarse tanto durante el uso habitual como al restaurar datos y reanudar la comunicación.
 
-Participan los responsables internos de operación tecnológica, administradores con permisos específicos y personal autorizado para auditoría. Los usuarios se benefician de estos controles sin tener que conocer sus detalles técnicos para registrar o atender una solicitud.
+El supervisor y el administrador disponen de las funciones técnicas de auditoría y respaldo. Por seguridad, en la práctica la auditoría y los respaldos los realiza un tercero externo que acude presencialmente a la empresa y entra localmente con las credenciales de los usuarios. Ese auditor no tiene cuenta propia ni constituye un quinto rol.
 
 ### Alcance y relación con otras épicas
 
@@ -1979,7 +1979,7 @@ Necesaria junto con los primeros envíos de Telegram. Refuerza HU-03-10, HU-06-0
 
 #### HU-10-06 — Registrar las acciones sensibles para poder revisarlas
 
-El personal autorizado para auditoría puede conocer quién realizó una acción relevante, cuándo ocurrió y cuál fue su resultado. Esto permite investigar cambios de acceso o configuración y revisar incidentes con evidencia, sin depender únicamente del historial de un ticket.
+El supervisor y el administrador pueden consultar quién realizó una acción relevante, cuándo ocurrió y cuál fue su resultado mediante las funciones técnicas de auditoría. En la práctica, la revisión la realiza presencialmente el auditor externo con las credenciales de los usuarios, sin cuenta propia. Esto permite investigar cambios de acceso o configuración y revisar incidentes con evidencia, sin depender únicamente del historial de un ticket.
 
 **Para revisar con el equipo:**
 
@@ -1994,22 +1994,22 @@ Necesaria desde las primeras operaciones sensibles. Complementa el historial de 
 
 #### HU-10-07 — Consultar y proteger los registros de auditoría
 
-La persona autorizada para auditoría puede revisar los registros que necesita para investigar una acción. El acceso y la conservación están controlados para que una persona no pueda ocultar sus cambios editando o eliminando esa evidencia sin autorización.
+El supervisor y el administrador pueden revisar los registros necesarios para investigar una acción; en la práctica los revisa el auditor externo, presencialmente y con las credenciales de los usuarios. El acceso y la conservación están controlados para que una persona no pueda ocultar sus cambios editando o eliminando esa evidencia sin autorización.
 
 **Para revisar con el equipo:**
 
-- La consulta requiere permisos específicos y limita el alcance de información visible. Ser administrador operativo no concede automáticamente acceso completo a la auditoría.
+- La consulta corresponde técnicamente al supervisor y al administrador y limita el alcance de información visible. No se crea una cuenta propia ni un rol de auditor para el tercero externo.
 - Se propone buscar por período, actor, acción o recurso, respetando los mismos límites en los resultados y en cualquier exportación que se habilite.
 - Las funciones habituales del HelpDesk no permiten sobrescribir o borrar registros de auditoría. Su protección impide modificaciones no autorizadas y permite detectar las alteraciones contempladas por el mecanismo acordado.
 - Una aclaración o corrección autorizada conserva el registro original y su trazabilidad; no lo sustituye silenciosamente.
 - La retención y eliminación autorizada siguen un procedimiento definido. Tener permiso de consulta no concede permiso para modificar o depurar registros.
 - El acceso y las acciones sensibles sobre la propia auditoría dejan evidencia protegida. La recuperación de un respaldo no debe utilizarse para ocultar cambios o incidentes posteriores.
 
-Necesaria desde que exista auditoría. Se relaciona con HU-10-06 y HU-10-09. Falta acordar roles de revisión, protección de integridad, retención y procedimiento de eliminación, sin prometer una inmutabilidad que no haya sido implementada y comprobada.
+Necesaria desde que exista auditoría. Se relaciona con HU-10-06 y HU-10-09. Los roles técnicos de revisión ya son supervisor y administrador. Falta acordar protección de integridad, retención y procedimiento de eliminación, sin prometer una inmutabilidad que no haya sido implementada y comprobada.
 
 #### HU-10-08 — Ejecutar respaldos protegidos y comprobar su resultado
 
-El responsable de operación puede contar con copias de los datos y archivos necesarios para recuperar el HelpDesk. Puede revisar qué se respaldó, de qué momento es la copia y si el proceso terminó correctamente.
+El supervisor y el administrador disponen de las funciones técnicas para respaldar los datos y archivos necesarios para recuperar el HelpDesk; en la práctica, el auditor externo realiza los respaldos y las comprobaciones presencialmente, con las credenciales de los usuarios y sin cuenta propia. Pueden revisar qué se respaldó, de qué momento es la copia y si el proceso terminó correctamente.
 
 **Para revisar con el equipo:**
 
@@ -2024,7 +2024,7 @@ Necesaria antes de operar con datos reales, con ampliaciones cuando se incorpore
 
 #### HU-10-09 — Probar la restauración del servicio y registrar sus resultados
 
-El responsable tecnológico puede seguir un procedimiento de recuperación y demostrar que el HelpDesk vuelve a funcionar con datos coherentes. La prueba permite conocer el tiempo necesario, las limitaciones y los problemas que deben corregirse antes de depender de una recuperación real.
+El supervisor o administrador puede seguir un procedimiento de recuperación y demostrar que el HelpDesk vuelve a funcionar con datos coherentes; la comprobación presencial corresponde en la práctica al auditor externo, usando las credenciales de los usuarios. La prueba permite conocer el tiempo necesario, las limitaciones y los problemas que deben corregirse antes de depender de una recuperación real.
 
 **Para revisar con el equipo:**
 
@@ -2048,7 +2048,7 @@ El responsable autorizado puede reanudar la integración después de restaurar e
 - No se reenvían todos los envíos por el solo hecho de restaurar. Se distinguen los completados, pendientes, fallidos y aquellos cuyo resultado no se puede confirmar.
 - Se comparan las evidencias disponibles para resolver resultados inciertos. Cuando el canal no permite comprobar lo ocurrido, se mantiene visible la incertidumbre y se sigue el procedimiento autorizado antes de repetir contenido.
 - Se vuelven a comprobar cuentas, vinculaciones, responsables y permisos vigentes antes de aceptar o enviar nuevos contenidos. Las referencias de una copia antigua no rehabilitan destinatarios revocados.
-- Los reintentos utilizan los controles de HU-06-10 para evitar duplicados en mensajes y notificaciones. Las respuestas reprocesadas no se cuentan como nuevas primeras respuestas de SLA.
+- Los reintentos utilizan los controles de HU-06-10 para evitar duplicados en mensajes y notificaciones. Los mensajes de Telegram, originales o reprocesados, no cuentan como primera respuesta de SLA; esta se calcula con el primer cambio a En proceso del historial de EP-02.
 - Las notificaciones conservadas en la aplicación siguen disponibles según los permisos. Un envío que todavía no puede recuperarse por Telegram no se marca como completado en ese canal.
 - La prueba de recuperación incluye la reanudación controlada de la integración y registra los casos que requieren intervención, sin enviar mensajes reales desde un entorno de prueba por defecto.
 
@@ -2080,8 +2080,8 @@ Los controles se convertirán en comprobaciones concretas al definir la arquitec
 | D-71 | Acordar validación de contenido y archivos, tratamiento de entradas rechazadas y fallos de validación. Complementa D-02 y D-42. | HU-10-03 |
 | D-72 | Validar el mecanismo de comprobación de origen de Telegram, los datos permitidos por mensaje y el tratamiento de intercambios no autorizados. Coordinar con D-38, D-39 y D-40. | HU-10-04, HU-10-05 |
 | D-73 | Definir catálogo y campos de auditoría, referencias temporales y tratamiento de operaciones cuando falle el registro de evidencia. | HU-10-06 |
-| D-74 | Acordar permisos, controles de integridad, retención y eliminación autorizada de auditoría, incluyendo su protección durante una recuperación. | HU-10-07 |
-| D-75 | Definir alcance, frecuencia, ubicación, protección y retención de respaldos, así como responsables de atender fallos. | HU-10-08 |
+| D-74 | Supervisor y administrador tienen las funciones técnicas de auditoría; la revisión práctica es presencial por un tercero externo con las credenciales de los usuarios, sin cuenta propia ni rol nuevo. Falta precisar el alcance de consulta, controles de integridad, retención y eliminación autorizada, incluida la recuperación. La alternativa de cuentas temporales por rol queda pendiente en Decisiones-de-producto.md. | HU-10-07 |
+| D-75 | Las funciones técnicas de respaldo corresponden a supervisor y administrador; en la práctica los realiza presencialmente el auditor externo con las credenciales de los usuarios, sin cuenta propia. Falta definir alcance, frecuencia, ubicación, protección, retención y atención de fallos. | HU-10-08 |
 | D-76 | Acordar pérdida máxima de datos aceptable, tiempo objetivo de recuperación, frecuencia de pruebas y autorización para restaurar y volver a operar. | HU-10-09 |
 | D-77 | Definir cómo se recupera evidencia vigente de permisos y revocaciones, se revisan eventos posteriores a la copia y se resuelven envíos inciertos antes de reanudar Telegram. Coordinar con D-39 y D-46. | HU-10-09, HU-10-10 |
 | D-09, seguimiento | Consolidar la retención y los objetivos de calidad de todas las épicas con las políticas de protección y recuperación, evitando reglas incompatibles. | Todas las historias pertinentes |

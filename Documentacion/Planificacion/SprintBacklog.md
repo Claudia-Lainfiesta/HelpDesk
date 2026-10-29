@@ -10,23 +10,25 @@ Fuente: `Requerimientos/UserStoryMapping.md` y `Requerimientos/Epics.md`. El MVP
 
 | # | Tarea | Responsable | Estado |
 |---|---|---|---|
-| S0-01 | Definir stack tecnológico y forma de despliegue (se propone web) | | Por hacer |
+| S0-01 | Definir stack tecnológico y forma de despliegue (plataforma web acordada) | | Por hacer |
 | S0-02 | Crear estructura del repositorio, ramas y flujo de trabajo del equipo (revisión de cambios) | | Por hacer |
 | S0-03 | Preparar entorno de desarrollo local reproducible para todo el equipo | | Por hacer |
 | S0-04 | Provisionar base de datos y esquema inicial de usuarios, roles y tickets | | Por hacer |
 | S0-05 | Preparar hosting de pruebas y pipeline de integración continua | | Por hacer |
 | S0-06 | Crear el bot de Telegram de pruebas y confirmar que permite la conversación en ambos sentidos | | Por hacer |
 | S0-07 | Diseñar prototipo de pantallas de los flujos del MVP | | Por hacer |
-| S0-08 | Cerrar con el cliente las decisiones pendientes (ver abajo) | | Por hacer |
+| S0-08 | Cerrar con el cliente las decisiones pendientes (ver abajo) | | Hecho |
 | S0-09 | Mover el repositorio fuera de iCloud Drive y limpiar los residuos de documentación | | Por hacer |
 
-**Decisiones pendientes del cliente (bloquean sprints posteriores):**
+**Decisiones del cliente cerradas el 29-oct-2026:**
 
-- Qué cuenta como primera respuesta de un agente (afecta HU-04-04 y los tiempos).
-- Quién puede cerrar o cancelar tickets (Sprint 3).
-- Quién ajusta prioridades y concede excepciones de tiempo (Sprint 4).
-- Plataforma: web, móvil o escritorio.
-- Quién revisa y publica artículos, y quién audita y respalda (no bloquea el MVP).
+- Primera respuesta: primer cambio a En proceso, calculado con el historial de estados, sin columna aparte ni dependencia de Telegram.
+- El agente cierra los tickets terminados con éxito y solo el supervisor cancela, con motivo, cuando se decide no continuar.
+- El supervisor ajusta prioridades y concede excepciones de tiempo.
+- Plataforma web.
+- El supervisor revisa artículos y el administrador publica. Auditoría y respaldo corresponden técnicamente a supervisor y administrador; en la práctica los realiza presencialmente un tercero externo, con acceso local y las credenciales de los usuarios, sin cuenta propia ni quinto rol.
+
+Los acuerdos y las consideraciones todavía pendientes están en [Decisiones-de-producto.md](../Decisiones-de-producto.md).
 
 ## Sprint 1: Cuentas y acceso (Semanas 3 y 4)
 
@@ -76,7 +78,7 @@ Fuente: `Requerimientos/UserStoryMapping.md` y `Requerimientos/Epics.md`. El MVP
 | HU-05-09 | EP-05 | Vincular una identidad de Telegram | Solicitante | Por hacer |
 | HU-06-08 | EP-06 | Recibir avisos en la aplicación y en Telegram | Todos | Por hacer |
 
-Nota: los tiempos de SLA usan valores fijos de ejemplo en el MVP; su configuración completa (EP-09) queda para después.
+Nota: los tiempos de SLA usan valores fijos de ejemplo en el MVP; su configuración completa (EP-09) queda para después. HU-04-04 ya no depende de Telegram, sino del historial de estados de HU-02-01 y HU-02-09. HU-02-01 y HU-02-02 están en Sprint 3 e incluyen el registro de cambios; HU-02-09 y HU-04-04 no tienen sprint asignado en este MVP. Hay que revisar esa cobertura antes de planificar HU-04-04; no se movieron ni agregaron historias a los sprints.
 
 ## Sprint 5: Pruebas y entrega (Semanas 11 y 12)
 

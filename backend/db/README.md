@@ -33,7 +33,7 @@ Conserva la carpeta `db/` junto a `dist/` al distribuir el backend.
 
 ```bash
 npm run db:new -- agregar_campo
-# Edita db/migrations/0005_agregar_campo.sql antes de aplicarla.
+# Edita el archivo recién creado antes de aplicarlo; su número depende de los existentes.
 npm run db:migrate
 npm run db:status
 ```
@@ -81,7 +81,7 @@ La operación afecta a toda la base configurada: úsala solo en la base local
 dedicada a HelpDesk. No borra el volumen ni otras bases del contenedor.
 
 El seed es una transacción: inserta cuatro empleados `@helpdesk.local`, cinco
-categorías y un ticket por estado. Usa `ON CONFLICT DO NOTHING`; para tickets
+categorías y seis tickets, uno por estado. Usa `ON CONFLICT DO NOTHING`; para tickets
 también comprueba asunto y solicitante antes de insertar, sin introducir una
 restricción artificial sobre los asuntos de tickets reales. Los ejemplos
 existentes no se sobrescriben. Las secuencias pueden tener saltos al repetir
@@ -94,9 +94,11 @@ inserciones con conflicto; las referencias no pretenden ser consecutivas.
 - Cada usuario tiene exactamente un `role_id` obligatorio. No hay `user_roles`
   ni contraseña. Los correos y nombres de categorías son únicos con índices
   sobre `lower(...)`, sin extensiones.
-- Los IDs del catálogo de estados son explícitos y estables: 1 creado,
-  2 en_proceso, 3 en_espera, 4 resuelto y 5 cerrado. Solo cerrado es final.
-  El valor predeterminado de `tickets.status_id` es 1.
+- Los cinco estados originales conservan sus IDs: 1 creado, 2 en_proceso,
+  3 en_espera, 4 resuelto y 5 cerrado. Cancelado se incorpora mediante una
+  migración nueva, con ID generado por identity y `sort_order = 6`.
+  Identifica los estados por `code`; el valor predeterminado de
+  `tickets.status_id` sigue siendo 1 (creado).
 - `reference` es una columna generada almacenada y única: `TK-000001`,
   `TK-999999`, `TK-1000000`. Los números largos se conservan completos.
 - `category_id`, `requester_id` y `status_id` son obligatorios;
@@ -110,6 +112,27 @@ inserciones con conflicto; las referencias no pretenden ser consecutivas.
   y cierre. La base no obliga a pasar por estados intermedios.
 - Las fechas son timestamptz; PostgreSQL conserva instantes y su presentación
   depende de la zona de la sesión. El ejecutor SQL usa UTC.
+
+## Estados de tickets
+
+| Orden | Código       | Nombre     | `is_final` |
+| ----- | ------------ | ---------- | ---------- |
+| 1     | `creado`     | Creado     | false      |
+| 2     | `en_proceso` | En proceso | false      |
+| 3     | `en_espera`  | En espera  | false      |
+| 4     | `resuelto`   | Resuelto   | false      |
+| 5     | `cerrado`    | Cerrado    | true       |
+| 6     | `cancelado`  | Cancelado  | true       |
+
+Cerrado significa que el problema se resolvió con éxito y el usuario confirmó
+el cierre. Cancelado significa que se decidió no continuar, por ejemplo porque
+el ticket se registró por error. Solo el supervisor podrá cancelar; esa regla
+se implementará en la aplicación, sin restricciones de rol ni transiciones en
+la base de datos.
+
+El ejemplo cancelado conserva un agente asignado, pero `resolved_at` y
+`closed_at` quedan en NULL: cancelar no representa una resolución exitosa ni
+un cierre confirmado. No se agregan columnas ni triggers de negocio.
 
 ## Diagrama ER
 
@@ -146,11 +169,11 @@ erDiagram
     }
     ticket_statuses {
         smallint id PK
-        text code UK
+        text code UK "creado, en_proceso, en_espera, resuelto, cerrado, cancelado"
         text name
         text description
         smallint sort_order
-        boolean is_final
+        boolean is_final "true: cerrado y cancelado"
     }
     tickets {
         bigint id PK
