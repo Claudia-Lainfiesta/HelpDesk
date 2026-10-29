@@ -1,0 +1,310 @@
+<title>HelpDesk Hoja de Ruta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Concepto: documento de proyecto limpio, una columna ancha, secciones numeradas solo donde hay secuencia real (proceso y sprints). Acento teal sobre neutros azulados. */
+:root{
+  /* Un solo tema oscuro: grafito azulado, un acento acero y paneles de vidrio sobrios */
+  --bg:#02050d; --surface:#0b111c; --fg:#e8edf3; --muted:#9ba8b7; --line:rgba(255,255,255,.10);
+  --glass:rgba(8,14,26,.58); --glass-edge:rgba(255,255,255,.14); --glass-shadow:rgba(0,0,0,.55);
+  --accent:#5b95c9; --accent-soft:rgba(91,149,201,.16); --accent-fg:#02070e;
+  --e1:#5b95c9; --e2:#7a8fc4; --e3:#b8935f; --e4:#b97a85; --e5:#8794a3; --e6:#69a38e; --e7:#9585b3; --e8:#aaa468; --e9:#b085a0; --e10:#7690a8;
+  --warn:#d9a65a; --warn-soft:rgba(217,166,90,.14);
+  --font-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --font-body:'Public Sans','Segoe UI',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--font-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+.wrap{max-width:1040px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);letter-spacing:-.02em}
+h2{font-size:1.65rem;letter-spacing:-.01em}
+h3{font-size:1.05rem}
+p{margin:0}
+.mono{font-family:var(--font-mono);font-size:.82rem}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--glass);border-bottom:1px solid var(--line);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:0 max(16px,env(safe-area-inset-left,0px))}
+nav .wrap{display:flex;gap:4px;align-items:center;overflow-x:auto}
+nav strong{font-family:var(--font-display);margin-right:12px;white-space:nowrap}
+nav a{color:var(--muted);text-decoration:none;padding:12px 10px;font-size:.9rem;white-space:nowrap;border-bottom:2px solid transparent}
+nav a:hover,nav a:focus-visible{color:var(--fg);border-color:var(--accent);outline:none}
+header{padding-block:48px 28px}
+header p{color:var(--muted);max-width:62ch;margin-top:14px;font-size:1.05rem}
+.tag{display:inline-block;background:var(--warn-soft);color:var(--warn);font-size:.78rem;font-weight:600;padding:3px 10px;border-radius:999px;margin-bottom:14px}
+section{padding-block:36px;border-top:1px solid var(--line)}
+section>.lead{color:var(--muted);max-width:66ch;margin-top:8px}
+.grid{display:grid;gap:14px;margin-top:22px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.card h3{margin-bottom:6px}
+.card p{color:var(--muted);font-size:.93rem}
+.card .kpi{margin-top:10px;font-size:.85rem;color:var(--fg)}
+.card .kpi b{font-weight:600;color:var(--accent)}
+/* proceso */
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0;margin-top:22px;counter-reset:s}
+.step{position:relative;background:var(--glass);border:1px solid var(--line);padding:14px;margin:0 -1px -1px 0;min-width:0}
+.step::before{counter-increment:s;content:counter(s);font-family:var(--font-mono);font-size:.8rem;color:var(--accent-fg);background:var(--accent);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;margin-bottom:8px}
+.step h3{font-size:1rem}
+.step .who{font-size:.78rem;font-weight:600;color:var(--accent);margin:2px 0 6px}
+.step p{font-size:.88rem;color:var(--muted)}
+.note{margin-top:16px;font-size:.9rem;color:var(--muted)}
+/* mvp */
+.meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.pill{background:var(--glass);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.pill b{display:block;font-family:var(--font-display);font-size:1.6rem;line-height:1}
+.pill span{font-size:.8rem;color:var(--muted)}
+.bars{margin-top:22px;display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:minmax(0,230px) 1fr 64px;gap:12px;align-items:center;font-size:.88rem}
+.bar .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.fill{height:100%;border-radius:6px}
+.bar .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+@media (max-width:560px){.bar{grid-template-columns:1fr 64px}.bar .track{grid-column:1/-1;order:3}}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:var(--glass);color:var(--fg)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.filters button{font:inherit;font-size:.85rem;background:var(--glass);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.filters button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tablewrap{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:8px;background:var(--glass)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+td.id{white-space:nowrap}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+/* sprints */
+.sprints{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:22px}
+.sprint{background:var(--glass);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.sprint header{padding:0;display:block}
+.sprint .when{font-family:var(--font-mono);font-size:.78rem;color:var(--accent)}
+.sprint h3{margin-top:2px}
+.sprint .goal{font-size:.88rem;color:var(--muted)}
+.sprint ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.sprint li{font-size:.86rem;display:flex;gap:8px;align-items:baseline}
+.sprint li .mono{color:var(--muted);flex:none}
+.sprint .done{margin-top:auto;font-size:.82rem;border-top:1px dashed var(--line);padding-top:10px}
+.sprint .done b{color:var(--accent)}
+.sprint.s0 .goal,.sprint.s0 li .mono{color:var(--fg)}
+/* pendientes */
+.todo{display:grid;gap:10px;margin-top:20px}
+.todo div{padding:12px 14px;display:grid;gap:2px}
+.todo b{font-weight:600}
+.todo span{font-size:.88rem;color:var(--muted)}
+footer{padding-block:32px 48px;color:var(--muted);font-size:.85rem;border-top:1px solid var(--line)}
+
+.waves{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;display:block}
+.drift{transform-box:fill-box}
+.card,.step,.pill,.chip,.tablewrap,.sprint,.todo div,nav{
+  background:var(--glass);border:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);
+  box-shadow:0 8px 28px var(--glass-shadow),inset 0 1px 0 var(--glass-edge)}
+.card,.pill,.tablewrap,.sprint,.todo div{border-radius:16px}
+.todo div{border-left:4px solid var(--warn)}
+.step{margin:0 -1px -1px 0;box-shadow:none}
+.flow{border-radius:16px;overflow:hidden;box-shadow:0 8px 28px var(--glass-shadow)}
+nav{border-width:0 0 1px 0}
+.filters button{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-color:var(--glass-edge)}
+.sprint.s0{background:linear-gradient(160deg,var(--accent-soft),var(--glass));border-color:var(--glass-edge)}
+section{border-top-color:var(--line)}
+th,td{border-bottom-color:var(--line)}
+@media (prefers-reduced-transparency:reduce){.card,.step,.pill,.chip,.tablewrap,.sprint,.todo div,nav{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--surface)}}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .4s}
+.w1{animation:dr 26s ease-in-out infinite alternate}.w2{animation:dr 32s ease-in-out infinite alternate-reverse}.w3{animation:dr 38s ease-in-out infinite alternate}.w4{animation:dr 30s ease-in-out infinite alternate-reverse}
+@keyframes dr{from{transform:translateX(-24px)}to{transform:translateX(24px)}}}
+</style>
+
+<svg class="waves" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+<defs>
+<linearGradient id="g0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#010204"/><stop offset="1" stop-color="#050a18"/></linearGradient>
+<linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1e42"/><stop offset="1" stop-color="#173a6b"/></linearGradient>
+<linearGradient id="g2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2a323e"/><stop offset="1" stop-color="#141a23"/></linearGradient>
+<linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a1730"/><stop offset="1" stop-color="#02050d"/></linearGradient>
+<linearGradient id="g4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#04070e"/><stop offset="1" stop-color="#010203"/></linearGradient>
+</defs>
+<rect width="1600" height="900" fill="url(#g0)"/>
+<path class="drift w1" d="M-80,330 C200,150 470,60 760,150 C1040,240 1260,430 1700,330 L1700,-40 L-80,-40Z" fill="url(#g1)" opacity=".85"/>
+<path class="drift w2" d="M-80,470 C190,300 480,200 790,290 C1090,380 1290,560 1700,450 L1700,330 C1260,430 1040,240 760,150 C470,60 200,150 -80,330Z" fill="url(#g2)" opacity=".75"/>
+<path class="drift w3" d="M-80,640 C200,470 500,380 820,470 C1110,555 1320,700 1700,610 L1700,450 C1290,560 1090,380 790,290 C480,200 190,300 -80,470Z" fill="url(#g1)" opacity=".55"/>
+<path class="drift w4" d="M-80,900 L-80,720 C250,600 560,560 880,650 C1180,735 1400,860 1700,790 L1700,900Z" fill="url(#g3)" opacity=".95"/>
+<path d="M-80,640 C200,470 500,380 820,470 C1110,555 1320,700 1700,610 L1700,790 C1400,860 1180,735 880,650 C560,560 250,600 -80,720Z" fill="url(#g4)" opacity=".85"/>
+<path d="M-80,470 C190,300 480,200 790,290 C1090,380 1290,560 1700,450" fill="none" stroke="#7c93b2" stroke-opacity=".28" stroke-width="2"/>
+<path d="M-80,640 C200,470 500,380 820,470 C1110,555 1320,700 1700,610" fill="none" stroke="#8a95a3" stroke-opacity=".20" stroke-width="2"/>
+</svg>
+<nav><div class="wrap">
+<strong>HelpDesk</strong>
+<a href="#objetivos">Objetivos</a><a href="#proceso">Proceso</a><a href="#mvp">MVP</a><a href="#sprints">Sprints</a><a href="#pendientes">Por decidir</a>
+</div></nav>
+
+<div class="wrap">
+<header>
+<span class="tag">Propuesta para validar con el cliente</span>
+<h1>HelpDesk: del requerimiento al primer producto</h1>
+<p>Sistema interno de soporte para una sola empresa. Los solicitantes registran sus necesidades en un portal, los equipos las atienden y todo el recorrido queda trazado. Esta página propone qué se construye primero y en qué orden.</p>
+</header>
+
+<section id="objetivos">
+<h2>Objetivos</h2>
+<p class="lead">Lo que HelpDesk debe lograr para la empresa. Las metas numéricas se acuerdan con el cliente, porque hoy no hay una medición de partida.</p>
+<div class="grid g3">
+<div class="card"><h3>Un solo punto de entrada</h3><p>Toda solicitud de soporte se registra en el portal, sin depender de mensajes o llamadas sueltas.</p><p class="kpi"><b>Indicador:</b> solicitudes registradas en el portal frente al total recibido.</p></div>
+<div class="card"><h3>Ninguna solicitud se pierde</h3><p>Cada ticket tiene un responsable y un estado visibles en todo momento.</p><p class="kpi"><b>Indicador:</b> tickets sin asignar después del plazo acordado.</p></div>
+<div class="card"><h3>El solicitante sabe cómo va</h3><p>Consulta estado, responsable y solución sin preguntar al equipo de soporte.</p><p class="kpi"><b>Indicador:</b> consultas informales sobre el avance de un caso.</p></div>
+<div class="card"><h3>Trazabilidad de cada caso</h3><p>Quién hizo qué y cuándo queda registrado en el ticket. No se guarda el contenido de los mensajes de Telegram.</p><p class="kpi"><b>Indicador:</b> tickets con su historial de actividades completo.</p></div>
+<div class="card"><h3>Tiempos medibles</h3><p>Prioridades, fechas límite y escalamiento para detectar lo que se atrasa.</p><p class="kpi"><b>Indicador:</b> cumplimiento de tiempos de primera respuesta y de resolución.</p></div>
+<div class="card"><h3>Datos para decidir</h3><p>Reportes de carga, demanda y satisfacción para el supervisor.</p><p class="kpi"><b>Indicador:</b> reportes que el cliente usa en sus reuniones de seguimiento.</p></div>
+</div>
+</section>
+
+<section id="proceso">
+<h2>Proceso del ticket</h2>
+<p class="lead">El recorrido que el sistema debe soportar. Cada paso lo ejecuta un rol distinto, y por eso el orden importa.</p>
+<div class="flow">
+<div class="step"><h3>Registro</h3><div class="who">Solicitante</div><p>Describe su necesidad en el portal y recibe un identificador.</p></div>
+<div class="step"><h3>Asignación</h3><div class="who">Supervisor</div><p>Dirige el ticket al equipo y agente adecuados.</p></div>
+<div class="step"><h3>Atención</h3><div class="who">Agente</div><p>Cambia estados, registra el trabajo y conversa por Telegram.</p></div>
+<div class="step"><h3>Resolución</h3><div class="who">Agente</div><p>Documenta la solución para que el solicitante la consulte.</p></div>
+<div class="step"><h3>Cierre</h3><div class="who">Agente</div><p>Termina la atención. Una reapertura vuelve al paso 3.</p></div>
+</div>
+<p class="note">Transversal a todos los pasos: el administrador gestiona cuentas, roles y configuración, y el sistema envía avisos por la aplicación y por Telegram. Los tickets se crean solo en el portal.</p>
+</section>
+
+<section id="mvp">
+<h2>MVP propuesto</h2>
+<p class="lead">El producto más pequeño que completa el recorrido de un ticket de punta a punta. Son 20 de las 98 historias.</p>
+<div class="meta">
+<div class="pill"><b>20</b><span>historias en el MVP</span></div>
+<div class="pill"><b>78</b><span>historias para después</span></div>
+<div class="pill"><b>4</b><span>roles cubiertos</span></div>
+<div class="pill"><b>5 de 10</b><span>épicas con aporte al MVP</span></div>
+</div>
+<div class="bars" id="bars" aria-label="Historias del MVP por épica"></div>
+
+<div class="filters" id="filters" role="group" aria-label="Filtrar por rol"></div>
+<div class="tablewrap"><table>
+<thead><tr><th>Historia</th><th>Qué permite</th><th>Rol</th><th>Sprint</th></tr></thead>
+<tbody id="rows"></tbody>
+</table></div>
+<p class="note">Los avisos de SLA se muestran con tiempos fijos de ejemplo en el MVP. Su configuración completa (EP-09) queda para después. Quedan fuera por ahora: base de conocimiento, reportes, satisfacción, reasignaciones, transferencias, escalamiento y auditoría.</p>
+</section>
+
+<section id="sprints">
+<h2>Planificación de sprints</h2>
+<p class="lead">Propuesta con sprints de 2 semanas. Las fechas se fijan cuando el equipo confirme su disponibilidad. Cada sprint termina con una demostración al cliente.</p>
+<div class="sprints" id="sprints"></div>
+</section>
+
+<section id="pendientes">
+<h2>Decisiones antes del Sprint 1</h2>
+<p class="lead">Estas definiciones del cliente desbloquean el diseño y evitan rehacer trabajo.</p>
+<div class="todo">
+<div><b>¿Qué cuenta como primera respuesta de un agente?</b><span>Afecta cómo se mide el tiempo de atención (HU-04-04).</span></div>
+<div><b>¿Quién puede cerrar o cancelar un ticket?</b><span>Define los permisos del Sprint 3.</span></div>
+<div><b>¿Quién ajusta prioridades y concede excepciones de tiempo?</b><span>Define qué hace el supervisor frente al agente.</span></div>
+<div><b>¿La plataforma será web, móvil o de escritorio?</b><span>Sin esto no se elige la tecnología. Se propone web.</span></div>
+<div><b>¿Quién revisa y publica artículos, y quién audita y respalda?</b><span>No bloquean el MVP, pero hay que nombrarlos para las siguientes fases.</span></div>
+</div>
+</section>
+
+<footer>Alcance, orden y duraciones son una propuesta sujeta a la validación del cliente.</footer>
+</div>
+
+<script>
+/* Épicas con su color y totales de historias */
+var EPICS={
+ 1:{n:"EP-01 Registro de solicitudes",t:10,c:"var(--e1)"},
+ 2:{n:"EP-02 Ciclo de vida del ticket",t:9,c:"var(--e2)"},
+ 3:{n:"EP-03 Asignación del trabajo",t:10,c:"var(--e3)"},
+ 4:{n:"EP-04 Prioridades y SLA",t:10,c:"var(--e4)"},
+ 5:{n:"EP-05 Usuarios, roles y accesos",t:10,c:"var(--e5)"},
+ 6:{n:"EP-06 Telegram y notificaciones",t:9,c:"var(--e6)"},
+ 7:{n:"EP-07 Base de conocimiento",t:10,c:"var(--e7)"},
+ 8:{n:"EP-08 Reportes y satisfacción",t:10,c:"var(--e8)"},
+ 9:{n:"EP-09 Administración",t:10,c:"var(--e9)"},
+ 10:{n:"EP-10 Seguridad y respaldos",t:10,c:"var(--e10)"}
+};
+/* Historias del MVP: id, épica, título, rol, sprint */
+var S=[
+ ["HU-05-01",5,"Habilitar una cuenta para un usuario","Administrador",1],
+ ["HU-05-03",5,"Entrar al HelpDesk y cerrar la sesión","Todos",1],
+ ["HU-05-05",5,"Asignar y ajustar roles","Administrador",1],
+ ["HU-05-07",5,"Acceder únicamente a las funciones y datos autorizados","Todos",1],
+ ["HU-10-01",10,"Proteger el acceso y las sesiones","Administrador",1],
+ ["HU-09-01",9,"Mantener categorías de clasificación","Administrador",1],
+ ["HU-01-01",1,"Registrar una solicitud de soporte","Solicitante",2],
+ ["HU-01-03",1,"Consultar mis solicitudes","Solicitante",2],
+ ["HU-01-05",1,"Consultar el detalle y el responsable de atención","Solicitante",2],
+ ["HU-03-02",3,"Identificar solicitudes que necesitan asignación","Supervisor",2],
+ ["HU-03-03",3,"Asignar un ticket al equipo y agente adecuados","Supervisor",2],
+ ["HU-02-01",2,"Actualizar el estado de un ticket","Agente",3],
+ ["HU-02-02",2,"Registrar el trabajo realizado","Agente",3],
+ ["HU-02-05",2,"Documentar la solución y resolver el ticket","Agente",3],
+ ["HU-02-06",2,"Cerrar un ticket cuando termina su atención","Agente",3],
+ ["HU-01-08",1,"Consultar la solución de una solicitud","Solicitante",3],
+ ["HU-04-01",4,"Determinar la prioridad de una solicitud","Supervisor",4],
+ ["HU-04-03",4,"Conocer las fechas límite de atención","Agente",4],
+ ["HU-05-09",5,"Vincular una identidad de Telegram","Solicitante",4],
+ ["HU-06-08",6,"Recibir avisos en la aplicación y en Telegram","Todos",4]
+];
+var PLAN=[
+ {k:0,t:"Sprint 0",h:"Cimientos",w:"Semanas 1 y 2",g:"Cerrar las decisiones pendientes y dejar el proyecto listo para construir.",
+  items:["Decisiones del cliente","Tecnología y arquitectura","Repositorio y flujo de trabajo del equipo","Prototipo de pantallas"],d:"Demo: prototipo navegable y alcance firmado."},
+ {k:1,t:"Sprint 1",h:"Cuentas y acceso",w:"Semanas 3 y 4",g:"Que cada persona entre con su rol."},
+ {k:2,t:"Sprint 2",h:"Solicitudes y asignación",w:"Semanas 5 y 6",g:"Que un ticket se registre y llegue a un agente."},
+ {k:3,t:"Sprint 3",h:"Atención y cierre",w:"Semanas 7 y 8",g:"Que el ticket se atienda, se resuelva y se cierre."},
+ {k:4,t:"Sprint 4",h:"Prioridad y Telegram",w:"Semanas 9 y 10",g:"Que haya fechas límite y avisos por Telegram."},
+ {k:5,t:"Sprint 5",h:"Pruebas y entrega",w:"Semanas 11 y 12",g:"Corregir, probar con usuarios reales y presentar el MVP.",
+  items:["Pruebas del recorrido completo","Ajustes con la opinión del cliente","Documentación de uso"],d:"Demo: MVP completo y plan de la siguiente fase."}
+];
+function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e}
+
+/* Barras por épica */
+function drawBars(){
+  var host=document.getElementById("bars");
+  Object.keys(EPICS).forEach(function(k){
+    var n=S.filter(function(s){return s[1]==k}).length,e=EPICS[k];
+    var row=el("div","bar");
+    row.appendChild(el("span","name",e.n));
+    var tr=el("div","track");var f=el("div","fill");f.style.width=(n/e.t*100)+"%";f.style.background=e.c;tr.appendChild(f);row.appendChild(tr);
+    row.appendChild(el("span","n",n+" de "+e.t));
+    host.appendChild(row);
+  });
+}
+/* Tabla con filtro por rol */
+var rol="Todos los roles";
+function drawRows(){
+  var tb=document.getElementById("rows");tb.innerHTML="";
+  S.forEach(function(s){
+    if(rol!=="Todos los roles"&&s[3]!==rol&&s[3]!=="Todos")return;
+    var tr=el("tr");
+    tr.innerHTML='<td class="id mono"><span class="dot" style="background:'+EPICS[s[1]].c+'"></span>'+s[0]+'</td><td>'+s[2]+'</td><td>'+s[3]+'</td><td>Sprint '+s[4]+'</td>';
+    tb.appendChild(tr);
+  });
+}
+function drawFilters(){
+  var host=document.getElementById("filters");
+  ["Todos los roles","Solicitante","Agente","Supervisor","Administrador"].forEach(function(r){
+    var b=el("button","",r);b.type="button";b.setAttribute("aria-pressed",r===rol);
+    b.addEventListener("click",function(){rol=r;
+      host.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b)});
+      drawRows();});
+    host.appendChild(b);
+  });
+}
+/* Sprints */
+function drawSprints(){
+  var host=document.getElementById("sprints");
+  PLAN.forEach(function(p){
+    var c=el("div","sprint"+(p.k===0?" s0":""));
+    var list=p.items?p.items.map(function(i){return '<li><span class="mono">•</span>'+i+'</li>'}):
+      S.filter(function(s){return s[4]===p.k}).map(function(s){return '<li><span class="mono">'+s[0]+'</span>'+s[2]+'</li>'});
+    var cnt=p.items?"":S.filter(function(s){return s[4]===p.k}).length+" historias";
+    c.innerHTML='<header><div class="when">'+p.w+'</div><h3>'+p.t+': '+p.h+'</h3></header><p class="goal">'+p.g+'</p><ul>'+list.join("")+'</ul>'+
+      '<div class="done">'+(p.d?p.d:'<b>'+cnt+'</b> · Demo al cliente al terminar.')+'</div>';
+    host.appendChild(c);
+  });
+}
+drawBars();drawFilters();drawRows();drawSprints();
+</script>
