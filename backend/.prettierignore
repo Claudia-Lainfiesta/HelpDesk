@@ -4,6 +4,7 @@ coverage/
 package-lock.json
 .env
 .env.*
+.seed-dev-password
 # Los checksums de las migraciones aplicadas son inmutables.
 db/migrations/
 # Prettier no incluye un parser SQL.

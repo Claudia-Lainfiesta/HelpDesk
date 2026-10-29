@@ -3,7 +3,16 @@ import request from 'supertest';
 import type { Express } from 'express';
 
 vi.mock('../../src/config/env.js', () => ({
-  env: { frontendOrigin: 'http://localhost:4200', nodeEnv: 'test' },
+  env: {
+    frontendOrigin: 'http://localhost:4200',
+    nodeEnv: 'test',
+    trustProxy: false,
+    sessionIdleMinutes: 30,
+    sessionAbsoluteHours: 8,
+    loginMaxAttempts: 5,
+    loginLockMinutes: 15,
+    loginRateLimitPerIp: 30,
+  },
 }));
 vi.mock('../../src/db/pool.js', () => ({ pool: { query: vi.fn() } }));
 
@@ -24,7 +33,7 @@ describe('API base', () => {
     const response = await request(app).get('/ruta-inexistente');
     expect(response.status).toBe(404);
     expect(response.headers['content-type']).toContain('application/json');
-    expect(response.body).toEqual({ status: 'error', message: 'Ruta no encontrada.' });
+    expect(response.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } });
   });
 
   it('incluye CORS para el origen permitido', async () => {

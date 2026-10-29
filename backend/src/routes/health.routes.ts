@@ -12,6 +12,8 @@ healthRouter.get('/db', async (_req, res) => {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', service: 'helpdesk-db', time: new Date().toISOString() });
   } catch {
-    res.status(503).json({ status: 'error', message: 'Base de datos no disponible.' });
+    res
+      .status(503)
+      .json({ error: { code: 'DATABASE_UNAVAILABLE', message: 'Base de datos no disponible.' } });
   }
 });

@@ -9,6 +9,6 @@ export const pool = new pg.Pool({
   max: 10,
 });
 
-pool.on('error', (error: Error) => {
-  console.error('Error en una conexión inactiva de PostgreSQL:', error.message);
+pool.on('error', () => {
+  console.error('db.connection_error');
 });

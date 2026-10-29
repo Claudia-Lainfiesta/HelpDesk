@@ -37,8 +37,8 @@ function shutdown(signal: NodeJS.Signals): void {
         clearTimeout(timeout);
         process.exitCode = error ? 1 : 0;
       })
-      .catch((poolError: unknown) => {
-        console.error('No se pudo cerrar el pool:', poolError);
+      .catch(() => {
+        console.error('No se pudo cerrar el pool de PostgreSQL.');
         process.exit(1);
       });
   });

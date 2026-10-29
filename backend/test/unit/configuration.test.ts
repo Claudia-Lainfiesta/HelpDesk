@@ -33,7 +33,9 @@ it('errorHandler omite el stack cuando NODE_ENV=production', async () => {
 
   const response = await request(app).get('/error-de-prueba');
   expect(response.status).toBe(500);
-  expect(response.body).toEqual({ status: 'error', message: 'Error interno del servidor.' });
+  expect(response.body).toEqual({
+    error: { code: 'INTERNAL_ERROR', message: 'Error interno del servidor.' },
+  });
   expect(response.text).not.toContain('Detalle interno confidencial');
   expect(response.body).not.toHaveProperty('stack');
   expect(log).toHaveBeenCalled();

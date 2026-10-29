@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import { env } from '../config/env.js';
+import { seedDevelopmentPasswords } from '../auth/seed.js';
 import {
   ensureMigrationTable,
   inTransaction,
@@ -93,6 +94,7 @@ export async function runDatabaseCommand(command: string): Promise<void> {
     const sql = await readFile(seedFile, 'utf8');
     await inTransaction(client, async () => {
       await client.query(sql);
+      await seedDevelopmentPasswords(client);
     });
     console.log('Datos de desarrollo cargados (seed idempotente).');
   });
