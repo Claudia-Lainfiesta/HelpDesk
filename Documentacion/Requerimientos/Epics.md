@@ -4,7 +4,7 @@
 
 El sistema centralizará la atención de solicitudes de soporte de los solicitantes de una sola empresa. Permitirá registrar, asignar, atender y resolver tickets con trazabilidad, controlar tiempos de atención y generar información para mejorar el servicio.
 
-Las cuentas pertenecen a empleados de la empresa y cada usuario tiene un solo rol a la vez: solicitante, agente de soporte, supervisor o administrador. No se contempla atención a clientes, proveedores ni usuarios de otras empresas. Para la auditoría, un tercero externo acude presencialmente y usa localmente las credenciales de los usuarios; no tiene cuenta propia ni constituye un quinto rol.
+Las cuentas ordinarias pertenecen a empleados de la empresa y cada usuario tiene un solo rol a la vez: solicitante, agente de soporte, supervisor o administrador. No se contempla atención a clientes, proveedores ni usuarios de otras empresas. Para la auditoría, un tercero externo acude presencialmente y usa localmente cuentas temporales de auditoría creadas por el administrador, una por cada uno de los cuatro roles existentes y con vencimiento automático; no constituye un quinto rol.
 
 La comunicación directa entre solicitantes y agentes se realizará mediante Telegram en ambas direcciones, integrada con los tickets del HelpDesk. Las notificaciones importantes y relevantes se enviarán tanto en la aplicación principal como por Telegram a los destinatarios autorizados. Telegram es un canal tecnológico externo; su uso no incorpora usuarios externos a la empresa.
 
@@ -178,7 +178,7 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 - Vincular de forma verificable la identidad de Telegram de solicitantes y agentes con su cuenta de usuario, y permitir su actualización o desvinculación controlada.
 - Revocar el acceso mediante la integración y los envíos a una identidad desvinculada o desactivada, conservando las referencias históricas.
 
-**Límites:** No incluye registro público ni identidades de organizaciones externas. La integración con un directorio corporativo o inicio de sesión único deberá validarse. EP-10 establece los controles técnicos de protección y auditoría; un rol administrativo no implica acceso indiscriminado al contenido de todos los tickets.
+**Límites:** No incluye registro público ni cuentas ordinarias para organizaciones externas. La excepción son las cuentas temporales de auditoría creadas por el administrador, una por rol existente y con vencimiento automático. La integración con un directorio corporativo o inicio de sesión único deberá validarse. EP-10 establece los controles técnicos de protección y auditoría; un rol administrativo no implica acceso indiscriminado al contenido de todos los tickets.
 
 **Resultado esperado:** Cada usuario accede únicamente a las funciones y datos autorizados, y los cambios de personal no destruyen la trazabilidad.
 
@@ -297,13 +297,13 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 **Descripción:** Proteger la información del HelpDesk, registrar acciones relevantes y permitir su recuperación ante fallos. Esta épica es transversal: sus controles se incorporarán desde el inicio en todos los módulos y tendrán entregables propios para verificar la confidencialidad, integridad y disponibilidad del sistema.
 
-**Actores principales:** Supervisor y administrador como roles técnicos de auditoría y respaldo; en la práctica, un auditor externo realiza las comprobaciones presencialmente en la empresa, con acceso local y las credenciales de los usuarios, sin cuenta propia ni rol nuevo.
+**Actores principales:** Supervisor y administrador como roles técnicos de auditoría y respaldo; en la práctica, un auditor externo realiza las comprobaciones presencialmente en la empresa, con acceso local mediante cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático, sin rol nuevo.
 
 **Papel de cada rol:**
 
 - **Administrador:** opera los controles de seguridad y dispone de las funciones técnicas de auditoría y respaldo, sin acceso indiscriminado a secretos.
 - **Supervisor:** dispone de las funciones técnicas de auditoría y respaldo dentro de su alcance.
-- **Auditor externo:** por seguridad realiza la auditoría y los respaldos presencialmente, entrando localmente con las credenciales de los usuarios. No tiene una cuenta propia ni es un quinto rol.
+- **Auditor externo:** por seguridad realiza la auditoría y los respaldos presencialmente, entrando localmente con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Las acciones se registran a nombre de la cuenta de auditoría utilizada; no hay un quinto rol.
 - **Solicitante y agente:** se benefician de estos controles; sus roles no incluyen funciones de auditoría o respaldo.
 
 **Alcance funcional y técnico:**

@@ -26,7 +26,7 @@ Fuente: `Requerimientos/UserStoryMapping.md` y `Requerimientos/Epics.md`. El MVP
 - El agente cierra los tickets terminados con éxito y solo el supervisor cancela, con motivo, cuando se decide no continuar.
 - El supervisor ajusta prioridades y concede excepciones de tiempo.
 - Plataforma web.
-- El supervisor revisa artículos y el administrador publica. Auditoría y respaldo corresponden técnicamente a supervisor y administrador; en la práctica los realiza presencialmente un tercero externo, con acceso local y las credenciales de los usuarios, sin cuenta propia ni quinto rol.
+- El supervisor revisa artículos y el administrador publica. Auditoría y respaldo corresponden técnicamente a supervisor y administrador; en la práctica los realiza presencialmente un tercero externo, con acceso local mediante cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático, sin quinto rol y con las acciones registradas a nombre de la cuenta de auditoría utilizada.
 
 Los acuerdos y las consideraciones todavía pendientes están en [Decisiones-de-producto.md](../Decisiones-de-producto.md).
 

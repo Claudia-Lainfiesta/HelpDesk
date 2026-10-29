@@ -833,7 +833,7 @@ Participan todos los usuarios que usan el sistema y los administradores o respon
 
 ### Alcance y relación con otras épicas
 
-- Las cuentas corresponden a empleados de una sola empresa. No se incluye registro público ni cuentas para clientes, proveedores u otras organizaciones. El auditor externo entra presencialmente y de forma local con las credenciales de los usuarios, sin cuenta propia ni rol nuevo; véanse las consideraciones de S0-08.
+- Las cuentas ordinarias corresponden a empleados de una sola empresa. No se incluye registro público ni cuentas para clientes, proveedores u otras organizaciones. El auditor externo entra presencialmente y de forma local con cuentas temporales de auditoría creadas por el administrador, una por cada uno de los cuatro roles existentes y con vencimiento automático, sin rol nuevo; véase la decisión de S0-08.
 - Cada usuario tiene un solo rol a la vez: solicitante, agente de soporte, supervisor o administrador. El alcance también depende del equipo y de la relación con cada caso.
 - EP-05 administra identidades, roles y asociaciones con equipos. EP-09 configura los equipos y niveles, y EP-03 decide la asignación operativa de tickets.
 - Cada función de las otras épicas debe comprobar los permisos vigentes. Ocultar una opción en pantalla no sustituye la comprobación al consultar datos o ejecutar una acción.
@@ -861,7 +861,7 @@ Esta separación organiza el trabajo, pero no permite liberar una integración s
 
 #### HU-05-01 — Habilitar una cuenta para un usuario
 
-El administrador autorizado puede habilitar a un usuario para utilizar el HelpDesk. La cuenta queda asociada a una persona de la empresa y le permite comenzar a usar las funciones que se le hayan concedido.
+El administrador autorizado puede habilitar a un usuario para utilizar el HelpDesk. La cuenta ordinaria queda asociada a una persona de la empresa y le permite comenzar a usar las funciones que se le hayan concedido; las cuentas temporales de auditoría siguen la excepción acordada en S0-08.
 
 **Para revisar con el equipo:**
 
@@ -870,8 +870,9 @@ El administrador autorizado puede habilitar a un usuario para utilizar el HelpDe
 - Los permisos iniciales siguen las reglas aprobadas. Dar de alta una cuenta no concede automáticamente funciones de agente, supervisor o administrador.
 - El usuario recibe las indicaciones necesarias para su primer acceso mediante el procedimiento acordado, sin exponer credenciales en registros o mensajes sin protección.
 - Se conserva quién o qué proceso realizó el alta y cuándo. Si la operación falla, no se presenta la cuenta como habilitada.
+- El administrador puede indicar una fecha de vencimiento para cuentas temporales, por ejemplo de auditoría; al llegar esa fecha, la cuenta deja de poder iniciar sesión y sus sesiones abiertas se invalidan automáticamente.
 
-Propuesta para la entrega 1. Se apoya en HU-05-05 y los controles de EP-10. Falta acordar los datos de identificación, quién valida la condición de personal de la empresa, los permisos iniciales y si el alta será manual o provendrá de un directorio corporativo.
+Propuesta para la entrega 1. Se apoya en HU-05-05 y los controles de EP-10. Falta acordar los datos de identificación, quién valida la condición de personal de la empresa para las cuentas ordinarias, los permisos iniciales y si el alta será manual o provendrá de un directorio corporativo.
 
 #### HU-05-02 — Mantener actualizados los datos del usuario
 
@@ -1871,7 +1872,7 @@ Las reglas de negocio pendientes en las épicas anteriores se resuelven una sola
 
 Que la información del HelpDesk permanezca protegida, que las acciones sensibles puedan revisarse y que el servicio pueda recuperarse ante un fallo. La protección debe comprobarse tanto durante el uso habitual como al restaurar datos y reanudar la comunicación.
 
-El supervisor y el administrador disponen de las funciones técnicas de auditoría y respaldo. Por seguridad, en la práctica la auditoría y los respaldos los realiza un tercero externo que acude presencialmente a la empresa y entra localmente con las credenciales de los usuarios. Ese auditor no tiene cuenta propia ni constituye un quinto rol.
+El supervisor y el administrador disponen de las funciones técnicas de auditoría y respaldo. Por seguridad, en la práctica la auditoría y los respaldos los realiza un tercero externo que acude presencialmente a la empresa y entra localmente con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Sus acciones se registran a nombre de la cuenta de auditoría utilizada; no hay un quinto rol.
 
 ### Alcance y relación con otras épicas
 
@@ -1979,12 +1980,12 @@ Necesaria junto con los primeros envíos de Telegram. Refuerza HU-03-10, HU-06-0
 
 #### HU-10-06 — Registrar las acciones sensibles para poder revisarlas
 
-El supervisor y el administrador pueden consultar quién realizó una acción relevante, cuándo ocurrió y cuál fue su resultado mediante las funciones técnicas de auditoría. En la práctica, la revisión la realiza presencialmente el auditor externo con las credenciales de los usuarios, sin cuenta propia. Esto permite investigar cambios de acceso o configuración y revisar incidentes con evidencia, sin depender únicamente del historial de un ticket.
+El supervisor y el administrador pueden consultar quién realizó una acción relevante, cuándo ocurrió y cuál fue su resultado mediante las funciones técnicas de auditoría. En la práctica, la revisión la realiza presencialmente el auditor externo con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Esto permite investigar cambios de acceso o configuración y revisar incidentes con evidencia, sin depender únicamente del historial de un ticket.
 
 **Para revisar con el equipo:**
 
 - El catálogo de auditoría incluye los accesos y acciones acordados, los cambios de permisos, configuración, vinculaciones y desvinculaciones, así como operaciones sensibles y fallos de envío relevantes.
-- Cada registro identifica al usuario o proceso, la fecha, la acción, el recurso afectado y el resultado. Cuando corresponda, conserva el motivo y los cambios necesarios para entender la operación.
+- Cada registro identifica al usuario o proceso, la fecha, la acción, el recurso afectado y el resultado. Las acciones del auditor externo se registran a nombre de la cuenta temporal de auditoría utilizada. Cuando corresponda, conserva el motivo y los cambios necesarios para entender la operación.
 - Las fechas y referencias permiten relacionar acciones entre módulos y distinguir el momento del evento del procesamiento posterior cuando sean diferentes.
 - Los registros no almacenan contraseñas, credenciales de integración, códigos de verificación ni copias completas de contenido privado sin necesidad justificada.
 - Si falla el registro de auditoría, se detecta la incidencia y se aplica el tratamiento acordado para la operación afectada. No se afirma que una acción quedó auditada cuando falta su evidencia.
@@ -1994,11 +1995,11 @@ Necesaria desde las primeras operaciones sensibles. Complementa el historial de 
 
 #### HU-10-07 — Consultar y proteger los registros de auditoría
 
-El supervisor y el administrador pueden revisar los registros necesarios para investigar una acción; en la práctica los revisa el auditor externo, presencialmente y con las credenciales de los usuarios. El acceso y la conservación están controlados para que una persona no pueda ocultar sus cambios editando o eliminando esa evidencia sin autorización.
+El supervisor y el administrador pueden revisar los registros necesarios para investigar una acción; en la práctica los revisa el auditor externo, presencialmente y con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. El acceso y la conservación están controlados para que una persona no pueda ocultar sus cambios editando o eliminando esa evidencia sin autorización.
 
 **Para revisar con el equipo:**
 
-- La consulta corresponde técnicamente al supervisor y al administrador y limita el alcance de información visible. No se crea una cuenta propia ni un rol de auditor para el tercero externo.
+- La consulta corresponde técnicamente al supervisor y al administrador y limita el alcance de información visible. El administrador crea cuentas temporales de auditoría, una por cada rol existente y con vencimiento automático; no se agrega un rol de auditor.
 - Se propone buscar por período, actor, acción o recurso, respetando los mismos límites en los resultados y en cualquier exportación que se habilite.
 - Las funciones habituales del HelpDesk no permiten sobrescribir o borrar registros de auditoría. Su protección impide modificaciones no autorizadas y permite detectar las alteraciones contempladas por el mecanismo acordado.
 - Una aclaración o corrección autorizada conserva el registro original y su trazabilidad; no lo sustituye silenciosamente.
@@ -2009,7 +2010,7 @@ Necesaria desde que exista auditoría. Se relaciona con HU-10-06 y HU-10-09. Los
 
 #### HU-10-08 — Ejecutar respaldos protegidos y comprobar su resultado
 
-El supervisor y el administrador disponen de las funciones técnicas para respaldar los datos y archivos necesarios para recuperar el HelpDesk; en la práctica, el auditor externo realiza los respaldos y las comprobaciones presencialmente, con las credenciales de los usuarios y sin cuenta propia. Pueden revisar qué se respaldó, de qué momento es la copia y si el proceso terminó correctamente.
+El supervisor y el administrador disponen de las funciones técnicas para respaldar los datos y archivos necesarios para recuperar el HelpDesk; en la práctica, el auditor externo realiza los respaldos y las comprobaciones presencialmente, con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Pueden revisar qué se respaldó, de qué momento es la copia y si el proceso terminó correctamente.
 
 **Para revisar con el equipo:**
 
@@ -2024,7 +2025,7 @@ Necesaria antes de operar con datos reales, con ampliaciones cuando se incorpore
 
 #### HU-10-09 — Probar la restauración del servicio y registrar sus resultados
 
-El supervisor o administrador puede seguir un procedimiento de recuperación y demostrar que el HelpDesk vuelve a funcionar con datos coherentes; la comprobación presencial corresponde en la práctica al auditor externo, usando las credenciales de los usuarios. La prueba permite conocer el tiempo necesario, las limitaciones y los problemas que deben corregirse antes de depender de una recuperación real.
+El supervisor o administrador puede seguir un procedimiento de recuperación y demostrar que el HelpDesk vuelve a funcionar con datos coherentes; la comprobación presencial corresponde en la práctica al auditor externo, usando cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. La prueba permite conocer el tiempo necesario, las limitaciones y los problemas que deben corregirse antes de depender de una recuperación real.
 
 **Para revisar con el equipo:**
 
@@ -2080,8 +2081,8 @@ Los controles se convertirán en comprobaciones concretas al definir la arquitec
 | D-71 | Acordar validación de contenido y archivos, tratamiento de entradas rechazadas y fallos de validación. Complementa D-02 y D-42. | HU-10-03 |
 | D-72 | Validar el mecanismo de comprobación de origen de Telegram, los datos permitidos por mensaje y el tratamiento de intercambios no autorizados. Coordinar con D-38, D-39 y D-40. | HU-10-04, HU-10-05 |
 | D-73 | Definir catálogo y campos de auditoría, referencias temporales y tratamiento de operaciones cuando falle el registro de evidencia. | HU-10-06 |
-| D-74 | Supervisor y administrador tienen las funciones técnicas de auditoría; la revisión práctica es presencial por un tercero externo con las credenciales de los usuarios, sin cuenta propia ni rol nuevo. Falta precisar el alcance de consulta, controles de integridad, retención y eliminación autorizada, incluida la recuperación. La alternativa de cuentas temporales por rol queda pendiente en Decisiones-de-producto.md. | HU-10-07 |
-| D-75 | Las funciones técnicas de respaldo corresponden a supervisor y administrador; en la práctica los realiza presencialmente el auditor externo con las credenciales de los usuarios, sin cuenta propia. Falta definir alcance, frecuencia, ubicación, protección, retención y atención de fallos. | HU-10-08 |
+| D-74 | Supervisor y administrador tienen las funciones técnicas de auditoría; la revisión práctica es presencial por un tercero externo con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Las acciones se atribuyen a la cuenta de auditoría utilizada; no hay un quinto rol. Falta precisar la duración máxima por defecto, el alcance de consulta, controles de integridad, retención y eliminación autorizada, incluida la recuperación. | HU-10-07 |
+| D-75 | Las funciones técnicas de respaldo corresponden a supervisor y administrador; en la práctica los realiza presencialmente el auditor externo con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Falta definir alcance, frecuencia, ubicación, protección, retención y atención de fallos. | HU-10-08 |
 | D-76 | Acordar pérdida máxima de datos aceptable, tiempo objetivo de recuperación, frecuencia de pruebas y autorización para restaurar y volver a operar. | HU-10-09 |
 | D-77 | Definir cómo se recupera evidencia vigente de permisos y revocaciones, se revisan eventos posteriores a la copia y se resuelven envíos inciertos antes de reanudar Telegram. Coordinar con D-39 y D-46. | HU-10-09, HU-10-10 |
 | D-09, seguimiento | Consolidar la retención y los objetivos de calidad de todas las épicas con las políticas de protección y recuperación, evitando reglas incompatibles. | Todas las historias pertinentes |

@@ -204,7 +204,7 @@ th,td{border-bottom-color:var(--line)}
 <div><b>El agente cierra; solo el supervisor cancela</b><span>Cerrado significa éxito; Cancelado significa no continuar. Seis estados, elegidos explícitamente sin restricciones de transición.</span></div>
 <div><b>El supervisor ajusta prioridades y concede excepciones de tiempo</b><span>Los valores y las demás reglas de SLA siguen pendientes de definición.</span></div>
 <div><b>Plataforma web</b><span>Se mantiene el acceso interno con un único rol vigente por usuario.</span></div>
-<div><b>El supervisor revisa artículos y el administrador publica</b><span>Supervisor y administrador tienen las funciones técnicas de auditoría y respaldo. En la práctica, un tercero externo acude presencialmente y usa localmente las credenciales de los usuarios, sin cuenta propia ni quinto rol.</span></div>
+<div><b>El supervisor revisa artículos y el administrador publica</b><span>Supervisor y administrador tienen las funciones técnicas de auditoría y respaldo. En la práctica, un tercero externo acude presencialmente y usa localmente cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Las acciones se registran a nombre de la cuenta de auditoría utilizada; no hay un quinto rol.</span></div>
 </div>
 </section>
 
