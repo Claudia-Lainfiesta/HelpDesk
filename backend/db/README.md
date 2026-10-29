@@ -105,6 +105,14 @@ restablece contraseñas existentes. Consulta [la guía de autenticación](../doc
   indica una cuenta sin vencimiento. Las sesiones guardan únicamente el SHA-256
   del token opaco, con límite absoluto, última actividad y revocación. La cuenta
   activa y su vencimiento se comprueban en cada petición autenticada.
+- `0008_user_management.sql` agrega proveedor `local`/`directory`, creador,
+  notas e `is_temporary`. Directory no admite hash; las cuentas creadas con
+  `temporary: true` deben conservar proveedor local y vencimiento. Los usuarios
+  anteriores quedan como locales y sin marca temporal obligatoria.
+- `0009_audit_events.sql` incorpora eventos administrativos. La aplicación solo
+  inserta registros y valida una lista de metadatos permitidos sin credenciales
+  ni texto libre. El evento y el cambio comparten transacción. Consulta las
+  [reglas y operaciones de administración](../docs/users-and-categories.md).
 - Los cinco estados originales conservan sus IDs: 1 creado, 2 en_proceso,
   3 en_espera, 4 resuelto y 5 cerrado. Cancelado se incorpora mediante una
   migración nueva, con ID generado por identity y `sort_order = 6`.
@@ -151,6 +159,8 @@ un cierre confirmado. No se agregan columnas ni triggers de negocio.
 erDiagram
     roles ||--o{ users : role_id
     users ||--o{ sessions : user_id
+    users o|--o{ users : created_by
+    users o|--o{ audit_events : actor_user_id
     users ||--o{ tickets : requester_id
     users o|--o{ tickets : assigned_agent_id
     categories ||--o{ tickets : category_id
@@ -168,6 +178,10 @@ erDiagram
         text email "UNIQUE lower(email)"
         smallint role_id FK
         boolean is_active
+        text auth_provider "local o directory"
+        bigint created_by FK "Nullable"
+        text notes "Nullable"
+        boolean is_temporary "Exige vencimiento y proveedor local"
         text password_hash "Nullable; Argon2id"
         boolean must_change_password
         int failed_login_attempts
@@ -177,6 +191,16 @@ erDiagram
         timestamptz expires_at "Nullable; vence la cuenta"
         timestamptz created_at
         timestamptz updated_at
+    }
+    audit_events {
+        bigint id PK
+        timestamptz occurred_at
+        bigint actor_user_id FK "Nullable; sistema"
+        text action
+        text target_type "Nullable"
+        bigint target_id "Nullable; sin FK polimórfica"
+        jsonb metadata "Sin secretos ni texto libre"
+        inet ip "Nullable"
     }
     sessions {
         uuid id PK

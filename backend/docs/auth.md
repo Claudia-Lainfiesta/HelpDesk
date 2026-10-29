@@ -3,7 +3,8 @@
 El HelpDesk es interno: cada empleado tiene un solo rol (`solicitante`, `agente`,
 `supervisor` o `administrador`). No hay registro público. El acceso utiliza
 contraseña y sesiones en PostgreSQL, sin JWT ni tokens en el almacenamiento del
-navegador. La administración de cuentas llegará en otro cambio.
+navegador. La [guía de usuarios y categorías](users-and-categories.md) describe
+el alta y las operaciones disponibles para el administrador.
 
 ## Contraseñas y sesiones
 
@@ -90,6 +91,9 @@ Login compara el correo sin distinguir mayúsculas. Un correo inexistente,
 contraseña incorrecta, cuenta inactiva, vencida, bloqueada o sin contraseña
 produce exactamente el mismo 401 `INVALID_CREDENTIALS`. Las entradas con
 estructura inválida responden 400 `INVALID_INPUT`.
+Las cuentas `directory` no tienen hash y tampoco pueden iniciar sesión hasta
+que se implemente el acceso corporativo. El administrador puede restablecer
+contraseñas locales, revocando todas las sesiones y exigiendo cambio al ingresar.
 Change-password usa 401 para contraseña actual incorrecta, 400
 `PASSWORD_POLICY` para una contraseña nueva inválida y 401
 `AUTHENTICATION_REQUIRED` si la sesión ya no es válida. `requireRole(...)`
@@ -236,8 +240,12 @@ sesiones. Cubren cookies, hash del token, fallos y bloqueos, expiración,
 revocación, contraseña temporal, cambio de contraseña, roles, CSRF y ausencia
 de secretos en los logs.
 
-Todavía no se incluyen frontend de acceso, administración de usuarios o
-cuentas temporales, restablecimiento por administrador, recuperación por
-correo, SSO, directorio corporativo, auditoría persistente EP-10 ni integración
-de autenticación con Telegram. `expires_at` prepara el vencimiento de cuentas;
-su interfaz de administración llegará después.
+Las cuentas creadas con `temporary: true` conservan un vencimiento obligatorio:
+7 días por defecto y 30 como máximo desde su creación, configurables mediante
+`TEMP_ACCOUNT_DEFAULT_DAYS` y `TEMP_ACCOUNT_MAX_DAYS`. El vencimiento invalida
+el acceso en cada petición, sin tareas programadas.
+
+Todavía no se incluyen frontend de acceso, recuperación por correo, SSO,
+inicio de sesión corporativo ni integración de autenticación con Telegram.
+Hay auditoría persistente de administración de usuarios y categorías; la
+cobertura completa de auditoría y respaldo de EP-10 llegará después.

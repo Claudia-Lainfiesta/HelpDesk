@@ -4,7 +4,8 @@ API con Express 5, TypeScript 6, CORS, Helmet y PostgreSQL 17.
 El esquema de usuarios, roles, categorías y tickets se gestiona con migraciones SQL.
 Consulta [la guía de base de datos y su diagrama ER](db/README.md).
 Incluye autenticación con sesiones en el servidor. Consulta [la guía de autenticación](docs/auth.md).
-Todavía no hay administración de usuarios ni endpoints de tickets.
+Incluye [administración de usuarios, cuentas temporales y categorías](docs/users-and-categories.md),
+con auditoría administrativa. Todavía no hay endpoints de tickets ni login corporativo.
 
 ## Desarrollo local en Fedora con Podman
 
@@ -61,15 +62,17 @@ Cambiar `POSTGRES_*` en `.env` no cambia las credenciales de un volumen ya inici
 
 ## Variables
 
-| Variable            | Uso                                            | Valor predeterminado    |
-| ------------------- | ---------------------------------------------- | ----------------------- |
-| `PORT`              | Puerto HTTP entre 1 y 65535                    | `3000`                  |
-| `FRONTEND_ORIGIN`   | Origen HTTP(S) exacto, sin ruta ni barra final | `http://localhost:4200` |
-| `DATABASE_URL`      | Conexión PostgreSQL completa                   | Obligatoria             |
-| `POSTGRES_USER`     | Usuario de PostgreSQL                          | Obligatoria             |
-| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL                       | Obligatoria             |
-| `POSTGRES_DB`       | Base de datos                                  | `helpdesk`              |
-| `NODE_ENV`          | `development`, `test` o `production`           | `development`           |
+| Variable                    | Uso                                            | Valor predeterminado    |
+| --------------------------- | ---------------------------------------------- | ----------------------- |
+| `PORT`                      | Puerto HTTP entre 1 y 65535                    | `3000`                  |
+| `FRONTEND_ORIGIN`           | Origen HTTP(S) exacto, sin ruta ni barra final | `http://localhost:4200` |
+| `DATABASE_URL`              | Conexión PostgreSQL completa                   | Obligatoria             |
+| `POSTGRES_USER`             | Usuario de PostgreSQL                          | Obligatoria             |
+| `POSTGRES_PASSWORD`         | Contraseña de PostgreSQL                       | Obligatoria             |
+| `POSTGRES_DB`               | Base de datos                                  | `helpdesk`              |
+| `NODE_ENV`                  | `development`, `test` o `production`           | `development`           |
+| `TEMP_ACCOUNT_DEFAULT_DAYS` | Duración predeterminada de cuentas temporales  | `7`                     |
+| `TEMP_ACCOUNT_MAX_DAYS`     | Máximo desde la creación de la cuenta temporal | `30`                    |
 
 La aplicación valida estas variables al arrancar y falla con un mensaje claro
 si faltan datos o los valores son inválidos. `.env` se busca junto al
@@ -117,7 +120,9 @@ Las pruebas unitarias de `npm test` usan configuraciones aisladas y no necesitan
 PostgreSQL. Las integraciones de autenticación y `/api/health/db` usan la base real y solo se ejecutan
 si `DATABASE_URL` está exportada. Si falta, se informa un SKIP; no se carga el
 `.env` automáticamente para decidirlo. Cada prueba de autenticación crea y elimina
-sus propios usuarios y sesiones, sin cambiar los ejemplos. Para incluir la integración local:
+sus propios usuarios y sesiones, sin cambiar los ejemplos. La integración de
+usuarios/categorías crea y elimina un esquema aislado en la base indicada
+(requiere permiso para crear esquemas). Para incluir la integración local:
 
 ```bash
 npm run db:up

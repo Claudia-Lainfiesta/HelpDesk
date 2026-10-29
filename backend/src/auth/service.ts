@@ -1,6 +1,6 @@
 import { isIP } from 'node:net';
-import type { PoolClient } from 'pg';
 import { pool } from '../db/pool.js';
+import { transaction } from '../db/transaction.js';
 import type { AuthConfig } from './config.js';
 import { ApiError, authenticationRequired, invalidCredentials } from './errors.js';
 import { hashPassword, validatePasswordPolicy, verifyPassword } from './password.js';
@@ -9,21 +9,6 @@ import type { AuthSession, UserRow } from './types.js';
 import { userProfile } from './types.js';
 
 const columns = `u.*, u.id::text, r.code AS role`;
-
-async function transaction<T>(action: (client: PoolClient) => Promise<T>): Promise<T> {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const result = await action(client);
-    await client.query('COMMIT');
-    return result;
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
-}
 
 export async function login(
   email: string,
