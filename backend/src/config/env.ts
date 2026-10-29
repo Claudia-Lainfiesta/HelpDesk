@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
+import { parseTelegramEnv } from './telegram-env.js';
 
 // La ruta funciona desde src/ y dist/, independientemente del directorio de ejecución.
 dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)), quiet: true });
@@ -64,4 +65,5 @@ export const env = Object.freeze({
   postgresPassword: required('POSTGRES_PASSWORD'),
   postgresDb: required('POSTGRES_DB', 'helpdesk'),
   nodeEnv,
+  telegram: parseTelegramEnv(process.env),
 });

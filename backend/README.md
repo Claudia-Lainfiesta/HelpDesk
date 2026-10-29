@@ -153,3 +153,85 @@ curl -i http://localhost:4200/api/health
 `app.ts` configura Express sin escuchar puertos; `server.ts` controla el
 arranque y cierre. `src/config/`, `src/db/`, `src/routes/` y `src/middlewares/`
 separan configuración, conexión, rutas y manejo de errores.
+
+## Telegram (desarrollo)
+
+Prueba de concepto S0-06 con grammY, long polling y sesiones en memoria. La API
+no inicia el bot y sigue funcionando sin `TELEGRAM_BOT_TOKEN`. Los scripts del
+bot tampoco necesitan PostgreSQL: no importan la configuración ni el pool de la API.
+
+1. Abre [@BotFather](https://t.me/BotFather) y usa `/newbot`. Elige el nombre y
+   el username de tu bot de pruebas siguiendo sus indicaciones.
+2. Guarda la credencial que te entregue **solo en tu `.env` local**, en
+   `TELEGRAM_BOT_TOKEN`. No la compartas, la agregues a Git ni la pegues en logs.
+   `.env.example` mantiene el valor vacío.
+3. Cada integrante del equipo usa **su propio bot**. Un token solo debe tener
+   un proceso de polling activo. Las dos cuentas de una prueba conversan con
+   el mismo bot, atendido por ese único proceso.
+
+Desde `backend/`:
+
+```bash
+npm run telegram:check
+npm run telegram:dev
+```
+
+`telegram:check` consulta `getMe` y muestra el username, el ID del bot y un
+resumen del webhook. Omite la URL y el detalle de errores del webhook porque
+pueden contener datos privados. Si hay un webhook activo, puedes quitarlo
+explícitamente antes de iniciar el polling:
+
+```bash
+npm run telegram:check -- --delete-webhook
+```
+
+El flag conserva las actualizaciones pendientes; no se elimina el webhook al
+arrancar el bot. Un error 409 explica que puede existir otro proceso de polling
+o un webhook activo. Detén la otra instancia con Ctrl+C antes de reiniciar.
+
+`TELEGRAM_ALLOWED_USER_IDS` acepta IDs positivos separados por comas. Vacío
+permite a cualquier persona en un chat privado. Para obtener los IDs, deja
+inicialmente la lista vacía, abre tu bot desde cada cuenta y envía `/miid`.
+Después configura ambos IDs y reinicia. Una persona fuera de la lista se
+ignora por completo, incluso si envía `/miid`.
+
+### Guion manual con dos cuentas
+
+1. Cada cuenta abre el mismo bot y envía `/start`.
+2. La primera envía `/ticket TK-000001 solicitante`.
+3. Antes de unir la segunda, envía un mensaje desde la primera: debe avisar
+   que falta el otro lado. Ese mensaje no se entrega después ni se pone en cola.
+4. La segunda envía `/ticket TK-000001 agente`.
+5. Intercambia mensajes en ambos sentidos, luego fotos, documentos y voz.
+   Al cambiar quien habla aparece una etiqueta con rol y referencia; varios
+   mensajes consecutivos del mismo emisor no repiten la etiqueta.
+6. Usa `/estado` en ambos chats. Desde la segunda cuenta, usa `/salir` y
+   confirma que la primera vuelve a ver que falta el otro lado. La segunda
+   puede volver a ocupar el rol con `/ticket`.
+7. Para probar un fallo de entrega, bloquea el bot desde una cuenta e intenta
+   escribir desde la otra. Debe avisar que no pudo confirmar la entrega y
+   seguir atendiendo comandos. Desbloquea y envía `/start` para continuar.
+
+Todas las referencias deben tener `TK-` y al menos seis dígitos. La POC no
+verifica su existencia en la base ni crea tickets. El rol elegido aquí solo
+empareja chats; no asigna responsables reales. Las sesiones se pierden al
+reiniciar, incluida una recarga de `tsx watch`.
+
+El texto plano y los archivos enviados aquí son conversación para el otro
+participante, **no notas internas**. La POC no consume notas del HelpDesk y no
+reenvía comandos, incluido un `/nota` desconocido.
+
+Los envíos no se reintentan. Si falla una copia o su etiqueta, se avisa al emisor;
+si también falla ese aviso, queda un resultado fallido con IDs en el log. Una
+etiqueta ya enviada puede quedar sin su copia. Ante un error de red no siempre
+se puede saber si Telegram alcanzó a entregar el mensaje: el aviso indica que
+no se confirmó la entrega. Un fallo del polling detiene el proceso con error;
+se reinicia manualmente. No hay cola persistente ni cambios de estado del ticket.
+
+Los logs de Telegram solo incluyen IDs, tipo de actualización, resultado y
+código de error, sin textos, archivos, credenciales ni errores originales.
+Las pruebas automáticas usan pasarelas falsas y no necesitan token ni red de
+Telegram: `npm run check`. La integración PostgreSQL previa conserva su skip
+habitual si no está exportada `DATABASE_URL`.
+
+Consulta los [hallazgos técnicos para EP-06](../Documentacion/Telegram-prueba-de-concepto.md).
