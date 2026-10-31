@@ -1,0 +1,200 @@
+.architecture-block {
+  margin: 0 0 var(--space-section);
+}
+.architecture-block .section-title {
+  gap: 15px;
+}
+.architecture-intro {
+  font-size: var(--fs-body);
+  line-height: 1.9;
+  color: var(--muted);
+  max-width: 800px;
+  margin-bottom: var(--space-block);
+}
+.architecture-map {
+  display: grid;
+  grid-template-columns: 1fr 22px 1fr 22px 1fr;
+  align-items: stretch;
+  gap: 12px;
+}
+.architecture-map article {
+  padding: var(--pad-card);
+  min-width: 0;
+}
+.architecture-map h3 {
+  color: #163d7a;
+  margin: 12px 0 var(--space-tight);
+}
+.architecture-map p {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+.architecture-map code {
+  font-size: var(--fs-caption);
+  color: #2355a7;
+  overflow-wrap: anywhere;
+}
+.architecture-arrow {
+  align-self: center;
+  color: #b52c43;
+  text-align: center;
+  font-size: var(--fs-title);
+}
+.architecture-integration {
+  margin: var(--space-item) 0 var(--space-block);
+  padding: 15px 19px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.architecture-integration p {
+  font-size: var(--fs-small);
+  color: #536783;
+  line-height: 1.9;
+  margin: 0;
+}
+.architecture-integration code {
+  overflow-wrap: anywhere;
+  font-size: var(--fs-caption);
+}
+.architecture-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-item);
+  align-items: start;
+}
+.architecture-details {
+  margin-bottom: 0;
+  padding: var(--pad-card);
+  min-width: 0;
+}
+.architecture-details summary {
+  font-weight: 700;
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  cursor: pointer;
+  color: #174589;
+}
+.architecture-details summary::marker {
+  color: var(--red);
+}
+.architecture-details>p {
+  margin-top: 17px;
+}
+.architecture-details .project-tree {
+  margin: 17px 0;
+  max-height: 520px;
+  overflow: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+  font-size: var(--fs-caption);
+  line-height: 1.95;
+}
+.technology-list {
+  margin: 17px 0 0;
+}
+.technology-list>div {
+  border-top: 1px solid var(--line);
+  padding: 14px 0;
+}
+.technology-list>div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.technology-list dt {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: #174589;
+  margin-bottom: 6px;
+}
+.technology-list dd {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--muted);
+  line-height: 1.85;
+}
+.technology-list dd b {
+  font-weight: 600;
+  color: #29456e;
+}
+.architecture-source {
+  margin-top: 20px;
+}
+@media (max-width:1050px) {
+  .architecture-columns {
+    grid-template-columns: 1fr;
+  }
+  .architecture-map article {
+    padding: 16px;
+  }
+  .architecture-map {
+    gap: 6px;
+    grid-template-columns: 1fr 14px 1fr 14px 1fr;
+  }
+}
+@media (max-width:760px) {
+  .architecture-block .section-title>.badge {
+    display: inline-block;
+    margin-top: 12px;
+  }
+  .architecture-map {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .architecture-map article {
+    padding: 20px;
+  }
+  .architecture-arrow {
+    transform: rotate(90deg);
+    font-size: 18px;
+    line-height: 1;
+  }
+  .architecture-integration {
+    display: block;
+  }
+  .architecture-integration p {
+    margin-top: 10px;
+  }
+  .architecture-details {
+    padding: 20px;
+  }
+  .architecture-details .project-tree {
+    font-size: 10px;
+    padding: 12px;
+  }
+  .architecture-columns {
+    gap: 14px;
+  }
+}
+@media screen {
+  [data-theme=dark] .architecture-map h3,
+  [data-theme=dark] .technology-list dt,
+  [data-theme=dark] .architecture-details summary {
+    color: #c1d8ff;
+  }
+  [data-theme=dark] .architecture-map code {
+    color: #a4c6ff;
+  }
+  [data-theme=dark] .architecture-integration p {
+    color: #b5c7e2;
+  }
+  [data-theme=dark] .technology-list dd b {
+    color: #c4d5ee;
+  }
+  [data-theme=dark] .architecture-arrow {
+    color: #ff93a9;
+  }
+}
+@media print {
+  .architecture-map article,
+  .architecture-details {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+  .architecture-details .project-tree {
+    max-height: none;
+    overflow: visible;
+  }
+}

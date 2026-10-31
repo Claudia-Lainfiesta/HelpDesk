@@ -1,0 +1,225 @@
+/* El footer abarca ambas columnas; la navegación termina antes de él. */
+body {
+  display: block;
+  min-height: 100vh;
+}
+.workspace-layout {
+  display: grid;
+  grid-template-columns: 244px minmax(0,1fr);
+  min-height: 100vh;
+}
+.sidebar {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  inset: auto;
+  top: 0;
+  align-self: start;
+  width: auto;
+  height: 100vh;
+}
+.shell {
+  grid-column: 2;
+  grid-row: 1;
+  margin-left: 0;
+  min-width: 0;
+}
+footer.company-footer {
+  grid-column: 1/-1;
+  grid-row: 2;
+  display: block;
+  width: 100%;
+  margin: var(--space-section) 0 0;
+  padding: 0;
+  border: 0;
+  border-top: 2px solid #bd2741;
+  border-radius: 0;
+  background: #e7edf8;
+  color: #526582;
+}
+.company-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 12px 44px;
+}
+.company-identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.company-logo-frame {
+  flex: 0 0 108px;
+  width: 108px;
+  line-height: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.company-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.company-copy {
+  min-width: 0;
+}
+.company-footer .company-kicker {
+  display: block;
+  font-size: var(--fs-caption);
+  letter-spacing: 1.6px;
+  font-weight: 700;
+  color: #31568f;
+  margin-bottom: 4px;
+}
+.company-footer .company-name {
+  display: block;
+  font: 800 var(--fs-title)/1.2 var(--font-display);
+  letter-spacing: -.5px;
+  color: #15396e;
+  margin: 0 0 4px;
+}
+.company-footer .company-tagline {
+  font-size: var(--fs-caption);
+  line-height: 1.6;
+  color: #a8233b;
+  margin: 0;
+  font-weight: 600;
+}
+.company-footer .footer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+  font-size: var(--fs-caption);
+  line-height: 1.7;
+  color: #526582;
+}
+.company-footer .footer-meta b {
+  color: #173d79;
+}
+.company-footer .footer-meta button {
+  white-space: nowrap;
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: var(--fs-small);
+}
+@media (max-width:1100px) {
+  .workspace-layout {
+    grid-template-columns: 205px minmax(0,1fr);
+  }
+}
+@media (max-width:760px) {
+  .workspace-layout {
+    grid-template-columns: minmax(0,1fr);
+    grid-template-rows: auto 1fr;
+  }
+  .sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    top: auto;
+    width: 100%;
+    height: auto;
+  }
+  .shell {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  footer.company-footer {
+    grid-column: 1;
+    grid-row: 3;
+    margin-top: 24px;
+  }
+  .company-footer-inner {
+    padding: 12px 20px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .company-identity {
+    gap: 14px;
+  }
+  .company-logo-frame {
+    flex-basis: 90px;
+    width: 90px;
+  }
+  .company-footer .company-name {
+    font-size: 19px;
+  }
+  .company-footer .footer-meta {
+    justify-content: space-between;
+    width: 100%;
+    gap: 15px;
+    padding-top: 9px;
+    border-top: 1px solid #cbd8ec;
+    font-size: 9px;
+  }
+  .company-footer .footer-meta button {
+    font-size: 9px;
+  }
+}
+@media screen {
+  [data-theme=dark] footer.company-footer {
+    background: #0d1a2e;
+    border-top-color: #cf3b55;
+    color: #b7c9e5;
+  }
+  [data-theme=dark] .company-footer .company-kicker {
+    color: #adcaff;
+  }
+  [data-theme=dark] .company-footer .company-name {
+    color: #f0f5ff;
+  }
+  [data-theme=dark] .company-footer .company-tagline {
+    color: #ff9db2;
+  }
+  [data-theme=dark] .company-footer .footer-meta {
+    color: #b7c9e5;
+    border-color: #314967;
+  }
+  [data-theme=dark] .company-footer .footer-meta b {
+    color: #b7d3ff;
+  }
+  [data-theme=dark] .company-logo-frame {
+    background: radial-gradient(ellipse,#c4d7ff30,transparent 72%);
+  }
+  [data-theme=dark] .company-logo {
+    filter: drop-shadow(0 0 1px #e1ebff30);
+  }
+}
+@media print {
+  body,
+  .workspace-layout {
+    display: block;
+    min-height: 0;
+  }
+  .sidebar {
+    display: none;
+  }
+  .shell {
+    margin: 0;
+  }
+  footer.company-footer {
+    background: white;
+    break-inside: avoid;
+    margin-top: 20px;
+  }
+  .company-footer-inner {
+    padding: 10px 15px;
+    max-width: none;
+  }
+  .company-logo-frame {
+    width: 80px;
+    flex-basis: 80px;
+  }
+  .company-footer .footer-meta button {
+    display: none;
+  }
+}
