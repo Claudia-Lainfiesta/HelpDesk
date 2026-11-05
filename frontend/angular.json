@@ -40,7 +40,13 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/rutas-desarrollo.ts",
+                  "with": "src/app/rutas-desarrollo.produccion.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,

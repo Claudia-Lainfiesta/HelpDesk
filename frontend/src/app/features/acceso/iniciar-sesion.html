@@ -1,0 +1,79 @@
+<main class="grid min-h-dvh lg:grid-cols-[39%_61%]">
+  <section
+    class="flex items-center justify-center border-r border-linea bg-superficie px-7 py-12 lg:px-10 xl:px-14"
+    aria-labelledby="titulo-acceso"
+  >
+    <div class="w-full max-w-[450px]">
+      <app-marca />
+      <h1 id="titulo-acceso" class="mt-8">Iniciar sesión</h1>
+      <p class="mt-2 text-base text-texto-suave">Uso interno de la empresa</p>
+      @if (auth.sesionTerminada()) {
+        <div class="mt-6">
+          <app-alerta variante="info">Tu sesión terminó. Inicia sesión de nuevo.</app-alerta>
+        </div>
+      }
+      @if (error()) {
+        <div class="mt-6">
+          <app-alerta variante="peligro">{{ error() }}</app-alerta>
+        </div>
+      }
+      <form class="mt-7 space-y-5" [formGroup]="formulario" (ngSubmit)="entrar()" novalidate>
+        <app-campo-texto
+          identificador="correo"
+          etiqueta="Correo"
+          tipo="email"
+          icono="correo"
+          marcador="nombre@empresa.com"
+          autocompletar="username"
+          formControlName="correo"
+          [error]="errorCampo('correo')"
+        />
+        <app-campo-texto
+          identificador="contrasena"
+          etiqueta="Contraseña"
+          tipo="password"
+          icono="candado"
+          marcador="Tu contraseña"
+          autocompletar="current-password"
+          formControlName="contrasena"
+          [error]="errorCampo('contrasena')"
+        />
+        <app-boton tipo="submit" [anchoCompleto]="true" [cargando]="auth.cargando()"
+          >Entrar</app-boton
+        >
+      </form>
+      <div class="mt-6 text-center">
+        <a
+          routerLink="/recuperar-contrasena"
+          class="rounded-boton text-texto-suave underline-offset-4 hover:text-primario hover:underline"
+          >¿Olvidaste tu contraseña?</a
+        >
+      </div>
+    </div>
+  </section>
+  <section
+    class="fondo-rejilla hidden items-center justify-center px-12 lg:flex xl:px-16"
+    aria-labelledby="titulo-presentacion"
+  >
+    <div class="w-full max-w-[610px]">
+      <h2
+        id="titulo-presentacion"
+        class="text-[34px] leading-tight font-bold tracking-tight text-primario"
+      >
+        <span class="block">Todas las solicitudes de</span> soporte, en un solo lugar.
+      </h2>
+      <ul class="mt-8 space-y-5 text-base text-texto-suave">
+        <li class="flex items-center gap-5">
+          <app-icono nombre="ticket" class="text-acento" [tamano]="24" />Registra cada solicitud con
+          su número
+        </li>
+        <li class="flex items-center gap-5">
+          <app-icono nombre="usuarios" class="text-acento" [tamano]="24" />Asigna al agente indicado
+        </li>
+        <li class="flex items-center gap-5">
+          <app-icono nombre="reporte" class="text-acento" [tamano]="24" />Mide tiempos y resultados
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>

@@ -1,0 +1,77 @@
+<section aria-labelledby="titulo-tickets">
+  <div class="flex flex-wrap items-center justify-between gap-5">
+    <h1 id="titulo-tickets">Tickets</h1>
+    <div class="flex flex-wrap items-center gap-3">
+      <app-campo-texto
+        identificador="buscar-tickets"
+        etiqueta="Buscar tickets por número o asunto"
+        [ocultarEtiqueta]="true"
+        tipo="search"
+        icono="buscar"
+        marcador="Buscar por número o asunto"
+        [formControl]="busqueda"
+        class="w-[300px]"
+      />
+      <app-boton icono="mas" (accion)="aviso.set(true)">Nuevo ticket</app-boton>
+    </div>
+  </div>
+  @if (aviso()) {
+    <div class="mt-5">
+      <app-alerta variante="info">La creación de tickets estará disponible pronto.</app-alerta>
+    </div>
+  }
+  <div class="mt-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar tickets por estado">
+    <app-filtro [activo]="filtro() === 'todos'" (seleccionado)="filtro.set('todos')"
+      >Todos</app-filtro
+    >
+    @for (estado of filtros; track estado.codigo) {
+      <app-filtro
+        [activo]="filtro() === estado.codigo"
+        (seleccionado)="filtro.set(estado.codigo)"
+        >{{ estado.etiqueta }}</app-filtro
+      >
+    }
+  </div>
+  <p class="mt-4 text-xs text-texto-suave">Datos de ejemplo</p>
+  <div
+    class="mt-4 overflow-x-auto rounded-boton"
+    tabindex="0"
+    role="region"
+    aria-label="Lista de tickets con desplazamiento horizontal"
+  >
+    <div class="min-w-[928px] xl:min-w-[1116px]" role="table" aria-label="Tickets de ejemplo">
+      <div
+        role="row"
+        class="grid grid-cols-[90px_minmax(220px,1fr)_150px_120px_112px_84px] xl:grid-cols-[110px_minmax(280px,1fr)_170px_140px_140px_96px] gap-3 px-5 py-4 text-xs font-semibold tracking-wide text-texto-suave uppercase"
+      >
+        @for (
+          columna of ['Ticket', 'Asunto', 'Categoría', 'Estado', 'Agente', 'Fecha'];
+          track columna
+        ) {
+          <span role="columnheader">{{ columna }}</span>
+        }
+      </div>
+      <div class="space-y-2.5" role="rowgroup">
+        @for (ticket of visibles(); track ticket.referencia) {
+          <app-tarjeta role="row"
+            ><div
+              class="grid min-h-[60px] grid-cols-[90px_minmax(220px,1fr)_150px_120px_112px_84px] xl:grid-cols-[110px_minmax(280px,1fr)_170px_140px_140px_96px] items-center gap-3 px-5 py-4"
+            >
+              <span role="cell" class="font-semibold">{{ ticket.referencia }}</span>
+              <span role="cell" class="font-medium">{{ ticket.asunto }}</span>
+              <span role="cell" class="text-texto-suave">{{ ticket.categoria }}</span>
+              <span role="cell"><app-insignia-estado [codigo]="ticket.estado" /></span>
+              <span role="cell" class="text-texto-suave">{{ ticket.agente }}</span>
+              <span role="cell" class="text-texto-suave">{{ ticket.fecha }}</span>
+            </div></app-tarjeta
+          >
+        }
+      </div>
+    </div>
+  </div>
+  @if (visibles().length === 0) {
+    <p class="py-10 text-center text-texto-suave" role="status">
+      No hay tickets de ejemplo que coincidan con tu búsqueda.
+    </p>
+  }
+</section>

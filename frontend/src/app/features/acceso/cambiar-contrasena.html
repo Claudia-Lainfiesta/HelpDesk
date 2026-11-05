@@ -1,0 +1,74 @@
+@if (obligatorio()) {
+  <main class="mx-auto max-w-xl px-6 py-12">
+    <div class="mb-8"><app-marca /></div>
+    <ng-container [ngTemplateOutlet]="contenido" />
+  </main>
+} @else {
+  <app-shell
+    ><div class="mx-auto max-w-xl"><ng-container [ngTemplateOutlet]="contenido" /></div
+  ></app-shell>
+}
+<ng-template #contenido>
+  <app-tarjeta
+    ><section class="p-7" aria-labelledby="titulo-cambio">
+      <h1 id="titulo-cambio">Cambiar contraseña</h1>
+      <p class="mt-3 text-texto-suave">Elige una contraseña que solo tú conozcas.</p>
+      @if (obligatorio()) {
+        <div class="mt-5">
+          <app-alerta variante="aviso"
+            >Tu contraseña es temporal. Debes elegir una nueva para continuar.</app-alerta
+          >
+        </div>
+      }
+      @if (error()) {
+        <div class="mt-5">
+          <app-alerta variante="peligro">{{ error() }}</app-alerta>
+        </div>
+      }
+      <form [formGroup]="formulario" (ngSubmit)="cambiar()" class="mt-6 space-y-5" novalidate>
+        <app-campo-texto
+          identificador="actual"
+          etiqueta="Contraseña actual"
+          tipo="password"
+          icono="candado"
+          autocompletar="current-password"
+          formControlName="actual"
+          [error]="errorCampo('actual')"
+        />
+        <app-campo-texto
+          identificador="nueva"
+          etiqueta="Nueva contraseña"
+          tipo="password"
+          icono="llave"
+          autocompletar="new-password"
+          ayuda="Entre 10 y 128 caracteres, distinta del correo y de la contraseña actual. No exige combinaciones de letras o símbolos."
+          formControlName="nueva"
+          [error]="errorCampo('nueva')"
+        />
+        <app-campo-texto
+          identificador="confirmacion"
+          etiqueta="Confirmar nueva contraseña"
+          tipo="password"
+          icono="llave"
+          autocompletar="new-password"
+          formControlName="confirmacion"
+          [error]="errorCampo('confirmacion')"
+        />
+        <app-boton tipo="submit" [cargando]="auth.cargando()" [anchoCompleto]="true"
+          >Guardar contraseña</app-boton
+        >
+      </form>
+      @if (obligatorio()) {
+        <div class="mt-4 text-center">
+          <app-boton
+            variante="fantasma"
+            icono="salir"
+            [deshabilitado]="auth.cargando()"
+            (accion)="salir()"
+            >Cerrar sesión</app-boton
+          >
+        </div>
+      }
+    </section></app-tarjeta
+  >
+</ng-template>

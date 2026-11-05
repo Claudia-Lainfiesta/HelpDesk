@@ -1,3 +1,98 @@
-/* You can add global styles to this file, and also import other style files */
-
+@import '@fontsource-variable/figtree';
 @import 'tailwindcss';
+
+@theme static {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-inherit: inherit;
+  --color-fondo: #edf1f6;
+  --color-superficie: #ffffff;
+  --color-superficie-suave: #f5f8fc;
+  --color-linea: #dbe2ea;
+  --color-texto: #0d1d2e;
+  --color-texto-suave: #53627a;
+  --color-primario: #0e2a52;
+  --color-primario-hover: #173a6b;
+  --color-sobre-primario: #ffffff;
+  --color-acento: #f4811f;
+  --color-foco: var(--color-acento);
+  --color-estado-creado: #3d506f;
+  --color-estado-creado-suave: #e8edf7;
+  --color-estado-en-proceso: #126780;
+  --color-estado-en-proceso-suave: #dcf3fb;
+  --color-estado-en-espera: #845202;
+  --color-estado-en-espera-suave: #fdeed0;
+  --color-estado-resuelto: #10653f;
+  --color-estado-resuelto-suave: #dcf4e6;
+  --color-estado-cerrado: #4d5260;
+  --color-estado-cerrado-suave: #e7eaef;
+  --color-estado-cancelado: #89221f;
+  --color-estado-cancelado-suave: #fde2e4;
+  --color-exito: #10653f;
+  --color-exito-suave: #dcf4e6;
+  --color-aviso: #845202;
+  --color-aviso-suave: #fdeed0;
+  --color-peligro: #b42318;
+  --color-peligro-suave: #fde2e4;
+  --color-info: #126780;
+  --color-info-suave: #dcf3fb;
+  --radius-boton: 0.5rem;
+  --radius-tarjeta: 0.875rem;
+  --radius-insignia: 9999px;
+  --shadow-tarjeta: 0 1px 2px color-mix(in srgb, var(--color-texto) 6%, transparent);
+  --font-sans: 'Figtree Variable', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--color-texto);
+    background: var(--color-fondo);
+  }
+  button,
+  input {
+    font: inherit;
+  }
+  button,
+  a {
+    -webkit-tap-highlight-color: var(--color-transparent);
+  }
+  button:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 3px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-primario);
+  }
+}
+.fondo-rejilla {
+  background-color: var(--color-fondo);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-linea) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-linea) 45%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 32px 32px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

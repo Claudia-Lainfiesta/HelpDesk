@@ -1,0 +1,89 @@
+<a
+  href="#contenido"
+  class="sr-only z-50 rounded-boton bg-superficie p-3 text-primario focus:not-sr-only focus:absolute focus:top-2 focus:left-2"
+  >Saltar al contenido</a
+>
+<header class="border-b border-linea bg-superficie">
+  <div class="relative flex min-h-[72px] flex-wrap items-center gap-5 px-6 py-3 lg:px-8">
+    <a routerLink="/tickets" aria-label="HelpDesk, ir a tickets" class="rounded-boton"
+      ><app-marca
+    /></a>
+    <button
+      #desplegarNavegacion
+      type="button"
+      class="ml-auto rounded-boton p-2 text-primario lg:hidden"
+      aria-label="Mostrar navegación"
+      [attr.aria-expanded]="menuNavegacion()"
+      aria-controls="navegacion"
+      (click)="menuNavegacion.set(!menuNavegacion())"
+    >
+      <app-icono nombre="menu" />
+    </button>
+    <nav
+      id="navegacion"
+      aria-label="Navegación principal"
+      [class]="
+        'order-last w-full gap-1 lg:order-none lg:flex lg:w-auto ' +
+        (menuNavegacion() ? 'flex flex-wrap' : 'hidden')
+      "
+    >
+      @for (enlace of enlaces(); track enlace.ruta) {
+        <a
+          [routerLink]="enlace.ruta"
+          routerLinkActive="bg-fondo text-primario"
+          #activo="routerLinkActive"
+          [class.text-texto-suave]="!activo.isActive"
+          ariaCurrentWhenActive="page"
+          (click)="menuNavegacion.set(false)"
+          class="inline-flex min-h-10 items-center gap-2.5 rounded-boton px-3.5 py-2 font-medium hover:bg-fondo"
+          ><app-icono [nombre]="enlace.icono" />{{ enlace.etiqueta }}</a
+        >
+      }
+    </nav>
+    <div class="relative lg:ml-auto" data-menu-usuario>
+      <button
+        #avatar
+        type="button"
+        class="flex h-10 w-10 items-center justify-center rounded-insignia bg-primario font-semibold text-sobre-primario"
+        [attr.aria-label]="'Menú de ' + auth.usuario()?.fullName"
+        [attr.aria-expanded]="menuUsuario()"
+        [attr.aria-controls]="menuUsuario() ? 'menu-usuario' : null"
+        (click)="menuUsuario.set(!menuUsuario())"
+      >
+        {{ iniciales() }}
+      </button>
+      @if (menuUsuario()) {
+        <div
+          id="menu-usuario"
+          class="absolute top-full right-0 z-20 mt-3 w-64 rounded-tarjeta border border-linea bg-superficie p-2 shadow-tarjeta"
+        >
+          <p class="truncate border-b border-linea px-3 py-3 font-semibold">
+            {{ auth.usuario()?.fullName }}
+          </p>
+          <a
+            routerLink="/cambiar-contrasena"
+            class="mt-1 flex items-center gap-3 rounded-boton px-3 py-2.5 text-texto hover:bg-fondo"
+            (click)="menuUsuario.set(false)"
+            ><app-icono nombre="llave" />Cambiar contraseña</a
+          >
+          <button
+            type="button"
+            [disabled]="auth.cargando()"
+            (click)="salir()"
+            class="flex w-full items-center gap-3 rounded-boton px-3 py-2.5 text-texto hover:bg-fondo disabled:opacity-60"
+          >
+            <app-icono nombre="salir" />Cerrar sesión
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>
+<main id="contenido" tabindex="-1" class="mx-auto max-w-[1244px] px-6 py-8 lg:px-8">
+  @if (error()) {
+    <div class="mb-5">
+      <app-alerta variante="peligro">{{ error() }}</app-alerta>
+    </div>
+  }
+  <router-outlet /><ng-content />
+</main>
