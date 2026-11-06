@@ -48,6 +48,8 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
+      MAIL_FROM: sender@example.invalid
+      RECOVERY_ADMIN_EMAIL: admin@example.invalid
       NODE_ENV: test
       PORT: 3000
       FRONTEND_ORIGIN: http://localhost:4200

@@ -2,8 +2,12 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import type { Express } from 'express';
 
-vi.mock('../../src/config/env.js', () => ({
+vi.mock('../../src/config/env.js', async () => ({
   env: {
+    mail: (await import('../../src/mail/config.js')).parseMailConfig({
+      MAIL_FROM: 'sender@example.invalid',
+      RECOVERY_ADMIN_EMAIL: 'admin@example.invalid',
+    }),
     frontendOrigin: 'http://localhost:4200',
     nodeEnv: 'test',
     trustProxy: false,

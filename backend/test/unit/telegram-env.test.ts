@@ -34,6 +34,8 @@ it('config/env.ts arranca sin token de Telegram', async () => {
   vi.stubEnv('DATABASE_URL', 'postgresql://unit_test:unit_test@localhost:5432/unit_test');
   vi.stubEnv('POSTGRES_USER', 'unit_test');
   vi.stubEnv('POSTGRES_PASSWORD', 'unit_test');
+  vi.stubEnv('MAIL_FROM', 'sender@example.invalid');
+  vi.stubEnv('RECOVERY_ADMIN_EMAIL', 'admin@example.invalid');
   vi.stubEnv('TELEGRAM_BOT_TOKEN', '');
   vi.stubEnv('TELEGRAM_ALLOWED_USER_IDS', '');
   const { env } = await import('../../src/config/env.js');

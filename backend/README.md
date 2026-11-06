@@ -172,6 +172,26 @@ curl -i http://localhost:4200/api/health
 arranque y cierre. `src/config/`, `src/db/`, `src/routes/` y `src/middlewares/`
 separan configuración, conexión, rutas y manejo de errores.
 
+## Correo y recuperación asistida
+
+Consulta [correo SMTP y recuperación](docs/email-and-recovery.md) para el flujo,
+las variables y los perfiles Mailpit/Brevo. La solicitud pública solo avisa al
+administrador; la contraseña temporal sigue mostrándose una vez en HelpDesk y
+se entrega por otro medio, nunca por correo.
+
+```bash
+npm run mail:up
+npm run mail:check
+npm run mail:logs
+```
+
+Mailpit está en http://127.0.0.1:8025 y su SMTP en 127.0.0.1:1025. Define
+`MAIL_FROM` y `RECOVERY_ADMIN_EMAIL` en `.env`; el resto tiene valores locales
+predeterminados. `SMTP_USER` y `SMTP_PASSWORD` quedan vacíos para Mailpit.
+`mail:check` verifica sin enviar y sin mostrar credenciales. `db:up` sigue
+comprobando solo PostgreSQL; `db:down` detiene todos los servicios del compose.
+El aviso se ejecuta como tarea best effort sin cola persistente ni reintentos.
+
 ## Telegram (desarrollo)
 
 Prueba de concepto S0-06 con grammY, long polling y sesiones en memoria. La API

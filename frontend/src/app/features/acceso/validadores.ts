@@ -8,6 +8,7 @@ import {
 
 export function validarCorreo(control: AbstractControl): ValidationErrors | null {
   const valor = String(control.value ?? '').trim();
+  if (valor.length > 254) return { maxlength: true };
   return valor ? Validators.email(new FormControl(valor)) : { required: true };
 }
 export function politicaContrasena(correo: () => string): ValidatorFn {

@@ -7,6 +7,8 @@ vi.mock('dotenv', () => ({ default: { config: vi.fn() } }));
 
 beforeEach(() => {
   vi.resetModules();
+  vi.stubEnv('MAIL_FROM', 'sender@example.invalid');
+  vi.stubEnv('RECOVERY_ADMIN_EMAIL', 'admin@example.invalid');
   vi.stubEnv('NODE_ENV', 'test');
   vi.stubEnv('PORT', '3000');
   vi.stubEnv('FRONTEND_ORIGIN', 'http://localhost:4200');

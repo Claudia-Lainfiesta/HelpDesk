@@ -32,7 +32,10 @@
     "telegram:dev": "tsx watch src/telegram-poc.ts",
     "telegram:check": "tsx src/telegram-check.ts",
     "user:create-admin": "tsx src/auth/create-admin.ts",
-    "auth:purge-sessions": "tsx src/auth/purge-sessions.ts"
+    "auth:purge-sessions": "tsx src/auth/purge-sessions.ts",
+    "mail:check": "tsx src/mail/check.ts",
+    "mail:up": "podman compose up -d mailpit",
+    "mail:logs": "podman compose logs -f mailpit"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.2",
@@ -43,6 +46,7 @@
     "express-rate-limit": "8.7.1",
     "grammy": "1.46.0",
     "helmet": "^8.1.0",
+    "nodemailer": "10.3.1",
     "pg": "^8.16.0",
     "zod": "4.6.7"
   },

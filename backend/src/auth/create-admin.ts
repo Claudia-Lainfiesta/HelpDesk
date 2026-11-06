@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { pool } from '../db/pool.js';
 import { ApiError } from './errors.js';
 import { hashPassword, validatePasswordPolicy } from './password.js';
-import { emailSchema } from './routes.js';
+import { emailSchema } from './validation.js';
 
 async function hiddenPassword(prompt: string): Promise<string> {
   emitKeypressEvents(stdin);

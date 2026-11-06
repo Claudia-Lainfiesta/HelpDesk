@@ -46,7 +46,7 @@ aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
 
 - `/iniciar-sesion`: acceso mediante correo y contraseña.
 - `/cambiar-contrasena`: cambio voluntario u obligatorio por contraseña temporal.
-- `/recuperar-contrasena`: indica que hay que contactar al administrador.
+- `/recuperar-contrasena`: solicita ayuda con aviso administrativo, sin restablecimiento automático.
 - `/tickets`: seis ejemplos locales del PDF, buscador y filtros por estado.
 - `/categorias` y `/usuarios`: administración real, disponible solo para el administrador.
 - `/reportes`: marcador para supervisor y administrador.
@@ -67,8 +67,27 @@ sesión vencida que quizá nunca existió. La restauración tiene un límite de 
 
 Las guardas y la navegación por rol mejoran la experiencia. La autorización
 real sigue en el backend. No hay todavía gestión real de tickets,
-directorio corporativo ni recuperación por correo. Nuevo ticket
+directorio corporativo ni recuperación automática por enlace. Nuevo ticket
 muestra un aviso; no crea registros ni llama a una API de tickets.
+
+## Recuperación asistida
+
+La pantalla pide un correo y llama a `POST /api/auth/recovery-request`. Muestra
+una confirmación genérica, sin indicar existencia, proveedor o estado de la
+cuenta. El servidor avisa a administración únicamente para cuentas locales
+activas y no vencidas. La solicitud no cambia contraseña ni sesiones y tampoco
+envía contraseñas por correo. Administración comprueba la identidad antes del
+restablecimiento existente y entrega la clave temporal por otro medio.
+
+El formulario recorta el correo, impide doble envío, limpia el campo al aceptar
+y no guarda el correo en URL, almacenamiento ni consola. Un exceso muestra el
+mensaje genérico de límite; los fallos de red usan el tratamiento habitual.
+Los usuarios de directorio se orientan al procedimiento corporativo posterior.
+
+Para comprobar los avisos locales, desde `backend/` ejecuta `npm run mail:up`
+y abre http://127.0.0.1:8025. Consulta la [guía de correo y recuperación](../backend/docs/email-and-recovery.md)
+para Mailpit, Brevo y sus limitaciones. El `202` acepta la solicitud y no asegura
+entrega: todavía no hay cola persistente ni reintentos durables.
 
 ## Usuarios y categorías
 

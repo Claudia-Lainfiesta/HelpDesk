@@ -16,6 +16,7 @@ const metadataSchema = z
   .strict();
 
 export type AuditAction =
+  | 'auth.recovery_requested'
   | 'users.created'
   | 'users.updated'
   | 'users.role_changed'
@@ -35,6 +36,7 @@ export interface AuditActor {
 }
 export interface AuditEvent {
   actor: AuditActor | null;
+  ip?: string;
   action: AuditAction;
   targetType: 'user' | 'category';
   targetId: string;
@@ -47,6 +49,7 @@ export async function recordAudit(
 ): Promise<void> {
   const parsed = metadataSchema.safeParse(event.metadata ?? {});
   if (!parsed.success) throw new Error('Metadatos de auditoría no permitidos.');
+  const ip = event.ip ?? event.actor?.ip;
   await client.query(
     `INSERT INTO audit_events (actor_user_id, action, target_type, target_id, metadata, ip)
     VALUES ($1, $2, $3, $4, $5::jsonb, $6)`,
@@ -56,7 +59,7 @@ export async function recordAudit(
       event.targetType,
       event.targetId,
       JSON.stringify(parsed.data),
-      event.actor?.ip && isIP(event.actor.ip) ? event.actor.ip : null,
+      ip && isIP(ip) ? ip : null,
     ],
   );
 }

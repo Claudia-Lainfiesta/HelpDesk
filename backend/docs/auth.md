@@ -6,6 +6,11 @@ contraseña y sesiones en PostgreSQL, sin JWT ni tokens en el almacenamiento del
 navegador. La [guía de usuarios y categorías](users-and-categories.md) describe
 el alta y las operaciones disponibles para el administrador.
 
+La [recuperación asistida por aviso SMTP](email-and-recovery.md) permite pedir
+ayuda sin sesión. No restablece contraseñas automáticamente ni las envía por
+correo; el administrador conserva la operación de reset existente y verifica
+la identidad antes de usarla.
+
 ## Contraseñas y sesiones
 
 Las contraseñas admiten de 10 a 128 caracteres Unicode y no pueden ser iguales
@@ -60,6 +65,14 @@ correo, contraseña, hash, cookie, token ni cuerpo de la petición. Los errores
 inesperados registran únicamente código y estado, sin el error original.
 
 ## Endpoints
+
+`POST /api/auth/recovery-request` recibe `{ "email": "persona@example.invalid" }`
+y responde `202` con el mismo mensaje genérico para cuentas elegibles y no
+elegibles. Es público, exige JSON y origen permitido y tiene límites propios:
+10 por IP cada 15 minutos y 3 por correo normalizado cada hora. El aviso solo
+se genera para local activa y no vencida (también si está bloqueada). Se procesa
+antes de cargar sesión y no modifica credenciales ni sesiones. Consulta el
+contrato completo, auditoría y variables en la guía de correo.
 
 Todos los errores tienen este formato; no incluyen stack traces:
 
@@ -245,7 +258,8 @@ Las cuentas creadas con `temporary: true` conservan un vencimiento obligatorio:
 `TEMP_ACCOUNT_DEFAULT_DAYS` y `TEMP_ACCOUNT_MAX_DAYS`. El vencimiento invalida
 el acceso en cada petición, sin tareas programadas.
 
-Todavía no se incluyen frontend de acceso, recuperación por correo, SSO,
-inicio de sesión corporativo ni integración de autenticación con Telegram.
+Existe frontend de acceso y solicitud de ayuda por aviso administrativo SMTP.
+No se incluyen recuperación automática por enlaces/códigos, SSO, inicio de sesión
+corporativo ni integración de autenticación con Telegram.
 Hay auditoría persistente de administración de usuarios y categorías; la
 cobertura completa de auditoría y respaldo de EP-10 llegará después.

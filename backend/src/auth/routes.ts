@@ -14,7 +14,8 @@ import {
 import { changePassword, login } from './service.js';
 import { pool } from '../db/pool.js';
 
-export const emailSchema = z.string().trim().max(254).email().toLowerCase();
+import { emailSchema } from './validation.js';
+export { emailSchema } from './validation.js';
 const passwordInput = z.string().min(1).max(256);
 const loginSchema = z.object({ email: emailSchema, password: passwordInput }).strict();
 const changeSchema = z

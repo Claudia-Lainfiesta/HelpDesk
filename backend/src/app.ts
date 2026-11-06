@@ -13,7 +13,14 @@ import { usersRouter } from './users/routes.js';
 import { categoriesRouter } from './categories/routes.js';
 import type { UserConfig } from './users/config.js';
 
-export function createApp(config: AuthConfig & Partial<UserConfig> = env) {
+import { recoveryRouter } from './auth/recovery/routes.js';
+import type { RecoveryDependencies } from './auth/recovery/routes.js';
+import type { MailConfig } from './mail/config.js';
+
+export function createApp(
+  config: AuthConfig & Partial<UserConfig> & { mail?: MailConfig } = env,
+  recovery?: RecoveryDependencies,
+) {
   const app = express();
 
   app.disable('x-powered-by');
@@ -28,6 +35,8 @@ export function createApp(config: AuthConfig & Partial<UserConfig> = env) {
   app.use(csrfProtection(config));
   app.use(express.json({ limit: '100kb' }));
   app.use('/api/health', healthRouter);
+  // La solicitud pública no carga ni actualiza sesiones, ni hereda el bloqueo por clave temporal.
+  app.use('/api/auth', recoveryRouter(config.mail ?? env.mail, recovery));
   app.use(attachSession(config));
   app.use(enforcePasswordChange);
   app.use('/api/auth', authRouter(config));

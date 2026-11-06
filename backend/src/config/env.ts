@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { parseTelegramEnv } from './telegram-env.js';
 import { parseAuthConfig } from '../auth/config.js';
+import { parseMailConfig } from '../mail/config.js';
 import { parseUserConfig } from '../users/config.js';
 
 // La ruta funciona desde src/ y dist/, independientemente del directorio de ejecución.
@@ -70,4 +71,5 @@ export const env = Object.freeze({
   telegram: parseTelegramEnv(process.env),
   ...parseAuthConfig(process.env),
   ...parseUserConfig(process.env),
+  mail: parseMailConfig(process.env),
 });
