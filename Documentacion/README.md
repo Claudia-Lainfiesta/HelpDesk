@@ -1,21 +1,80 @@
 # HelpDesk
 
-HelpDesk es un proyecto de software orientado a apoyar la organización y atención de necesidades de soporte. Este repositorio reúne la documentación y los recursos que servirán como base para su desarrollo.
+HelpDesk es un sistema web interno de mesa de ayuda, desarrollado como proyecto
+personal/local. Cada cuenta tiene un único rol: solicitante, agente, supervisor
+o administrador. El producto usa autenticación local mediante correo y contraseña.
 
-## Propósito
+## Estado funcional · 6-nov-2026
 
-El proyecto busca construir una solución que facilite la gestión del soporte, aplicando prácticas de análisis, diseño y desarrollo de software. Su alcance se definirá progresivamente a partir de los requerimientos identificados.
+Sprint 1 tiene implementados los núcleos de acceso y administración y Sprint 2
+ya tiene creación, listado, búsqueda, filtros, paginación y detalle de tickets
+persistidos en PostgreSQL. El código y las pruebas son la fuente de verdad;
+las épicas, historias y calendarios describen también trabajo futuro.
 
-## Estado del proyecto
+- Autenticación con Argon2id, cookie HttpOnly y sesiones en el servidor, bloqueo
+  por intentos, expiración, cambio de contraseña y cambio obligatorio tras una
+  contraseña temporal.
+- Administración de usuarios y categorías; cuentas temporales con vencimiento.
+  La contraseña temporal se muestra una vez y se entrega por otro medio.
+- Recuperación asistida: respuesta pública genérica y aviso SMTP a administración.
+  Mailpit sirve para desarrollo y Brevo es configurable para correo real.
+- Tickets reales: todos los roles pueden crear para sí mismos; nacen `creado`,
+  sin agente. Referencia pública `TK-XXXXXX`, mínimo seis dígitos; si el número
+  supera 999999 se conserva completo, por ejemplo `TK-1000001`.
+- Auditoría de operaciones de usuarios, categorías, recuperación elegible y alta
+  de tickets. No equivale a un historial de estados ni a toda la futura EP-10.
+- POC independiente de Telegram con sesiones en memoria y pruebas sin red.
+  No está vinculada a usuarios o tickets reales ni envía notificaciones del caso.
 
-El proyecto se encuentra en una etapa inicial de definición y organización. Las funcionalidades, tecnologías y decisiones de implementación se documentarán conforme avance el trabajo.
+No hay asignación manual, transiciones de estado, conversación integrada,
+comentarios, notas internas, adjuntos, prioridad, SLA, base de conocimiento ni
+reportes reales. `/reportes` es un marcador. Los otros cinco estados aparecen
+en el catálogo, las insignias, filtros y datos del seed, pero no son editables.
 
-## Organización del repositorio
+## Permisos implementados
 
-- `Requerimientos/`: espacio destinado a la documentación de requerimientos del proyecto.
-- `Planificacion/`: backlog y planificación de sprints (`SprintBacklog.md`).
-- `docs/`: página web de la hoja de ruta del proyecto (MVP y sprints), lista para publicarse con GitHub Pages desde `index.html`.
+Todas las operaciones protegidas exigen sesión vigente y cambio de contraseña
+temporal completado. `/me`, logout y cambio de contraseña siguen permitidos
+mientras ese cambio sea obligatorio.
 
-## Documentación
+| Acción | Solicitante | Agente | Supervisor | Administrador |
+| --- | --- | --- | --- | --- |
+| Crear ticket propio | Sí | Sí | Sí | Sí |
+| Ver tickets propios | Sí | Sí | Sí | Sí |
+| Ver tickets de otros | No; responde 404 en detalle | Sí | Sí | Sí |
+| Consultar categorías activas | Sí | Sí | Sí | Sí |
+| Consultar categorías inactivas | No | No | No | Sí |
+| Administrar usuarios | No | No | No | Sí |
+| Administrar categorías | No | No | No | Sí |
+| Cambiar la propia contraseña | Sí | Sí | Sí | Sí |
 
-La documentación se actualizará durante el desarrollo para reflejar los acuerdos, avances y cambios en el alcance del proyecto.
+Las guardas y el menú ayudan en la interfaz; la API vuelve a comprobar permisos.
+Las cuentas temporales usan estos mismos cuatro roles, sin un quinto rol.
+
+## Organización y documentación
+
+No hay README ni paquete npm en la raíz. Cada proyecto lleva sus instrucciones:
+
+- [Backend y endpoints reales](../backend/README.md).
+- [Autenticación y sesiones](../backend/docs/auth.md).
+- [Usuarios y categorías](../backend/docs/users-and-categories.md).
+- [Correo y recuperación asistida](../backend/docs/email-and-recovery.md).
+- [Tickets: API, búsqueda y permisos](../backend/docs/tickets.md).
+- [Base de datos, migraciones y diagrama ER](../backend/db/README.md).
+- [Frontend y rutas](../frontend/README.md).
+- [Diseño y componentes existentes](../frontend/docs/diseno.md).
+- [Pantallas de administración](../frontend/docs/pantallas-administracion.md).
+- [Pantallas de tickets](../frontend/docs/tickets.md).
+- [Guía de contribución y CI](Guia-de-contribucion.md).
+- [Decisiones de producto y pendientes](Decisiones-de-producto.md).
+- [POC de Telegram y límites](Telegram-prueba-de-concepto.md).
+- [Épicas](Requerimientos/Epics.md), [historias](Requerimientos/UserStoryMapping.md)
+  y [Sprint Backlog](Planificacion/SprintBacklog.md): alcance objetivo y cobertura
+  actual separados. Los cuestionarios de `Requerimientos/` son plantillas de
+  análisis, no contratos de la API ni evidencia de funcionalidades entregadas.
+- [Hoja de ruta](docs/index.html) y [bitácora navegable](pagina%20Epicas%20y%20HU/index.html):
+  vistas documentales. Sus planes, fechas y estimaciones no acreditan despliegue,
+  disponibilidad del equipo ni aceptación de historias completas.
+
+Para levantar el proyecto usa las instrucciones de backend/frontend. Los comandos
+npm se ejecutan en su carpeta; no existe un `npm start` en la raíz.

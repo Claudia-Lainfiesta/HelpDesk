@@ -258,7 +258,7 @@ Las cuentas creadas con `temporary: true` conservan un vencimiento obligatorio:
 el acceso en cada petición, sin tareas programadas.
 
 Existe frontend de acceso y solicitud de ayuda por aviso administrativo SMTP.
-No se incluyen recuperación automática por enlaces/códigos, SSO, inicio de sesión
-corporativo ni integración de autenticación con Telegram.
-Hay auditoría persistente de administración de usuarios y categorías; la
+No hay recuperación automática por enlaces/códigos ni integración de
+autenticación con Telegram.
+Hay auditoría persistente de administración, solicitudes elegibles de recuperación y creación de tickets; la
 cobertura completa de auditoría y respaldo de EP-10 llegará después.

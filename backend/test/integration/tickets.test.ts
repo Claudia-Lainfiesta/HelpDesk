@@ -161,9 +161,11 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
         categoryId: category,
       });
       expect(r.status).toBe(201);
+      expect((await list(user)).body.data[0].number).toBe(r.body.number);
+      expect((await detail(r.body.id, user)).body.number).toBe(r.body.number);
       expect(r.headers.location).toBe(`/api/tickets/${r.body.id}`);
       expect(r.body).toMatchObject({
-        number: expect.stringMatching(/^HD-\d{6,}$/),
+        number: expect.stringMatching(/^TK-\d{6,}$/),
         subject: 'Impresora',
         description: 'Dos líneas\nSegunda',
         status: 'creado',
@@ -234,7 +236,13 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
       "UPDATE tickets SET status_id=(SELECT id FROM ticket_statuses WHERE code='en_espera') WHERE id=$1",
       [second.body.id],
     );
-    for (const search of [first.body.number, first.body.number.slice(3), 'IMPRESORA', '%_']) {
+    for (const search of [
+      first.body.number,
+      first.body.number.slice(3),
+      first.body.id,
+      'IMPRESORA',
+      '%_',
+    ]) {
       expect(
         (await list(solicitante, `search=${encodeURIComponent(search)}`)).body.data.map(
           (t: { id: string }) => t.id,
@@ -300,7 +308,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
         "INSERT INTO tickets(id,subject,description,category_id,requester_id) OVERRIDING SYSTEM VALUE VALUES(1000001,'Grande','Texto',$1,$2) RETURNING reference",
         [category, solicitante.id],
       );
-      expect(big.rows[0].reference).toBe('HD-1000001');
+      expect(big.rows[0].reference).toBe('TK-1000001');
       await client.query('ROLLBACK');
     } finally {
       client.release();

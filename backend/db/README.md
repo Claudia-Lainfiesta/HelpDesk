@@ -110,8 +110,11 @@ restablece contraseñas existentes. Consulta [la guía de autenticación](../doc
   `0010_local_accounts_only.sql` exige hash Argon2id para todas las cuentas y
   conserva el vencimiento obligatorio de las cuentas temporales. Una instalación
   vacía permite crear su primer administrador mediante seed o la CLI.
-- `0011_ticket_core.sql` evoluciona tickets con número HD-, límites de asunto y
+- `0011_ticket_core.sql` incorpora límites de asunto y
   descripción, fecha de cancelación e índices de listado; no crea otra tabla.
+- `0012_ticket_reference_tk.sql` cambia la expresión generada de `reference`
+  al formato público TK-, sin modificar IDs, secuencia ni relaciones. Los
+  eventos de auditoría anteriores se conservan.
 - `0009_audit_events.sql` incorpora eventos administrativos. La aplicación solo
   inserta registros y valida una lista de metadatos permitidos sin credenciales
   ni texto libre. El evento y el cambio comparten transacción. Consulta las
@@ -121,17 +124,18 @@ restablece contraseñas existentes. Consulta [la guía de autenticación](../doc
   migración nueva, con ID generado por identity y `sort_order = 6`.
   Identifica los estados por `code`; el valor predeterminado de
   `tickets.status_id` sigue siendo 1 (creado).
-- `reference` es una columna generada almacenada y única: `HD-000001`,
-  `HD-999999`, `HD-1000000`. Los números largos se conservan completos.
+- `reference` es una columna generada almacenada y única: `TK-000001`,
+  `TK-999999`, `TK-1000000`. Los números largos se conservan completos.
 - `category_id`, `requester_id` y `status_id` son obligatorios;
   `assigned_agent_id`, `resolved_at` y `closed_at` admiten NULL.
-- Las relaciones usan `ON DELETE RESTRICT`, sin cascadas. La aplicación usará
-  `users.is_active` para desactivar empleados y no ofrecerá borrado físico de
+- Las relaciones usan `ON DELETE RESTRICT`, sin cascadas. La aplicación usa
+  `users.is_active` para desactivar empleados y no ofrece borrado físico de
   usuarios ni tickets. Las FK por sí solas no impiden borrar filas sin referencias;
-  los permisos de escritura y esa política se definirán con la aplicación.
+  la API aplica permisos y no expone rutas DELETE.
 - Los únicos triggers actualizan `updated_at` en users, categories y tickets.
-  La aplicación validará roles y transiciones, y escribirá las fechas de resolución
-  y cierre. La base no obliga a pasar por estados intermedios.
+  La aplicación valida roles. Las transiciones y la escritura de fechas de
+  resolución/cierre/cancelación quedan pendientes; la base no obliga a pasar
+  por estados intermedios.
 - Las fechas son timestamptz; PostgreSQL conserva instantes y su presentación
   depende de la zona de la sesión. El ejecutor SQL usa UTC.
 
@@ -146,11 +150,11 @@ restablece contraseñas existentes. Consulta [la guía de autenticación](../doc
 | 5     | `cerrado`    | Cerrado    | true       |
 | 6     | `cancelado`  | Cancelado  | true       |
 
-Cerrado significa que el problema se resolvió con éxito y el usuario confirmó
-el cierre. Cancelado significa que se decidió no continuar, por ejemplo porque
-el ticket se registró por error. Solo el supervisor podrá cancelar; esa regla
-se implementará en la aplicación, sin restricciones de rol ni transiciones en
-la base de datos.
+Cerrado representa una resolución exitosa; el texto actual del catálogo menciona
+confirmación del usuario. El acuerdo de producto establece que cierra el agente
+y solo cancela el supervisor; esos endpoints todavía no existen. Cancelado
+significa que se decidió no continuar, por ejemplo por un registro erróneo. Las
+reglas futuras se validarán en la aplicación; la base no restringe transiciones.
 
 El ejemplo cancelado conserva un agente asignado, pero `resolved_at` y
 `closed_at` quedan en NULL: cancelar no representa una resolución exitosa ni

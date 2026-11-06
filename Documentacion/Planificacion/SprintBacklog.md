@@ -4,21 +4,35 @@ Fuente: `Requerimientos/UserStoryMapping.md` y `Requerimientos/Epics.md`. El MVP
 
 **Estado de cada ítem:** Por hacer / En curso / Hecho. Responsable: por asignar.
 
+Corte de código: **6-nov-2026**. Los estados indican cobertura de la historia
+completa: En curso puede incluir un núcleo funcional ya probado y criterios
+más amplios todavía pendientes. No son fechas reales de ejecución ni aceptación
+formal del cliente. El núcleo de Sprint 1 funciona y Sprint 2 ya tiene tickets
+persistidos. Asignación, transiciones, archivos, conversación integrada, SLA y
+reportes continúan pendientes. [Funciones y permisos actuales](../README.md).
+
 ## Sprint 0: Cimientos (Semanas 1 y 2)
 
 **Objetivo:** dejar listo el entorno y las decisiones para empezar a construir. Sin historias de usuario.
 
 | # | Tarea | Responsable | Estado |
 |---|---|---|---|
-| S0-01 | Definir stack tecnológico y forma de despliegue (plataforma web acordada) | | Por hacer |
-| S0-02 | Crear estructura del repositorio, ramas y flujo de trabajo del equipo (revisión de cambios) | | Por hacer |
-| S0-03 | Preparar entorno de desarrollo local reproducible para todo el equipo | | Por hacer |
-| S0-04 | Provisionar base de datos y esquema inicial de usuarios, roles y tickets | | Por hacer |
-| S0-05 | Preparar hosting de pruebas y pipeline de integración continua | | Por hacer |
-| S0-06 | Crear el bot de Telegram de pruebas y confirmar que permite la conversación en ambos sentidos | | Por hacer |
-| S0-07 | Diseñar prototipo de pantallas de los flujos del MVP | | Por hacer |
+| S0-01 | Definir stack tecnológico y forma de despliegue (plataforma web acordada) | | En curso |
+| S0-02 | Crear estructura del repositorio, ramas y flujo de trabajo del equipo (revisión de cambios) | | En curso |
+| S0-03 | Preparar entorno de desarrollo local reproducible para todo el equipo | | En curso |
+| S0-04 | Provisionar base de datos y esquema inicial de usuarios, roles y tickets | | Hecho |
+| S0-05 | Preparar hosting de pruebas y pipeline de integración continua | | En curso |
+| S0-06 | Crear el bot de Telegram de pruebas y confirmar que permite la conversación en ambos sentidos | | En curso |
+| S0-07 | Diseñar prototipo de pantallas de los flujos del MVP | | En curso |
 | S0-08 | Cerrar con el cliente las decisiones pendientes (ver abajo) | | Hecho |
-| S0-09 | Mover el repositorio fuera de iCloud Drive y limpiar los residuos de documentación | | Por hacer |
+| S0-09 | Mover el repositorio fuera de iCloud Drive y limpiar los residuos de documentación | | En curso |
+
+**Evidencia actual de cimientos:** stack Angular 22.2/TypeScript 6/Tailwind 4,
+Express 5/Node 22 y PostgreSQL 17 con Podman; doce migraciones y seed reproducible;
+calidad y workflow CI versionados; PDF de login/listado y pantallas reales.
+Hosting, ajustes de protección de GitHub, prueba en otros equipos y relevo con
+dos cuentas reales no se consideran verificados. La carpeta de trabajo actual
+está en Fedora, fuera de iCloud; quedan metadatos Finder sin uso documental.
 
 **Decisiones del cliente cerradas el 29-oct-2026:**
 
@@ -36,12 +50,17 @@ Los acuerdos y las consideraciones todavía pendientes están en [Decisiones-de-
 
 | ID | Épica | Historia | Rol | Estado |
 |---|---|---|---|---|
-| HU-05-01 | EP-05 | Habilitar una cuenta para un usuario | Administrador | Por hacer |
-| HU-05-03 | EP-05 | Entrar al HelpDesk y cerrar la sesión | Todos | Por hacer |
-| HU-05-05 | EP-05 | Asignar y ajustar roles | Administrador | Por hacer |
-| HU-05-07 | EP-05 | Acceder únicamente a las funciones y datos autorizados | Todos | Por hacer |
-| HU-10-01 | EP-10 | Proteger el acceso y las sesiones | Administrador | Por hacer |
-| HU-09-01 | EP-09 | Mantener categorías de clasificación | Administrador | Por hacer |
+| HU-05-01 | EP-05 | Habilitar una cuenta para un usuario | Administrador | En curso |
+| HU-05-03 | EP-05 | Entrar al HelpDesk y cerrar la sesión | Todos | Hecho |
+| HU-05-05 | EP-05 | Asignar y ajustar roles | Administrador | En curso |
+| HU-05-07 | EP-05 | Acceder únicamente a las funciones y datos autorizados | Todos | En curso |
+| HU-10-01 | EP-10 | Proteger el acceso y las sesiones | Administrador | En curso |
+| HU-09-01 | EP-09 | Mantener categorías de clasificación | Administrador | En curso |
+
+**Cobertura actual:** login/logout, sesiones, cambio de contraseña, recuperación
+asistida, alta/edición/roles/desactivación/reset/unlock, cuentas temporales y
+categorías planas funcionan. Subcategorías y dependencias de enrutamiento siguen pendientes. Los criterios sobre módulos futuros, verificación humana
+de identidad y motivo obligatorio de cambios de rol no están completos.
 
 ## Sprint 2: Solicitudes y asignación (Semanas 5 y 6)
 
@@ -49,11 +68,16 @@ Los acuerdos y las consideraciones todavía pendientes están en [Decisiones-de-
 
 | ID | Épica | Historia | Rol | Estado |
 |---|---|---|---|---|
-| HU-01-01 | EP-01 | Registrar una solicitud de soporte | Solicitante | Por hacer |
-| HU-01-03 | EP-01 | Consultar mis solicitudes | Solicitante | Por hacer |
-| HU-01-05 | EP-01 | Consultar el detalle y el responsable de atención | Solicitante | Por hacer |
+| HU-01-01 | EP-01 | Registrar una solicitud de soporte | Solicitante | En curso |
+| HU-01-03 | EP-01 | Consultar mis solicitudes | Solicitante | En curso |
+| HU-01-05 | EP-01 | Consultar el detalle y el responsable de atención | Solicitante | En curso |
 | HU-03-02 | EP-03 | Identificar solicitudes que necesitan asignación | Supervisor | Por hacer |
 | HU-03-03 | EP-03 | Asignar un ticket al equipo y agente adecuados | Supervisor | Por hacer |
+
+**Cobertura actual:** creación para la sesión, listado con búsqueda/filtros y
+paginación, y detalle con permisos. Tickets nuevos creados y sin agente; no hay
+registro por cuenta de otra persona ni adjuntos. Los tres núcleos de consulta y
+alta no dan por resueltas asignación, historial o criterios futuros de atención.
 
 ## Sprint 3: Atención y cierre (Semanas 7 y 8)
 
@@ -78,7 +102,7 @@ Los acuerdos y las consideraciones todavía pendientes están en [Decisiones-de-
 | HU-05-09 | EP-05 | Vincular una identidad de Telegram | Solicitante | Por hacer |
 | HU-06-08 | EP-06 | Recibir avisos en la aplicación y en Telegram | Todos | Por hacer |
 
-Nota: los tiempos de SLA usan valores fijos de ejemplo en el MVP; su configuración completa (EP-09) queda para después. HU-04-04 ya no depende de Telegram, sino del historial de estados de HU-02-01 y HU-02-09. HU-02-01 y HU-02-02 están en Sprint 3 e incluyen el registro de cambios; HU-02-09 y HU-04-04 no tienen sprint asignado en este MVP. Hay que revisar esa cobertura antes de planificar HU-04-04; no se movieron ni agregaron historias a los sprints.
+Nota: se prevé usar valores fijos de ejemplo para SLA en el MVP; todavía no están implementados; su configuración completa (EP-09) queda para después. HU-04-04 ya no depende de Telegram, sino del historial de estados de HU-02-01 y HU-02-09. HU-02-01 y HU-02-02 están en Sprint 3 e incluyen el registro de cambios; HU-02-09 y HU-04-04 no tienen sprint asignado en este MVP. Hay que revisar esa cobertura antes de planificar HU-04-04; no se movieron ni agregaron historias a los sprints.
 
 ## Sprint 5: Pruebas y entrega (Semanas 11 y 12)
 

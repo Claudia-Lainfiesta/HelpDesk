@@ -1,4 +1,4 @@
-// Estado de cada historia de usuario (HU).
+// Cobertura revisada el 6-nov-2026; no acredita aceptación formal de historias completas.
 // Valores permitidos:
 //   'todo'  = Sin iniciar
 //   'doing' = En proceso
@@ -6,11 +6,11 @@
 // Para cambiar el estado de una HU, modifica su valor aquí. Si una HU no aparece en esta lista, se muestra como "Sin iniciar".
 const HU_STATUS = {
  // EP-01 · Registro de solicitudes y portal del solicitante
- 'HU-01-01': 'todo',
+ 'HU-01-01': 'doing',
  'HU-01-02': 'todo',
- 'HU-01-03': 'todo',
- 'HU-01-04': 'todo',
- 'HU-01-05': 'todo',
+ 'HU-01-03': 'doing',
+ 'HU-01-04': 'doing',
+ 'HU-01-05': 'doing',
  'HU-01-06': 'todo',
  'HU-01-07': 'todo',
  'HU-01-08': 'todo',
@@ -19,7 +19,7 @@ const HU_STATUS = {
  // EP-02 · Gestión del ciclo de vida y seguimiento del ticket
  'HU-02-01': 'todo',
  'HU-02-02': 'todo',
- 'HU-02-03': 'todo',
+ 'HU-02-03': 'doing',
  'HU-02-04': 'todo',
  'HU-02-05': 'todo',
  'HU-02-06': 'todo',
@@ -49,14 +49,14 @@ const HU_STATUS = {
  'HU-04-09': 'todo',
  'HU-04-10': 'todo',
  // EP-05 · Gestión de usuarios, roles y accesos
- 'HU-05-01': 'todo',
- 'HU-05-02': 'todo',
- 'HU-05-03': 'todo',
- 'HU-05-04': 'todo',
- 'HU-05-05': 'todo',
+ 'HU-05-01': 'doing',
+ 'HU-05-02': 'doing',
+ 'HU-05-03': 'done',
+ 'HU-05-04': 'doing',
+ 'HU-05-05': 'doing',
  'HU-05-06': 'todo',
- 'HU-05-07': 'todo',
- 'HU-05-08': 'todo',
+ 'HU-05-07': 'doing',
+ 'HU-05-08': 'doing',
  'HU-05-09': 'todo',
  'HU-05-10': 'todo',
  // EP-06 · Comunicación bidireccional por Telegram y notificaciones
@@ -92,7 +92,7 @@ const HU_STATUS = {
  'HU-08-09': 'todo',
  'HU-08-10': 'todo',
  // EP-09 · Administración y configuración del servicio
- 'HU-09-01': 'todo',
+ 'HU-09-01': 'doing',
  'HU-09-02': 'todo',
  'HU-09-03': 'todo',
  'HU-09-04': 'todo',
@@ -103,11 +103,11 @@ const HU_STATUS = {
  'HU-09-09': 'todo',
  'HU-09-10': 'todo',
  // EP-10 · Seguridad, auditoría y recuperación de la información
- 'HU-10-01': 'todo',
- 'HU-10-02': 'todo',
- 'HU-10-03': 'todo',
+ 'HU-10-01': 'doing',
+ 'HU-10-02': 'doing',
+ 'HU-10-03': 'doing',
  'HU-10-04': 'todo',
- 'HU-10-05': 'todo',
+ 'HU-10-05': 'doing',
  'HU-10-06': 'todo',
  'HU-10-07': 'todo',
  'HU-10-08': 'todo',

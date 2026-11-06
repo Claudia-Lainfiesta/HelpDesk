@@ -67,8 +67,8 @@ semántico de mensaje correspondiente.
 
 Figtree está autoalojada mediante `@fontsource-variable/figtree`; no se hacen
 peticiones a servicios de fuentes. Los SVG de `app-icono` son locales, de trazo
-1.8 px. El paquete consultado `lucide-angular` declara Angular 13–21, por lo
-que se eligió un componente SVG compatible con Angular 22.
+1.8 px. Se usa el componente SVG propio del repositorio, compatible con Angular 22;
+no existe una dependencia externa de iconos en package.json.
 
 Nombres de íconos: `ticket`, `etiqueta`, `usuarios`, `reporte`, `buscar`, `mas`,
 `correo`, `candado`, `salir`, `llave`, `desplegar`, `menu`, `cerrar`, `copiar`, `acciones` y `editar`. Al acompañar texto
@@ -123,7 +123,7 @@ quedan deshabilitados; la lógica de envío también impide peticiones duplicada
 | `app-confirmacion`    | Modal con mensaje, cancelar, confirmar y variante de peligro                                                         |
 | `app-menu-acciones`   | Acciones por fila, explicaciones de deshabilitados, flechas, Home/End y Escape                                       |
 | `app-tabla-paginada`  | Encabezados, rejilla y filas proyectadas; carga, vacío y error con reintento                                         |
-| `app-paginador`       | Rango mostrado, tamaño y anterior/siguiente; evita avanzar fuera de rango                                            |
+| `app-paginador`       | Rango mostrado, `opcionesTamanos`, tamaño y anterior/siguiente; evita avanzar fuera de rango                         |
 | `app-aviso-flotante`  | Servicio `Avisos`, región de estado y cierre automático a los seis segundos                                          |
 | `app-clave-temporal`  | Valor transferido con `entregar`, copia explícita y cierre único que lo retira                                       |
 | `app-insignia-cuenta` | Temporal, Vencida, Inactiva, Bloqueada, Activa y etiqueta de rol                                                     |
@@ -165,7 +165,8 @@ comprueba el resultado después de `npm run build`; forma parte de `check` y CI.
   funciones de color, clases de paleta ni colores arbitrarios.
 - Sin emojis, morados, índigos, violetas ni fucsias.
 - Todos los elementos interactivos tienen foco visible con `foco`. Los menús
-  se recorren con Tab y se cierran con Escape. Hay un enlace para saltar al contenido.
+  se abren con el botón y se recorren con flechas, Home y End;
+  Tab y Escape los cierran. Hay un enlace para saltar al contenido.
 - No se transmite información solo con color. Las animaciones respetan
   `prefers-reduced-motion`.
 - Un color nuevo necesita un significado: decláralo primero en el único bloque
@@ -196,3 +197,9 @@ Las diferencias intencionales respecto del PDF son los SVG propios, Figtree,
 los tamaños y radios semánticos pedidos, la paginación y las opciones
 funcionales de sesión. Se usa un botón sólido de marca, sin degradados ni
 sombras fuertes. No hay un diseño móvil completo.
+
+La referencia visible de tickets es `TK-XXXXXX` (mínimo seis dígitos, sin
+truncamiento), enviada por la API. El logo y la marca siguen siendo HelpDesk.
+El PDF de dos páginas sigue siendo válido como referencia de login, filas,
+colores y estados; sus datos son ilustrativos, no contratos ni permisos. No
+incluye todos los filtros, paginación, modales ni el detalle real implementados.

@@ -223,8 +223,8 @@ cualquier combinación no vacía de estos campos.
 ```
 
 No hay DELETE. Desactivar oculta la categoría del listado habitual; los tickets
-existentes conservan su FK. El futuro alta de tickets deberá comprobar también
-que siga activa al crear el ticket. Un duplicado responde 409 `CATEGORY_EXISTS`;
+existentes conservan su FK. El alta de tickets comprueba que siga activa dentro de su transacción;
+una categoría inactiva no puede usarse en un ticket nuevo. Un duplicado responde 409 `CATEGORY_EXISTS`;
 un ID inexistente, 404 `CATEGORY_NOT_FOUND`. Pedir inactivas sin ser
 administrador responde 403.
 
@@ -269,6 +269,7 @@ URL exportada se omite con un mensaje claro. No necesita Telegram.
 Para curl, usa [archivos privados y cookie jar](auth.md#probar-con-curl-sin-exponer-credenciales)
 y guarda la respuesta de alta/reset en un archivo privado, sin imprimirla.
 
-No se incluyen frontend, correo, inicio de sesión corporativo, endpoints de
-tickets ni interfaz de auditoría o respaldo. El seed de categorías y sus
-contraseñas de desarrollo conserva el mecanismo existente.
+Existen [pantallas de administración](../../frontend/docs/pantallas-administracion.md),
+[recuperación asistida por correo](email-and-recovery.md) y [API de tickets](tickets.md).
+No hay interfaz de consulta de auditoría ni funciones de respaldo. El seed crea
+cuentas con hash obligatorio y categorías idempotentes.

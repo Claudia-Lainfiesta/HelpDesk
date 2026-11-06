@@ -26,7 +26,7 @@ La respuesta es 201 con `Location: /api/tickets/:id` y el ticket completo:
 ```json
 {
   "id": "123",
-  "number": "HD-000123",
+  "number": "TK-000123",
   "subject": "No puedo imprimir",
   "description": "La impresora muestra un error.",
   "status": "creado",
@@ -63,7 +63,8 @@ GET /api/tickets/123
 El listado devuelve `{ data, page, pageSize, total }`; cada elemento tiene el
 contrato anterior. `page` comienza en 1, por defecto 1; `pageSize` admite 10, 20 y
 50, por defecto 20. `search` admite hasta 160 caracteres, busca número y asunto
-sin distinguir mayúsculas, incluyendo `HD-000123` o `000123`. `%` y `_` se
+sin distinguir mayúsculas, incluyendo `TK-000123`, `000123` o `123`. Es búsqueda de subcadenas,
+no una coincidencia numérica exacta. `%` y `_` se
 interpretan literalmente. SQL parametrizado, sin orden configurable.
 
 `status` admite `creado`, `en_proceso`, `en_espera`, `resuelto`, `cerrado` y
@@ -79,10 +80,12 @@ los roles, respetando siempre la visibilidad de sus tickets.
 
 ## Persistencia y esquema
 
-`0011_ticket_core.sql` evoluciona la tabla existente. Conserva `id` bigint
+`0011_ticket_core.sql` evoluciona la tabla existente y
+`0012_ticket_reference_tk.sql` establece el prefijo público actual. Conserva `id` bigint
 identity, FKs `category_id`, `requester_id`, `assigned_agent_id` nullable y
 `status_id` hacia el catálogo fijo de seis estados. No duplica el estado en una
-columna textual. `reference` se genera como HD- desde el identity, es única y
+columna textual. El número interno es `id`; no hay una columna separada
+`ticket_number`. `reference` se genera como TK- desde el identity, es única y
 no trunca valores mayores a seis dígitos. No se usa `MAX()+1`; puede haber saltos
 por transacciones revertidas. Las fechas son timestamptz. Añade `canceled_at`,
 límites de longitud e índices de listado global y por solicitante. Conserva el
@@ -102,3 +105,24 @@ Repetirlo no duplica registros ni restablece contraseñas.
 `npm run check` incluye pruebas con PostgreSQL en esquemas privados si se exporta
 `DATABASE_URL`; de lo contrario las integraciones se omiten con mensaje. No
 implementa asignación, transiciones, historial, prioridad, adjuntos ni Telegram.
+
+## Referencia canónica y auditoría
+
+`TK-XXXXXX` es el identificador público: `TK-000001`, `TK-000042` y `TK-001253`.
+Tiene un mínimo de seis dígitos: `TK-999999` y luego `TK-1000000`, sin truncar.
+El ID bigint es interno y permanece en rutas `/api/tickets/:id` y `/tickets/:id`.
+La UI y los avisos muestran siempre `number` recibido; no duplican el formateo.
+La única fuente del formato es la expresión SQL de `tickets.reference`.
+
+La migración 0012 usa ALTER COLUMN SET EXPRESSION de PostgreSQL 17 para
+recalcular los valores almacenados existentes, conservando IDs, datos,
+relaciones, índice único y secuencia. No borra tickets ni reinicia números.
+Los eventos históricos conservan el número que registraron; los nuevos
+`ticket.created` guardan el `ticketNumber` actual. La validación de auditoría
+acepta el formato canónico. No se promete compatibilidad con el prefijo anterior.
+[Referencia técnica de PostgreSQL 17](https://www.postgresql.org/docs/17/sql-altertable.html).
+
+Los estados del catálogo son `creado`, `en_proceso`, `en_espera`, `resuelto`,
+`cerrado` y `cancelado`. Actualmente toda alta usa `creado`; los demás estados
+pueden verse en seed, filtros e insignias. No existen endpoints para cambiarlos
+ni para rellenar fechas de resolución, cierre o cancelación desde la aplicación.

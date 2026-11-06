@@ -1,5 +1,19 @@
 # Épicas del sistema HelpDesk interno
 
+## Estado de implementación · 6-nov-2026
+
+Estas épicas describen el alcance objetivo; no son una lista de funciones ya
+entregadas. Hoy funcionan acceso local con sesiones, usuarios, cuentas temporales,
+recuperación asistida por SMTP, categorías y creación/listado/detalle real de
+tickets. Todos crean para sí; solicitante consulta solo los suyos y agente,
+supervisor y administrador consultan todos. Los nuevos nacen `creado`, sin agente.
+
+Asignación, transiciones, historial de estados, comentarios, notas internas,
+adjuntos, prioridad, SLA, conocimiento, reportes, conversación y notificaciones
+integradas están pendientes. Telegram es una POC separada, en memoria. La
+referencia pública es `TK-XXXXXX`, mínimo seis dígitos, sin truncar números largos.
+Consulta [el estado y permisos actuales](../README.md).
+
 ## 1. Propósito y alcance
 
 El sistema centralizará la atención de solicitudes de soporte de los solicitantes de una sola empresa. Permitirá registrar, asignar, atender y resolver tickets con trazabilidad, controlar tiempos de atención y generar información para mejorar el servicio.
@@ -61,7 +75,7 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 - **Solicitante:** registra sus solicitudes con asunto, descripción, categoría y archivos adjuntos; consulta y filtra solo sus propios tickets, su estado, su responsable y su historial de actividades; lee la solución, pide la reapertura cuando las reglas lo permiten y accede desde el ticket a la conversación por Telegram.
 - **Agente:** puede registrar una solicitud en nombre de otro solicitante, únicamente si la empresa habilita esta opción; esto no le da permisos adicionales sobre el ticket.
-- **Supervisor y administrador:** no tienen un papel propio en esta épica; ser supervisor o administrador no permite ver los tickets de otros solicitantes.
+- **Todos los roles:** pueden registrar un ticket propio. El solicitante consulta solo los suyos; agente, supervisor y administrador consultan todos. Todavía no se permite crear en nombre de otra persona.
 
 **Alcance funcional:**
 
@@ -178,7 +192,7 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 - Vincular de forma verificable la identidad de Telegram de solicitantes y agentes con su cuenta de usuario, y permitir su actualización o desvinculación controlada.
 - Revocar el acceso mediante la integración y los envíos a una identidad desvinculada o desactivada, conservando las referencias históricas.
 
-**Límites:** No incluye registro público ni cuentas ordinarias para organizaciones externas. La excepción son las cuentas temporales de auditoría creadas por el administrador, una por rol existente y con vencimiento automático. La integración con un directorio corporativo o inicio de sesión único deberá validarse. EP-10 establece los controles técnicos de protección y auditoría; un rol administrativo no implica acceso indiscriminado al contenido de todos los tickets.
+**Límites:** No incluye registro público ni cuentas ordinarias para organizaciones externas. La excepción son las cuentas temporales de auditoría creadas por el administrador, una por rol existente y con vencimiento automático. HelpDesk utiliza autenticación local mediante correo y contraseña, con Argon2id y sesiones del servidor. EP-10 establece los controles técnicos de protección y auditoría; un rol administrativo no implica acceso indiscriminado al contenido de todos los tickets.
 
 **Resultado esperado:** Cada usuario accede únicamente a las funciones y datos autorizados, y los cambios de personal no destruyen la trazabilidad.
 
@@ -328,13 +342,13 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 Las decisiones cerradas el 29-oct-2026 están en [Decisiones-de-producto.md](../Decisiones-de-producto.md). Las siguientes definiciones siguen pendientes al convertir las épicas en historias de usuario:
 
-- **Accesos:** Matriz de permisos por rol, equipo y relación con el ticket, incluida la visibilidad de notas internas, adjuntos y reportes.
+- **Accesos:** La matriz del núcleo está implementada: todos crean para sí, solicitante ve solo los suyos y los otros tres roles ven todos. Solo administrador gestiona cuentas y categorías. Queda pendiente la matriz de módulos futuros, equipos, notas, adjuntos y reportes.
 - **Flujo:** Los seis estados, la selección sin restricciones de transición, el cierre por el agente y la cancelación solo por el supervisor ya están acordados. Falta precisar condiciones de espera, contenido de la solución, posible confirmación previa al cierre y reglas de reapertura.
-- **Atención:** Categorías, equipos, niveles, responsables y criterios de asignación y escalamiento.
+- **Atención:** Categorías planas implementadas; quedan pendientes subcategorías, equipos, niveles, responsables y criterios de asignación y escalamiento.
 - **Tiempos:** Matriz de impacto y urgencia, objetivos de SLA, horarios, pausas y efecto de los cambios sobre tickets en curso.
 - **Integración con Telegram:** El canal está decidido. Falta concretar y validar el mecanismo de conversación bidireccional, la vinculación verificable de identidades, la identificación del ticket en cada conversación, el tratamiento de archivos y los reintentos ante fallos. Telegram no se incorpora como canal de creación de tickets.
 - **Notificaciones por ambos canales:** Precisar el catálogo de eventos importantes y relevantes y sus destinatarios. Todos los eventos incluidos deberán generar notificaciones en la aplicación y en Telegram. Definir el manejo operativo de cuentas sin vinculación, caídas del canal y envíos pendientes.
-- **Identidad:** Necesidad de conexión con un directorio de usuarios.
+- **Identidad:** autenticación local y altas manuales por el administrador, sin registro público; están implementadas. La verificación externa de que una persona pertenece a la empresa corresponde al procedimiento administrativo.
 - **Medición:** Fórmulas de indicadores, momento de envío de encuestas y tratamiento de casos reabiertos. La primera respuesta es el primer cambio a «En proceso», calculado desde el historial de estados de EP-02, sin una columna aparte ni reinicios; no cuentan notificaciones automáticas, notas internas ni mensajes de Telegram. Queda pendiente cómo contar esa primera vez cuando el cambio lo hace alguien distinto del agente asignado.
 - **Protección y continuidad:** Retención de tickets, archivos y auditoría; objetivos y pruebas de respaldo y recuperación.
 

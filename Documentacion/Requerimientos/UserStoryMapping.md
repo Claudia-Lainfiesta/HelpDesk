@@ -1,5 +1,21 @@
 # User Story Mapping — HelpDesk interno
 
+## Cobertura actual · 6-nov-2026
+
+Este mapa conserva los identificadores y el alcance objetivo de las historias.
+Los criterios de funciones aún no construidas no describen endpoints disponibles.
+El núcleo implementado es autenticación local mediante correo/contraseña,
+Argon2id y sesiones HttpOnly; administración de cuentas, roles, temporalidad,
+bloqueo y recuperación asistida; categorías; y tickets reales con alta propia,
+listado/búsqueda/filtros/paginación y detalle. La visibilidad actual permite al
+solicitante consultar solo sus tickets; agente, supervisor y administrador ven
+todos. Toda cuenta autenticada puede crear para sí, `creado` y sin agente.
+
+No hay asignación, transiciones, historial de estados, archivos, notas, solución
+editable, SLA, artículos o reportes reales. La POC Telegram no se vincula a
+usuarios ni tickets persistidos. La implementación parcial de una épica no da por
+terminadas todas sus historias. [Estado y permisos reales](../README.md).
+
 ## 1. Acerca de este documento
 
 Este documento reúne progresivamente las historias de usuario del proyecto y las organiza según el recorrido de sus usuarios. La fuente de alcance es [Epics.md](Epics.md). Actualmente se desarrollan **EP-01: Registro de solicitudes y portal del solicitante**, **EP-02: Gestión del ciclo de vida y seguimiento del ticket**, **EP-03: Asignación y distribución del trabajo**, **EP-04: Gestión de prioridades, SLA y escalamiento**, **EP-05: Gestión de usuarios, roles y accesos**, **EP-06: Comunicación bidireccional por Telegram y notificaciones**, **EP-07: Base de conocimiento y autoservicio**, **EP-08: Reportes, tableros y satisfacción del solicitante**, **EP-09: Administración y configuración del servicio** y **EP-10: Seguridad, auditoría y recuperación de la información**.
@@ -58,7 +74,7 @@ Cuando un solicitante necesita ayuda, puede registrar su problema en el portal i
 
 - El solicitante debe haber iniciado sesión y tener su cuenta habilitada. Las categorías disponibles son las que el servicio permite usar.
 - Si falta un dato obligatorio, contiene solo espacios o la categoría no es válida, el portal señala qué debe corregirse antes de crear el ticket.
-- La solicitud queda a nombre del solicitante, con una referencia única `TK-XXXXXX` de seis dígitos, fecha de creación y estado Creado. La confirmación permite abrir su detalle.
+- La solicitud queda a nombre del solicitante, con una referencia única `TK-XXXXXX` de al menos seis dígitos, sin truncar números largos, fecha de creación y estado Creado. La confirmación permite abrir su detalle.
 - Si el registro falla y el ticket no se crea, se informa el problema y se conservan los textos ingresados para volver a intentarlo.
 
 Propuesta para la entrega 1. Se apoya en EP-02 para crear el ticket, EP-05 para identificar al solicitante, EP-09 para las categorías y EP-10 para proteger la información. Los avisos del registro corresponden a EP-06.
@@ -78,7 +94,7 @@ Propuesta para la entrega 2. Complementa HU-01-01 y utiliza los controles de arc
 
 #### HU-01-03 — Consultar mis solicitudes
 
-El solicitante encuentra sus casos en «Mis solicitudes» y puede ver en qué estado está cada uno sin tener que preguntar a soporte. Desde el listado puede abrir el caso que le interesa.
+El solicitante encuentra sus casos en «Tickets» y puede ver en qué estado está cada uno sin tener que preguntar a soporte. Desde el listado puede abrir el caso que le interesa.
 
 **Para revisar con el equipo:**
 
@@ -100,7 +116,7 @@ Cuando el solicitante tiene varias solicitudes, puede reducir el listado para en
 - Si no hay coincidencias, el portal lo explica y permite cambiar o quitar los filtros.
 - Al limpiar los filtros, vuelven a estar disponibles todas las solicitudes propias que se conservan.
 
-Propuesta para la entrega 2. Complementa HU-01-03 y utiliza los estados de EP-02 y las categorías de EP-09. Los filtros concretos, el orden del listado y la zona horaria todavía deben acordarse.
+Propuesta para la entrega 2. Complementa HU-01-03 y utiliza los estados de EP-02 y las categorías de EP-09. El núcleo actual filtra por estado y categoría, busca por número/asunto y ordena por creación e ID descendentes; muestra fechas en la zona del navegador. El filtro por período de esta historia sigue pendiente.
 
 #### HU-01-05 — Consultar el detalle y la responsabilidad de atención
 
@@ -200,9 +216,9 @@ Esta historia queda fuera de las entregas propuestas hasta confirmar que se habi
 
 | ID | Decisión necesaria | Historias afectadas |
 | --- | --- | --- |
-| D-01 | Aprobar categorías iniciales, longitudes de asunto y descripción y cualquier obligatoriedad adicional por categoría. | HU-01-01, HU-01-10 |
+| D-01 | Implementado: cinco categorías de ejemplo, asunto de 1 a 160 caracteres y descripción de 1 a 5000, recortados. Cualquier obligatoriedad adicional por categoría sigue pendiente. | HU-01-01, HU-01-10 |
 | D-02 | Definir tipos, tamaños, cantidad y validaciones de archivos, además del comportamiento del envío si falla una carga. | HU-01-02 |
-| D-03 | Confirmar filtros, orden inicial del listado y zona horaria del servicio. | HU-01-03, HU-01-04 |
+| D-03 | Implementado: estado, categoría y búsqueda por número/asunto, páginas de 10/20/50 y orden por creación e ID descendentes; fechas en zona del navegador. El filtro por período aún no existe. | HU-01-03, HU-01-04 |
 | D-04 | Los seis estados están acordados; falta completar la matriz de información autorizada y su visibilidad, incluida la identificación del equipo o agente, actividades y archivos. | HU-01-05, HU-01-06, HU-01-08 |
 | D-05 | Definir vinculación, mecanismo de acceso a Telegram y tratamiento de casos sin agente o con conversación no disponible por su estado. | HU-01-07 |
 | D-06 | Acordar estados, plazo, aprobación y manejo de peticiones repetidas para reapertura. | HU-01-09 |
@@ -839,7 +855,7 @@ Participan todos los usuarios que usan el sistema y los administradores o respon
 - Cada función de las otras épicas debe comprobar los permisos vigentes. Ocultar una opción en pantalla no sustituye la comprobación al consultar datos o ejecutar una acción.
 - EP-05 verifica la vinculación entre el usuario y su identidad de Telegram. EP-06 utiliza esa vinculación para la conversación y los avisos, sin convertir Telegram en un canal de creación de tickets.
 - EP-10 define los controles técnicos de autenticación, sesiones, protección y auditoría. Aquí se describe la experiencia y el resultado esperado para usuarios y administradores.
-- El uso de cuentas locales, un directorio corporativo o inicio de sesión único todavía debe acordarse. Estas historias no eligen una tecnología ni presuponen contraseñas administradas por el HelpDesk.
+- Las cuentas utilizan autenticación local mediante correo y contraseña. HelpDesk guarda solo hashes Argon2id, exige cambio de contraseñas temporales y controla las sesiones en el servidor.
 
 ### 6.1. Mapa del recorrido
 
@@ -855,7 +871,7 @@ El recorrido comienza con la habilitación del usuario y continúa con su acceso
 
 **Valor de la entrega 2:** los solicitantes y agentes pueden utilizar su identidad verificada en Telegram para conversar y recibir avisos, con un procedimiento para cambiarla o desvincularla.
 
-Esta separación organiza el trabajo, pero no permite liberar una integración sin control de identidad. HU-05-09 y HU-05-10 deben acompañar cualquier primera versión que ya utilice Telegram. Del mismo modo, la aplicación de permisos y la desactivación deben funcionar desde que existan cuentas, no agregarse al final. La recuperación de acceso puede apoyarse en el mecanismo corporativo acordado, sin duplicarlo dentro del HelpDesk.
+Esta separación organiza el trabajo, pero no permite liberar una integración sin control de identidad. HU-05-09 y HU-05-10 deben acompañar cualquier primera versión que ya utilice Telegram. Del mismo modo, la aplicación de permisos y la desactivación deben funcionar desde que existan cuentas, no agregarse al final. La recuperación actual es asistida por el administrador mediante aviso SMTP; la petición pública no modifica credenciales ni sesiones.
 
 ### 6.2. Historias de usuario
 
@@ -872,7 +888,7 @@ El administrador autorizado puede habilitar a un usuario para utilizar el HelpDe
 - Se conserva quién o qué proceso realizó el alta y cuándo. Si la operación falla, no se presenta la cuenta como habilitada.
 - El administrador puede indicar una fecha de vencimiento para cuentas temporales, por ejemplo de auditoría; al llegar esa fecha, la cuenta deja de poder iniciar sesión y sus sesiones abiertas se invalidan automáticamente.
 
-Propuesta para la entrega 1. Se apoya en HU-05-05 y los controles de EP-10. Falta acordar los datos de identificación, quién valida la condición de personal de la empresa para las cuentas ordinarias, los permisos iniciales y si el alta será manual o provendrá de un directorio corporativo.
+Propuesta para la entrega 1. Se apoya en HU-05-05 y los controles de EP-10. El alta implementada exige nombre completo, correo único sin distinguir mayúsculas y uno de los cuatro roles; solo la realiza el administrador y genera una contraseña temporal que se muestra una vez. La validación externa de la pertenencia a la empresa sigue siendo un procedimiento administrativo.
 
 #### HU-05-02 — Mantener actualizados los datos del usuario
 
@@ -883,10 +899,10 @@ El administrador autorizado puede corregir o actualizar los datos de una cuenta 
 - Solo se pueden modificar los campos permitidos y se validan los datos obligatorios y los identificadores que deban ser únicos.
 - La actualización conserva la identidad interna de la cuenta y las referencias de sus solicitudes, actividades y decisiones anteriores.
 - Cambiar datos de contacto o presentación no concede nuevos roles, cambia equipos ni vincula una identidad de Telegram por coincidencia de nombre.
-- Si un dato proviene de un directorio corporativo, se respeta la fuente que se acuerde como responsable de mantenerlo y se explica dónde debe corregirse.
+- En la implementación actual el administrador edita nombre, rol, vencimiento y notas. El correo es inmutable; no hay autoedición de perfil.
 - Se registra quién o qué proceso hizo el cambio y cuándo. Si otra persona ya actualizó los datos, se pide revisar la versión vigente antes de reemplazarla.
 
-Propuesta para la entrega 1. Los cambios de roles, equipos y Telegram se realizan mediante sus historias específicas. Falta definir qué datos se pueden editar en el HelpDesk, si el usuario puede actualizar alguno por su cuenta y cómo se presentan nombres anteriores en los registros históricos.
+Propuesta para la entrega 1. Los cambios de roles, equipos y Telegram se realizan mediante sus historias específicas. Los campos editables actuales son los indicados arriba. No hay historial de nombres ni control de versiones optimista: la detección de una edición concurrente descrita como criterio objetivo sigue pendiente.
 
 #### HU-05-03 — Entrar al HelpDesk y cerrar la sesión
 
@@ -900,7 +916,7 @@ El usuario puede identificarse para entrar al HelpDesk y encontrar las funciones
 - Al cerrar sesión, esa sesión deja de permitir nuevas consultas u operaciones protegidas. Volver a una dirección guardada no recupera el acceso sin autenticarse de nuevo.
 - Una sesión vencida exige volver a identificarse. El portal no presenta una operación como guardada si no pudo completarse por falta de sesión válida.
 
-Propuesta para la entrega 1. EP-10 establece la protección de credenciales y sesiones. Falta acordar el mecanismo de autenticación, la duración de las sesiones y el comportamiento del cierre cuando se utilice un acceso corporativo compartido con otras aplicaciones.
+Propuesta para la entrega 1. EP-10 establece la protección de credenciales y sesiones. El acceso implementado es correo y contraseña local, con cookie HttpOnly y token opaco cuyo hash se guarda en PostgreSQL. Por defecto vence tras 30 minutos de inactividad u 8 horas absolutas, configurables. Logout revoca la sesión y borra la cookie.
 
 #### HU-05-04 — Recuperar el acceso a la cuenta
 
@@ -908,13 +924,13 @@ Si un usuario no puede entrar, puede seguir un procedimiento claro para recupera
 
 **Para revisar con el equipo:**
 
-- La recuperación utiliza el mecanismo elegido para las cuentas, ya sea del HelpDesk o del proveedor corporativo. El usuario recibe indicaciones sobre dónde continuar.
+- La recuperación implementada recibe un correo y responde genéricamente. Para una cuenta activa y no vencida avisa por SMTP al administrador, quien comprueba la identidad y restablece o desbloquea desde Usuarios.
 - No basta con conocer el nombre o identificador de otra persona para recuperar su cuenta. Se exige la verificación acordada.
-- Si se utilizan enlaces o códigos temporales, los vencidos o ya utilizados no permiten repetir la recuperación. Sus valores no se exponen en el historial de atención ni en registros de auditoría.
+- No hay enlaces ni códigos de recuperación. Restablecer revoca todas las sesiones y genera una contraseña temporal que obliga a cambiarla. Se muestra una vez al administrador y se entrega por otro medio, nunca por correo.
 - Recuperar el acceso no reactiva una cuenta deshabilitada ni concede roles o permisos nuevos.
 - Si no puede completar la verificación, se indica el procedimiento de asistencia autorizado, sin omitir la comprobación de identidad.
 
-Propuesta para la entrega 1. Se coordina con EP-10 y HU-05-03. Falta acordar el canal de verificación, quién puede prestar asistencia y cómo se tratan las sesiones existentes después de recuperar el acceso. No se presupone que el HelpDesk deba cambiar contraseñas de un directorio externo.
+Propuesta para la entrega 1. Se coordina con EP-10 y HU-05-03. El administrador presta asistencia y verifica la identidad mediante el procedimiento externo autorizado, aún por concretar. La solicitud no modifica cuentas ni sesiones; el reset revoca todas las sesiones y el desbloqueo solo limpia fallos y bloqueo.
 
 #### HU-05-05 — Asignar y ajustar roles según la responsabilidad del usuario
 
@@ -926,9 +942,9 @@ El administrador con permiso puede asignar o cambiar el rol que necesita un usua
 - Antes de guardar, se comprueba que quien hace el cambio tenga permiso para conceder o retirar esos roles. Tener acceso a la administración no permite ampliar sus propios privilegios sin autorización.
 - Se registra el rol anterior, el nuevo, la persona que lo modificó, la fecha y el motivo del cambio.
 - Los permisos resultantes se aplican también a las siguientes operaciones de una sesión ya abierta. Una pantalla que quedó abierta no conserva una autorización retirada.
-- El rol vigente respeta las restricciones de acceso acordadas. El rol de administrador no implica lectura indiscriminada de tickets, mensajes o archivos.
+- En el núcleo actual agente, supervisor y administrador leen todos los tickets; el solicitante solo los propios. No existen mensajes o archivos del ticket implementados.
 
-Propuesta para la entrega 1. Se complementa con HU-05-06 y HU-05-07 y la auditoría de EP-10. El rol único ya está acordado. Falta completar la matriz de permisos, quién puede administrar cada rol y cómo se resuelven permisos que entren en conflicto.
+Propuesta para la entrega 1. Se complementa con HU-05-06 y HU-05-07 y la auditoría de EP-10. El rol único ya está acordado. La matriz del núcleo está implementada: solo el administrador gestiona cuentas y categorías; no puede cambiar su propio rol ni retirar al último administrador activo sin vencimiento. Los permisos de funcionalidades futuras siguen pendientes.
 
 #### HU-05-06 — Asociar agentes y supervisores con equipos y niveles de soporte
 
@@ -957,7 +973,7 @@ El usuario puede consultar y utilizar lo que le corresponde según su rol, equip
 - Se comprueba la autorización vigente al consultar o modificar información y antes de registrar o reenviar contenido mediante la integración. Una asignación anterior o una vinculación de Telegram no sustituyen ese permiso.
 - Si se retira un rol, una asociación o un permiso, las siguientes operaciones respetan el cambio y no continúan usando el acceso anterior por una sesión o enlace conservado.
 
-Propuesta para la entrega 1 y requisito de todas las funciones del proyecto. EP-05 define las autorizaciones y EP-10 sus controles técnicos; cada módulo las aplica. Falta completar la matriz de permisos, incluyendo casos en los que un agente o supervisor también es el solicitante del ticket.
+Propuesta para la entrega 1 y requisito de todas las funciones del proyecto. EP-05 define las autorizaciones y EP-10 sus controles técnicos; cada módulo las aplica. La matriz del núcleo permite crear tickets propios a todos los roles y consultar todos a agente, supervisor y administrador; la matriz de módulos futuros sigue pendiente.
 
 #### HU-05-08 — Desactivar una cuenta sin perder su historia
 
@@ -1022,12 +1038,12 @@ Estas definiciones deben mantener coherencia con los permisos que ya se dejaron 
 
 | ID | Decisión necesaria | Historias afectadas |
 | --- | --- | --- |
-| D-32 | Acordar la fuente de identidad de usuarios, los datos obligatorios y únicos, el mecanismo de alta y la necesidad de directorio corporativo o inicio de sesión único. | HU-05-01, HU-05-02, HU-05-03 |
-| D-33 | Definir qué datos se editan en el HelpDesk, quién puede corregirlos y qué fuente prevalece cuando existe directorio corporativo. | HU-05-02 |
-| D-34 | Acordar autenticación, duración y cierre de sesiones, recuperación de acceso, asistencia autorizada y efecto de la recuperación sobre sesiones existentes. | HU-05-03, HU-05-04 |
-| D-35 | Acordado: un único rol vigente por usuario. Falta completar la matriz de permisos, administración de privilegios y resolución de conflictos, y precisar cómo registra sus propias solicitudes un agente o supervisor sin combinar roles. | HU-05-05, HU-05-07 |
+| D-32 | Resuelto para el núcleo: autenticación local, correo único sin distinguir mayúsculas, nombre y rol obligatorios; alta manual por administrador. La verificación externa de pertenencia a la empresa sigue pendiente de procedimiento. | HU-05-01, HU-05-02, HU-05-03 |
+| D-33 | Resuelto para campos actuales: administrador edita nombre, rol, vencimiento y notas; correo inmutable. Historial de nombres y control de versiones de edición no implementados. | HU-05-02 |
+| D-34 | Implementado: sesiones HttpOnly de 30 min de inactividad y 8 h máximas; bloqueo de 15 min tras 5 fallos; valores configurables. Recuperación asistida, verificación humana y reset administrativo con revocación de sesiones. | HU-05-03, HU-05-04 |
+| D-35 | Implementado: un único rol vigente; todos los roles crean para sí sin cambiarlo; agente, supervisor y administrador ven todos los tickets. Solo administrador gestiona cuentas/categorías, con protección del propio rol y del último administrador. Permisos de módulos futuros pendientes. | HU-05-05, HU-05-07 |
 | D-36 | Definir pertenencia a varios equipos o niveles y efecto de los cambios sobre accesos y asignaciones. Complementa D-17 y D-20. | HU-05-06 |
-| D-37 | Acordar autorización de bajas, atención de casos pendientes y posible reactivación con revisión de accesos. Coordinar con D-20. | HU-05-08 |
+| D-37 | Implementado: administrador desactiva/reactiva, desactivar revoca sesiones y reactivar no renueva vencimientos; no puede desactivarse ni retirar al último administrador. El manejo de tickets asignados al dar de baja sigue pendiente con D-20. | HU-05-08 |
 | D-38 | Definir verificación de Telegram, relación permitida entre identidades y cuentas, resolución de conflictos y asistencia ante pérdida de acceso a la identidad anterior. Complementa D-05. | HU-05-09, HU-05-10 |
 | D-39 | Acordar el tratamiento de mensajes y envíos pendientes tras desvincular, cambiar o desactivar una identidad, sin entregar contenido a destinatarios revocados. | HU-05-08, HU-05-10 |
 | D-04, D-08 y D-09, seguimiento | Aplicar las reglas de visibilidad, destinatarios y retención a cuentas, vinculaciones y referencias históricas, coordinadas con EP-06 y EP-10. | HU-05-02, HU-05-07 a HU-05-10 |
@@ -1696,6 +1712,8 @@ Las entregas son una propuesta. Cada módulo necesita su configuración antes de
 
 El responsable autorizado puede organizar las categorías, subcategorías y opciones que utilizan los solicitantes para describir sus solicitudes. Esto facilita que los casos se clasifiquen de manera consistente y lleguen al equipo adecuado.
 
+El núcleo actual permite al administrador mantener categorías planas, sin subcategorías ni reglas de enrutamiento. Los criterios jerárquicos siguientes siguen pendientes.
+
 **Para revisar con el equipo:**
 
 - Se pueden crear y actualizar las opciones permitidas, con nombres comprensibles y relaciones válidas entre categorías y subcategorías.
@@ -1857,9 +1875,9 @@ Las reglas de negocio pendientes en las épicas anteriores se resuelven una sola
 
 | ID | Decisión necesaria | Historias afectadas |
 | --- | --- | --- |
-| D-63 | Definir permisos de configuración por área y distinguir administración de catálogos, políticas, credenciales y consulta operativa. Coordinar con D-35. | Todas las historias pertinentes |
+| D-63 | Implementado: solo administrador mantiene categorías. Los permisos de configuración de políticas, credenciales y otros catálogos futuros siguen pendientes con D-35. | Todas las historias pertinentes |
 | D-64 | Acordar vigencia, alcance sobre casos existentes y pendientes, conservación de versiones y aplicación conjunta de cambios relacionados. | HU-09-10 y los catálogos o políticas afectados |
-| D-65 | Definir profundidad de subcategorías, reglas de nombres y tratamiento de clasificación histórica al reorganizar opciones. Coordinar con D-01, D-47 y D-55. | HU-09-01 |
+| D-65 | Implementado: categorías planas con nombre de 1 a 80 caracteres y único sin distinguir mayúsculas; se desactivan conservando los tickets históricos. Subcategorías y reorganización jerárquica siguen pendientes con D-01, D-47 y D-55. | HU-09-01 |
 | D-66 | Los seis estados se eligen sin restricciones de transición. Falta precisar los demás permisos y condiciones de las acciones y las relaciones configurables de equipos y reglas. Retomar D-10, D-16, D-17 y D-22. | HU-09-02, HU-09-03, HU-09-04 |
 | D-67 | Acordar campos permitidos en plantillas, vista previa, uso de respuestas frecuentes y efecto de cambios de texto sobre envíos pendientes. Complementa D-08 y D-40. | HU-09-08 |
 | D-68 | Definir parámetros operativos de Telegram, comprobación de funcionamiento, sustitución de credenciales y manejo de pendientes durante los cambios. Complementa D-45 y D-46. | HU-09-09 |
@@ -1916,7 +1934,7 @@ El usuario puede utilizar su cuenta con la confianza de que otra persona no podr
 - La recuperación de acceso exige la verificación definida en HU-05-04 y no permite omitir la desactivación o elevar privilegios.
 - Se comprueba el rechazo de consultas y acciones no autorizadas en tickets, archivos, artículos, reportes, configuración e integración, incluyendo accesos directos.
 
-Necesaria desde el primer acceso protegido. Implementa los controles que respaldan HU-05-03, HU-05-04 y HU-05-07. Falta acordar los parámetros de sesiones y protección de autenticación en coordinación con D-34; las cuentas y los roles siguen administrándose en EP-05.
+Necesaria desde el primer acceso protegido. Implementa los controles que respaldan HU-05-03, HU-05-04 y HU-05-07. Los parámetros actuales son 30 minutos de inactividad, 8 horas máximas y bloqueo de 15 minutos tras 5 fallos, todos configurables; D-34 recoge el alcance; las cuentas y los roles siguen administrándose en EP-05.
 
 #### HU-10-02 — Proteger la información y las credenciales
 
@@ -1927,7 +1945,7 @@ El responsable tecnológico puede mantener protegidos los datos del servicio y l
 - Las comunicaciones de la aplicación y de sus integraciones utilizan mecanismos de protección acordes con la sensibilidad de los datos. Las credenciales no se transmiten mediante enlaces o mensajes sin protección.
 - Los datos almacenados, archivos y copias de respaldo tienen controles de acceso y protección definidos según su clasificación. Se comprueba que no queden expuestos como recursos públicos por su ubicación o configuración.
 - Los secretos de integración solo pueden administrarse con permisos específicos y no aparecen completos en pantallas de consulta, errores, auditorías o exportaciones.
-- Si el HelpDesk administra contraseñas, no las conserva en texto legible ni permite recuperarlas mediante una consulta administrativa. Si utiliza identidad corporativa, respeta el mecanismo acordado con ese proveedor.
+- HelpDesk administra contraseñas locales mediante hashes Argon2id; no conserva el texto original ni permite recuperarlo mediante una consulta administrativa.
 - Se define cómo sustituir o revocar credenciales y cómo recuperar de forma autorizada el material necesario para restaurar datos protegidos, sin colocarlo en registros de auditoría.
 - Los errores informan lo necesario para resolver el problema sin exponer credenciales, contenido privado u otros detalles sensibles.
 
@@ -2081,7 +2099,7 @@ Los controles se convertirán en comprobaciones concretas al definir la arquitec
 | D-71 | Acordar validación de contenido y archivos, tratamiento de entradas rechazadas y fallos de validación. Complementa D-02 y D-42. | HU-10-03 |
 | D-72 | Validar el mecanismo de comprobación de origen de Telegram, los datos permitidos por mensaje y el tratamiento de intercambios no autorizados. Coordinar con D-38, D-39 y D-40. | HU-10-04, HU-10-05 |
 | D-73 | Definir catálogo y campos de auditoría, referencias temporales y tratamiento de operaciones cuando falle el registro de evidencia. | HU-10-06 |
-| D-74 | Supervisor y administrador tienen las funciones técnicas de auditoría; la revisión práctica es presencial por un tercero externo con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Las acciones se atribuyen a la cuenta de auditoría utilizada; no hay un quinto rol. Falta precisar la duración máxima por defecto, el alcance de consulta, controles de integridad, retención y eliminación autorizada, incluida la recuperación. | HU-10-07 |
+| D-74 | Supervisor y administrador tienen las funciones técnicas de auditoría; la revisión práctica es presencial por un tercero externo con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Las acciones se atribuyen a la cuenta de auditoría utilizada; no hay un quinto rol. Duración implementada: 7 días por defecto y máximo configurable de 30 desde la creación. Siguen pendientes alcance de consulta, controles de integridad, retención y eliminación autorizada, incluida la recuperación. | HU-10-07 |
 | D-75 | Las funciones técnicas de respaldo corresponden a supervisor y administrador; en la práctica los realiza presencialmente el auditor externo con cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Falta definir alcance, frecuencia, ubicación, protección, retención y atención de fallos. | HU-10-08 |
 | D-76 | Acordar pérdida máxima de datos aceptable, tiempo objetivo de recuperación, frecuencia de pruebas y autorización para restaurar y volver a operar. | HU-10-09 |
 | D-77 | Definir cómo se recupera evidencia vigente de permisos y revocaciones, se revisan eventos posteriores a la copia y se resuelven envíos inciertos antes de reanudar Telegram. Coordinar con D-39 y D-46. | HU-10-09, HU-10-10 |

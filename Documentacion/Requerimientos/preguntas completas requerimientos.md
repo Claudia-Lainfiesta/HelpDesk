@@ -1,5 +1,13 @@
 # Conversación con el cliente: Sistema de ayuda y soporte (Helpdesk)
 
+> Plantilla de análisis, no descripción de la implementación. Estado revisado el
+> 6-nov-2026: HelpDesk es interno, con autenticación local, cuatro roles y tickets
+> propios para el solicitante; soporte y administración consultan todos. Los
+> estados son Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado.
+> Solo están implementados registro/listado/detalle; asignación, transiciones,
+> conversación integrada y SLA siguen pendientes. Las preguntas abiertas no
+> sustituyen las decisiones de [Decisiones-de-producto.md](../Decisiones-de-producto.md).
+
 | Campo | Detalle |
 |---|---|
 | **Cliente** | |
@@ -111,7 +119,7 @@
 >
 >
 
-**3.2 ⭐** ¿Por qué etapas pasa una solicitud desde que llega hasta que se resuelve (recibida, asignada, en trabajo, esperando respuesta del cliente, terminada)?
+**3.2 ⭐** ¿Por qué etapas pasa una solicitud desde que llega hasta que se resuelve (Creado, En proceso, En espera, Resuelto, Cerrado, Cancelado)?
 
 **Respuesta:**
 >
@@ -462,7 +470,7 @@
 >
 >
 
-**11.2** ¿Quieren que las personas entren con la misma cuenta que ya usan (por ejemplo, la de Google o Microsoft), sin tener otra contraseña?
+**11.2** ¿Qué procedimiento administrativo se usará para verificar la identidad antes de restablecer la contraseña? El acceso implementado usa correo y contraseña local.
 
 **Respuesta:**
 >

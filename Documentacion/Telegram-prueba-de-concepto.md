@@ -1,5 +1,13 @@
 # Telegram: prueba de concepto S0-06 y hallazgos para EP-06
 
+## Estado actual
+
+La API ya crea y consulta tickets reales en PostgreSQL, pero esta POC sigue
+siendo independiente: escribir una referencia TK no comprueba ni autoriza un
+ticket real. No hay conversación integrada ni notificaciones del caso. El formato
+canónico es `TK-XXXXXX`, mínimo seis dígitos, sin truncar números largos.
+La validación con dos cuentas reales continúa pendiente.
+
 ## Diseño y alcance
 
 Un bot normal no puede iniciar un chat privado con una persona: esta debe

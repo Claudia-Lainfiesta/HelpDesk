@@ -64,7 +64,7 @@ BEGIN
     (1000001, 'Prueba de referencia larga', 'Se revierte al terminar.', category, requester)
   RETURNING reference, status_id INTO generated_reference, default_status;
 
-  IF generated_reference <> 'HD-1000001' THEN
+  IF generated_reference <> 'TK-1000001' THEN
     RAISE EXCEPTION 'FALLO: referencia larga incorrecta: %', generated_reference;
   END IF;
   IF default_status <> (SELECT id FROM ticket_statuses WHERE code = 'creado') THEN

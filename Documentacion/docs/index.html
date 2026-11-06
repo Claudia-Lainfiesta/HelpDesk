@@ -140,11 +140,12 @@ th,td{border-bottom-color:var(--line)}
 
 <div class="wrap">
 <header>
-<span class="tag">Propuesta para validar con el cliente</span>
+<span class="tag">Estado actual y alcance pendiente · 6-nov-2026</span>
 <h1>HelpDesk: del requerimiento al primer producto</h1>
 <p>Sistema interno de soporte para una sola empresa. Los solicitantes registran sus necesidades en un portal, los equipos las atienden y todo el recorrido queda trazado. Esta página propone qué se construye primero y en qué orden.</p>
 </header>
 
+<section id="actual"><h2>Qué funciona actualmente</h2><p>Autenticación local por correo y contraseña, Argon2id y sesiones HttpOnly; usuarios y cuentas temporales, categorías, recuperación asistida por SMTP y núcleo real de tickets en PostgreSQL. Cualquier rol crea para sí; solicitante ve solo los suyos, agente, supervisor y administrador ven todos. Referencias TK- con mínimo seis dígitos, sin truncar números largos.</p><p>Listado, búsqueda, filtros, paginación y detalle están disponibles. Los nuevos tickets nacen Creado y sin agente. No hay asignación, transiciones, comentarios, notas, adjuntos, SLA, prioridad o reportes reales. Telegram es una POC separada. Los pasos y métricas siguientes describen el alcance futuro, no funcionalidades terminadas. <a href="../README.md">Estado, permisos y documentación técnica</a>.</p></section>
 <section id="objetivos">
 <h2>Objetivos</h2>
 <p class="lead">Lo que HelpDesk debe lograr para la empresa. Las metas numéricas se acuerdan con el cliente, porque hoy no hay una medición de partida.</p>
@@ -187,7 +188,7 @@ th,td{border-bottom-color:var(--line)}
 <thead><tr><th>Historia</th><th>Qué permite</th><th>Rol</th><th>Sprint</th></tr></thead>
 <tbody id="rows"></tbody>
 </table></div>
-<p class="note">Los avisos de SLA se muestran con tiempos fijos de ejemplo en el MVP. Su configuración completa (EP-09) queda para después. Quedan fuera por ahora: base de conocimiento, reportes, satisfacción, reasignaciones, transferencias, escalamiento y auditoría.</p>
+<p class="note">Los avisos y tiempos de SLA están previstos, pero no implementados. Su configuración completa (EP-09) queda para después. Siguen pendientes base de conocimiento, reportes, satisfacción, reasignaciones, transferencias, escalamiento y auditoría completa; hoy existe auditoría de operaciones administrativas, recuperación elegible y creación de tickets.</p>
 </section>
 
 <section id="sprints">
@@ -201,7 +202,7 @@ th,td{border-bottom-color:var(--line)}
 <p class="lead">El equipo, en el papel del cliente, cerró estas definiciones. Los acuerdos y pendientes restantes están en Decisiones-de-producto.md.</p>
 <div class="todo">
 <div><b>Primera respuesta: primer cambio a En proceso</b><span>Se calcula con el historial de estados, sin columna aparte ni reinicios. No cuentan Telegram, notas internas ni avisos automáticos (HU-04-04).</span></div>
-<div><b>El agente cierra; solo el supervisor cancela</b><span>Cerrado significa éxito; Cancelado significa no continuar. Seis estados, elegidos explícitamente sin restricciones de transición.</span></div>
+<div><b>El agente cierra; solo el supervisor cancela</b><span>Cerrado significa éxito; Cancelado significa no continuar. Catálogo de seis estados; las transiciones aún no están implementadas.</span></div>
 <div><b>El supervisor ajusta prioridades y concede excepciones de tiempo</b><span>Los valores y las demás reglas de SLA siguen pendientes de definición.</span></div>
 <div><b>Plataforma web</b><span>Se mantiene el acceso interno con un único rol vigente por usuario.</span></div>
 <div><b>El supervisor revisa artículos y el administrador publica</b><span>Supervisor y administrador tienen las funciones técnicas de auditoría y respaldo. En la práctica, un tercero externo acude presencialmente y usa localmente cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático. Las acciones se registran a nombre de la cuenta de auditoría utilizada; no hay un quinto rol.</span></div>

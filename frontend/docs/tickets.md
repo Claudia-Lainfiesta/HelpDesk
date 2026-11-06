@@ -1,11 +1,16 @@
 # Tickets
 
+El número público es `TK-XXXXXX`, por ejemplo `TK-000123`, mínimo seis dígitos.
+Al superar 999999 se muestra el número completo. La interfaz usa `number` de la
+API, sin formatearlo de nuevo. El ID interno se mantiene en `/tickets/:id`.
+
 `/tickets` consume exclusivamente la API. El backend determina visibilidad:
 solicitante ve sus tickets; agente, supervisor y administrador ven todos.
 Todos pueden crear para sí mismos y necesitan cambiar antes una contraseña
 temporal. Las guardas conservan la sesión y el backend verifica cada petición.
 
-La búsqueda espera 300 ms y consulta número o asunto. `search`, `status`,
+La búsqueda espera 300 ms y consulta número o asunto en el backend. Admite
+`TK-000123`, `000123`, `123` y texto del asunto, por coincidencia parcial. `search`, `status`,
 `categoryId`, `page` y `pageSize` se conservan en la URL; cambiar un filtro vuelve
 a página 1. Se ofrecen tamaños 10, 20 y 50. El número enlaza al detalle mediante
 un enlace nativo accesible. Fechas UTC se presentan en español y zona del navegador.
@@ -23,7 +28,8 @@ obligatorios, contenido sin espacios vacíos y longitudes de 160/5000 caracteres
 Solo ofrece categorías activas. No contiene campos de solicitante, estado,
 agente, prioridad o adjuntos. Bloquea doble envío y cierre durante la creación.
 
-Tras un 201 cierra el modal, anuncia el número devuelto por la API, recarga la
+Tras un 201 cierra el modal, anuncia «Ticket TK-000123 creado correctamente.»
+con el número devuelto por la API y recarga la
 lista y abre `/tickets/:id`. Un error conserva el texto. Si la categoría ya no
 está disponible, limpia su selección y recarga categorías para elegir otra,
 conservando asunto y descripción. El reintento de categorías también es visible.

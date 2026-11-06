@@ -2,7 +2,10 @@
 
 El 29-oct-2026 el equipo, haciendo el papel del cliente, cerró las decisiones
 de S0-08. Este registro recoge lo acordado; los puntos que todavía necesitan
-una decisión están separados al final.
+una decisión están separados al final. Este registro distingue acuerdos de
+producto de implementación: primera respuesta, estados editables, SLA, artículos,
+consulta de auditoría y respaldos siguen siendo trabajo futuro. El estado actual
+está en [README.md](README.md).
 
 | Fecha | Decisión | Motivo breve | Historias o épicas afectadas |
 | --- | --- | --- | --- |
@@ -12,7 +15,7 @@ una decisión están separados al final.
 | 29-oct-2026 | El supervisor revisa los artículos de conocimiento y el administrador los publica. | Separar la revisión del contenido de su publicación. | EP-07; HU-07-04 y HU-07-05; D-48. |
 | 29-oct-2026 | Las funciones técnicas de auditoría y respaldo corresponden al supervisor y al administrador. Por seguridad, en la práctica las realiza un tercero externo que acude presencialmente a la empresa y entra localmente con cuentas temporales de auditoría creadas por el administrador: una de solicitante, una de agente, una de supervisor y una de administrador. Usan los cuatro roles existentes, vencen automáticamente en la fecha indicada y sus acciones quedan registradas a nombre de la cuenta de auditoría utilizada; no hay un quinto rol. | Comprobar el sistema de forma externa y presencial sin compartir credenciales de empleados, con acceso limitado en el tiempo y acciones atribuibles a la cuenta de auditoría. | EP-05 y EP-10; HU-05-01, HU-10-06, HU-10-07, HU-10-08 y HU-10-09; D-74 y D-75. |
 | 29-oct-2026 | Cada usuario tiene **un solo rol a la vez**: solicitante, agente, supervisor o administrador. | Evitar combinaciones simultáneas y mantener claro el rol vigente. | EP-05; HU-05-05 y HU-05-07; D-35. |
-| 29-oct-2026 | La referencia del ticket tiene el formato **`TK-XXXXXX`**, con seis dígitos. | Reconocer y compartir una referencia uniforme del caso. | EP-01 y EP-02; HU-01-01. |
+| 29-oct-2026 | La referencia del ticket tiene el formato **`TK-XXXXXX`**, con un mínimo de seis dígitos; no se recortan números mayores que 999999. | Reconocer y compartir una referencia uniforme del caso. | EP-01 y EP-02; HU-01-01. |
 | 29-oct-2026 | La plataforma será **web**. | Mantener la modalidad acordada para el proyecto actual. | S0-01, S0-08 y los recorridos del portal y de atención. |
 
 ## Pendientes y consideraciones
@@ -21,10 +24,11 @@ una decisión están separados al final.
   sentidos con dos cuentas reales. La prueba de concepto no se ha validado
   con una segunda cuenta real; las pruebas automáticas con pasarelas falsas
   no sustituyen esa comprobación.
-- **Duración de las cuentas temporales de auditoría — PENDIENTE:** definir su
-  duración máxima por defecto. La creación por el administrador, una cuenta por
-  cada rol existente, el vencimiento automático y el registro de acciones a
-  nombre de la cuenta de auditoría ya están acordados.
+- **Cuentas temporales — IMPLEMENTADO:** 7 días por defecto y máximo de 30 días
+  desde la creación, configurables con `TEMP_ACCOUNT_DEFAULT_DAYS` y
+  `TEMP_ACCOUNT_MAX_DAYS` (enteros de 1 a 365; por defecto ≤ máximo). Las creadas
+  como temporales conservan vencimiento obligatorio; ampliarlo no reinicia el
+  plazo desde su creación. La aplicación no impone una única cuenta por rol.
 - **Autor del primer cambio a En proceso — PENDIENTE:** precisar cómo se cuenta
   exactamente esa primera vez cuando el cambio lo hace alguien distinto del
   agente asignado. No se da por decidido si ese cambio acredita la primera
@@ -34,12 +38,13 @@ una decisión están separados al final.
   sprint asignado en el MVP actual. Antes de programar HU-04-04 debe revisarse
   la cobertura del historial que necesita; no se movieron historias ni se
   amplió el MVP.
-- **Referencia y POC existente:** la documentación técnica de Telegram describe
-  una validación de al menos seis dígitos, mientras que el formato de producto
-  acordado es de seis. Esa diferencia queda señalada para la revisión técnica;
-  este cambio documental no modifica frontend, backend ni la descripción de
-  lo que realmente hace la POC.
+- **Referencia pública — CONFIRMADO 6-nov-2026:** se presenta `TK-000123` y
+  se conserva el número completo a partir de `TK-1000000`. El ID interno se usa
+  en las rutas; no se reinicia la secuencia ni se cambian IDs. La POC de Telegram
+  acepta el mismo formato mínimo, sin comprobar que el ticket exista.
 
-Los demás pendientes de los documentos de requerimientos siguen abiertos:
+La autenticación local, la matriz de permisos del núcleo actual y los tiempos
+de sesión ya están implementados; no son decisiones abiertas. Los demás
+pendientes de los documentos de requerimientos siguen abiertos:
 valores y reglas de SLA, permisos no cerrados aquí, condiciones de aprobación,
 retención y recuperación, entre otros. Cerrar S0-08 no los da por resueltos.

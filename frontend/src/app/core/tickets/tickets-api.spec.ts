@@ -15,7 +15,7 @@ describe('TicketsApi', () => {
   afterEach(() => http.verify());
   it('envía paginación, búsqueda y filtros al servidor', () => {
     api
-      .listar({ page: 2, pageSize: 10, search: 'HD-000123', status: 'en_espera', categoryId: '4' })
+      .listar({ page: 2, pageSize: 10, search: 'TK-000123', status: 'en_espera', categoryId: '4' })
       .subscribe();
     const r = http.expectOne((r) => r.url === '/api/tickets');
     expect(
@@ -23,7 +23,7 @@ describe('TicketsApi', () => {
     ).toEqual({
       page: '2',
       pageSize: '10',
-      search: 'HD-000123',
+      search: 'TK-000123',
       status: 'en_espera',
       categoryId: '4',
     });

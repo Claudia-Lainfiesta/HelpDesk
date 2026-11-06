@@ -11,7 +11,7 @@ const metadataSchema = z
     previousExpiresAt: z.iso.datetime({ offset: true }).nullable().optional(),
     ticketNumber: z
       .string()
-      .regex(/^HD-\d{6,}$/)
+      .regex(/^TK-\d{6,}$/)
       .optional(),
     categoryId: z
       .string()

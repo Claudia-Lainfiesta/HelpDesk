@@ -15,8 +15,8 @@ restaura la vista. Los valores inválidos se normalizan antes de enviarlos.
 La paginación admite hasta 100 registros. Un interruptor apagado no filtra;
 si un enlace incluye expresamente `temporary=false` o `expired=false`, se respeta.
 
-Cada fila muestra nombre, correo, rol, vencimiento, estado y último
-acceso. Las fechas ISO de la API se presentan en español con la zona del
+Las columnas son Usuario, Rol, Estado, Último acceso y Acciones. La cuenta
+temporal y su vencimiento se muestran junto al usuario, sin columnas adicionales de autenticación. Las fechas ISO de la API se presentan en español con la zona del
 navegador, también al editar mediante `datetime-local`. Puede haber varias
 insignias simultáneas: por ejemplo, una cuenta inactiva y vencida.
 

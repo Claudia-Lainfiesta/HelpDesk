@@ -1,7 +1,7 @@
 # HelpDesk · Frontend
 
-Base del Sprint 1 con Angular 22.2, Tailwind CSS 4, TypeScript 6 y Vitest.
-Incluye diseño semántico, acceso local, sesiones y administración de usuarios y categorías.
+Sprint 1 y núcleo de tickets del Sprint 2 con Angular 22.2, Tailwind CSS 4, TypeScript 6 y Vitest.
+Incluye diseño semántico, acceso local, sesiones, recuperación asistida, administración de usuarios/categorías y creación, listado y detalle de tickets.
 
 ## Desarrollo
 
@@ -48,6 +48,7 @@ aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
 - `/cambiar-contrasena`: cambio voluntario u obligatorio por contraseña temporal.
 - `/recuperar-contrasena`: solicita ayuda con aviso administrativo, sin restablecimiento automático.
 - `/tickets`: listado real paginado, búsqueda, filtros y creación.
+  Muestra referencias `TK-XXXXXX` recibidas de la API, mínimo seis dígitos.
 - `/tickets/:id`: detalle persistido con autorización.
 - `/categorias` y `/usuarios`: administración real, disponible solo para el administrador.
 - `/reportes`: marcador para supervisor y administrador.
@@ -139,8 +140,7 @@ la guía y su componente del bundle. `verify:production` comprueba que no estén
 presentes. Para desarrollo continuo también existe `npm run watch`.
 
 Se conservan las versiones de Angular, TypeScript y Tailwind del proyecto.
-Figtree se sirve localmente desde npm. Los íconos son SVG propios porque el
-paquete Lucide consultado no declara compatibilidad con Angular 22.
+Figtree se sirve localmente desde npm. Los íconos son SVG propios definidos en `shared/ui/icono.ts`.
 Node debe ser >=22.23.1; `.nvmrc` fija 22.23.1. Con nvm usa `nvm install` y `nvm use`.
 
 Para revisar visualmente: compara acceso y tickets con el PDF; prueba Tab y

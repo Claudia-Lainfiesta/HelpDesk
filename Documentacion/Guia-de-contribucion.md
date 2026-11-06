@@ -21,7 +21,8 @@ Ejecuta los chequeos, revisa el diff y sube tu rama. Completa la plantilla del P
 con el resultado esperado, la historia relacionada y las pruebas realizadas.
 Las tareas de cimientos pueden referenciar `S0-XX` en lugar de una HU.
 
-Cada PR requiere CI en verde y la aprobación de al menos otra persona.
+El flujo acordado requiere CI en verde y la aprobación de al menos otra persona.
+Esta revisión del código no verifica si GitHub ya exige esas reglas.
 Resuelve los comentarios de revisión antes de fusionar. Usa **Squash and merge**
 para dejar un commit por PR y elimina la rama al terminar. No hagas pushes
 directos ni force pushes a `main`.
@@ -76,8 +77,9 @@ siguiendo `backend/db/README.md`. Nunca lo agregues a Git. Los comandos `source`
 anteriores asumen el formato bash del ejemplo; exportan las variables para que
 Vitest pueda ejecutar la integración contra PostgreSQL real.
 
-En ambos proyectos, `check` ejecuta en orden **lint → format:check → typecheck
-→ test → build** y se detiene ante el primer error. `format` escribe cambios;
+En backend, `check` ejecuta **lint → format:check → typecheck → test → build**.
+En frontend ejecuta **lint → lint:tokens → format:check → typecheck → test:tokens
+→ test → build → verify:production**. Ambos se detienen ante el primer error. `format` escribe cambios;
 `format:check` solo verifica. Revisa siempre el diff después de formatear.
 
 Comandos individuales disponibles en cada carpeta:
@@ -92,10 +94,10 @@ npm run test:watch
 npm run build
 ```
 
-`npm test` termina tras una ejecución. En frontend verifica los casos correcto,
-de error y reintento del estado de la API. En backend usa Vitest y Supertest;
-las pruebas unitarias no requieren PostgreSQL. La integración de `/api/health/db`
-se omite con un mensaje **SKIP** si `DATABASE_URL` no está exportada. Si está
+`npm test` termina tras una ejecución. En frontend verifica sesión, guardas, administración, listado/modal/detalle de
+tickets, errores, accesibilidad de componentes y protección de tokens. En backend usa Vitest y Supertest;
+las pruebas unitarias no requieren PostgreSQL. Las integraciones de autenticación, usuarios/categorías, recuperación, tickets,
+migraciones y `/api/health/db` se omiten con un mensaje **SKIP** si `DATABASE_URL` no está exportada. Si está
 definida y la base falla, la prueba falla; no se omite por un error de conexión.
 
 Las pruebas anteriores de herramientas y arranque siguen disponibles en

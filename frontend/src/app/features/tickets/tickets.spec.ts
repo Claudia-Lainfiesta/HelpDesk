@@ -15,7 +15,7 @@ import { FormularioTicket } from './formulario-ticket';
 import { Avisos } from '../../shared/ui/aviso-flotante';
 const ticket: Ticket = {
   id: '123',
-  number: 'HD-000123',
+  number: 'TK-000123',
   subject: 'Impresora',
   description: 'Primera línea\n<img src=x onerror=alert(1)>',
   status: 'creado',
@@ -58,7 +58,7 @@ describe('Tickets y detalle', () => {
     lista();
     await pagina.fixture.whenStable();
     const e = pagina.routeNativeElement!;
-    expect(e.querySelector('a[href="/tickets/123"]')?.textContent).toContain('HD-000123');
+    expect(e.querySelector('a[href="/tickets/123"]')?.textContent).toContain('TK-000123');
     expect(e.textContent).toContain('Sin asignar');
     expect(e.textContent).toContain('Creado');
   });
@@ -92,7 +92,7 @@ describe('Tickets y detalle', () => {
       .click();
     lista();
     await pagina.fixture.whenStable();
-    expect(pagina.routeNativeElement!.textContent).toContain('HD-000123');
+    expect(pagina.routeNativeElement!.textContent).toContain('TK-000123');
   });
   it('restaura URL, filtra por categoría/estado y pagina preservando filtros', async () => {
     await abrir('/tickets?search=impresora&status=creado&categoryId=8&page=2&pageSize=10');
@@ -141,7 +141,7 @@ describe('Tickets y detalle', () => {
     http.expectOne('/api/tickets/123').flush(ticket);
     await pagina.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe('/tickets/123');
-    expect(TestBed.inject(Avisos).aviso()?.mensaje).toBe('Ticket HD-000123 creado correctamente.');
+    expect(TestBed.inject(Avisos).aviso()?.mensaje).toBe('Ticket TK-000123 creado correctamente.');
   });
   it('normaliza parámetros inválidos', () =>
     expect(
@@ -161,7 +161,7 @@ describe('Tickets y detalle', () => {
     http.expectOne('/api/tickets/123').flush(ticket);
     await pagina.fixture.whenStable();
     const e = pagina.routeNativeElement!;
-    expect(e.textContent).toContain('HD-000123');
+    expect(e.textContent).toContain('TK-000123');
     expect(e.textContent).toContain('Sin asignar');
     expect(e.querySelector('.whitespace-pre-wrap')?.textContent).toBe(ticket.description);
     expect(e.querySelector('img')).toBeNull();
