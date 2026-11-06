@@ -1,6 +1,8 @@
 import { isIP } from 'node:net';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
+import { statusSchema } from '../tickets/validation.js';
+import { idSchema } from '../http/validation.js';
 
 const role = z.enum(['solicitante', 'agente', 'supervisor', 'administrador']);
 const metadataSchema = z
@@ -17,6 +19,10 @@ const metadataSchema = z
       .string()
       .regex(/^[1-9]\d*$/)
       .optional(),
+    fromStatus: statusSchema.optional(),
+    toStatus: statusSchema.optional(),
+    fromAgentId: idSchema.nullable().optional(),
+    toAgentId: idSchema.nullable().optional(),
     isActive: z.boolean().optional(),
     changedFields: z.array(z.enum(['fullName', 'notes', 'name', 'description'])).optional(),
   })
@@ -24,6 +30,10 @@ const metadataSchema = z
 
 export type AuditAction =
   | 'ticket.created'
+  | 'ticket.assigned'
+  | 'ticket.reassigned'
+  | 'ticket.unassigned'
+  | 'ticket.status_changed'
   | 'auth.recovery_requested'
   | 'users.created'
   | 'users.updated'

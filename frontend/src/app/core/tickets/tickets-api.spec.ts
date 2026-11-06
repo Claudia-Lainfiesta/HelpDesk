@@ -44,4 +44,25 @@ describe('TicketsApi', () => {
     expect(r.request.body).toEqual(body);
     r.flush({});
   });
+
+  it('consulta agentes y actividad paginada; mutaciones envían solo IDs y acciones JSON', () => {
+    api.agentesAsignables().subscribe();
+    http.expectOne('/api/tickets/assignable-agents').flush([]);
+    api.eventos('123', 2, 50).subscribe();
+    http
+      .expectOne('/api/tickets/123/events?page=2&pageSize=50')
+      .flush({ data: [], page: 2, pageSize: 50, total: 0 });
+    for (const id of ['42', null]) {
+      api.asignar('123', id).subscribe();
+      const r = http.expectOne('/api/tickets/123/assignment');
+      expect(r.request.method).toBe('PATCH');
+      expect(r.request.body).toEqual({ agentId: id });
+      r.flush({});
+    }
+    api.transicion('123', 'resolve').subscribe();
+    const r = http.expectOne('/api/tickets/123/transitions');
+    expect(r.request.method).toBe('POST');
+    expect(r.request.body).toEqual({ action: 'resolve' });
+    r.flush({});
+  });
 });

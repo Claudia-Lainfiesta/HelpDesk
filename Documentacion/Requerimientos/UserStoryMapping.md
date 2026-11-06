@@ -11,7 +11,7 @@ listado/búsqueda/filtros/paginación y detalle. La visibilidad actual permite a
 solicitante consultar solo sus tickets; agente, supervisor y administrador ven
 todos. Toda cuenta autenticada puede crear para sí, `creado` y sin agente.
 
-No hay asignación, transiciones, historial de estados, archivos, notas, solución
+Ya hay asignación, nueve transiciones e historial estructurado. No hay archivos, notas, solución
 editable, SLA, artículos o reportes reales. La POC Telegram no se vincula a
 usuarios ni tickets persistidos. La implementación parcial de una épica no da por
 terminadas todas sus historias. [Estado y permisos reales](../README.md).
@@ -173,16 +173,16 @@ Propuesta para la entrega 1. Complementa HU-01-05. EP-02 gestiona la solución y
 
 #### HU-01-09 — Solicitar la reapertura de un ticket
 
-Si el problema persiste, el solicitante puede pedir que se retome la atención de su ticket y explicar por qué lo necesita. Esta opción estará disponible cuando el caso cumpla las reglas de reapertura que acuerde el servicio.
+Si el problema continúa y el ticket está Resuelto, el propietario puede pulsar «El problema continúa» y confirmar su reapertura a En proceso. Conserva el agente y la actividad anterior.
 
 **Para revisar con el equipo:**
 
-- Los casos que permiten pedir una reapertura ofrecen la opción desde su detalle y solicitan un motivo. No se acepta un motivo vacío o compuesto solo por espacios.
-- La petición queda asociada al ticket, con la persona que la hizo, la fecha y la explicación. El portal comunica el resultado del proceso gestionado por EP-02.
-- Si la reapertura necesita revisión, se confirma que la petición está pendiente; no se presenta el ticket como reabierto antes de tiempo.
-- Si el caso no cumple las reglas, se explica el impedimento y se rechaza la operación, incluso si se intenta mediante un acceso directo.
+- Solo Resuelto ofrece reapertura; Cerrado y Cancelado son terminales.
+- La acción es directa después de confirmar, sin aprobación ni motivo textual.
+- Se comprueba la propiedad real y no se admite actor/estado anterior enviados por el cliente.
+- Si el estado cambió, se informa el conflicto y se recargan los datos.
 
-Propuesta para la entrega 2. Complementa HU-01-08. EP-02 gestiona la reapertura, EP-09 sus reglas, EP-05 y EP-10 los permisos y EP-06 los avisos que correspondan. Falta acordar los estados permitidos, el plazo, si se necesita aprobación y cómo tratar peticiones repetidas; no se da por hecho que la reapertura sea automática.
+El núcleo está implementado mediante HU-02-08; futuras comunicaciones y comentarios siguen fuera de alcance.
 
 #### HU-01-10 — Registrar una solicitud en nombre de otro solicitante
 
@@ -221,7 +221,7 @@ Esta historia queda fuera de las entregas propuestas hasta confirmar que se habi
 | D-03 | Implementado: estado, categoría y búsqueda por número/asunto, páginas de 10/20/50 y orden por creación e ID descendentes; fechas en zona del navegador. El filtro por período aún no existe. | HU-01-03, HU-01-04 |
 | D-04 | Los seis estados están acordados; falta completar la matriz de información autorizada y su visibilidad, incluida la identificación del equipo o agente, actividades y archivos. | HU-01-05, HU-01-06, HU-01-08 |
 | D-05 | Definir vinculación, mecanismo de acceso a Telegram y tratamiento de casos sin agente o con conversación no disponible por su estado. | HU-01-07 |
-| D-06 | Acordar estados, plazo, aprobación y manejo de peticiones repetidas para reapertura. | HU-01-09 |
+| D-06 | Implementado: solo Resuelto → En proceso por propietario/supervisor/administrador, sin aprobación, conservando agente; Cerrado/Cancelado terminales. | HU-01-09 |
 | D-07 | Confirmar si se habilita el registro en nombre de otro solicitante y qué agentes pueden usarlo. | HU-01-10 |
 | D-08 | Acordar catálogo de eventos relevantes y destinatarios para notificaciones por aplicación y Telegram. | HU-01-01, HU-01-09, HU-01-10; integración con EP-06 |
 | D-09 | Definir retención de tickets y archivos, y objetivos medibles de accesibilidad, usabilidad, rendimiento y confiabilidad del portal. | Todas las historias pertinentes |
@@ -234,12 +234,12 @@ Que soporte pueda llevar cada solicitud desde su registro hasta su resolución y
 
 Participan agentes de soporte y supervisores con acceso al caso. Los solicitantes intervienen en las acciones que el servicio les permita realizar, como aportar información o pedir que se retome la atención.
 
-Los estados acordados son Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado. Se eligen explícitamente, sin restricciones de transición ni pasos obligatorios. El agente cierra los tickets terminados con éxito; solo el supervisor puede cancelarlos cuando se decide no continuar.
+Los estados acordados son Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado. Se ejecutan las nueve transiciones vigentes: agente asignado atiende/resuelve; propietario, supervisor o administrador cierra/reabre Resuelto y cancela Creado/En espera. No hay reapertura de Cerrado.
 
 ### Alcance y relación con otras épicas
 
 - EP-01 cubre la experiencia del solicitante al registrar y consultar sus solicitudes. Aquí se desarrolla el trabajo necesario para atenderlas y conservar su historia.
-- EP-02 aplica los cambios de estado; EP-09 mantiene el catálogo y sus permisos, sin restricciones de transición, y EP-05 determina quién puede ejecutar cada acción.
+- EP-02 aplica los cambios de estado; EP-09 mantiene el catálogo y sus permisos, con las transiciones y permisos de la máquina vigente, y EP-05 determina quién puede ejecutar cada acción.
 - La asignación de equipos y agentes pertenece a EP-03. Cambiar de estado no concede permisos ni asigna por sí solo un responsable.
 - EP-04 calcula los tiempos y aplica las reglas de SLA. Poner un caso en espera no supone automáticamente que su tiempo deje de contar.
 - La conversación con el solicitante ocurre en Telegram mediante EP-06. El portal no incorpora un chat y recibir un mensaje no cambia automáticamente el estado del ticket.
@@ -266,18 +266,18 @@ Estas entregas son una propuesta de organización, no versiones independientes d
 
 #### HU-02-01 — Actualizar el estado de un ticket
 
-El agente puede indicar en qué situación se encuentra una solicitud para que quienes participan en ella sepan si ya se está atendiendo, está pendiente de algo o ha llegado a otra etapa del proceso. El sistema le permite elegir explícitamente el estado, sin restricciones de origen y destino, respetando sus permisos.
+El agente puede indicar en qué situación se encuentra una solicitud para que quienes participan en ella sepan si ya se está atendiendo, está pendiente de algo o ha llegado a otra etapa del proceso. El sistema ofrece las acciones válidas del estado actual, según rol, propiedad y agente asignado; la máquina vigente está en [tickets](../../backend/docs/tickets.md).
 
 **Para revisar con el equipo:**
 
 - Cada ticket comienza en Creado y conserva un único estado vigente entre los seis acordados.
-- No se impone una secuencia de estados. Se comprueban el acceso al caso y los permisos de la acción, incluso mediante un acceso directo: el agente cierra y solo el supervisor cancela.
-- Antes de aceptar el cambio, se comprueba que se cumplen sus condiciones, como tener una solución documentada para resolver el caso.
+- Solo se admiten las nueve transiciones acordadas. Iniciar, esperar, reanudar y resolver corresponden al agente asignado, supervisor o administrador; cerrar/reabrir Resuelto y cancelar Creado/En espera corresponden al propietario, supervisor o administrador.
+- Antes de aceptar el cambio se comprueban estado, permisos y agente cuando corresponde. Documentar una solución de texto sigue fuera del núcleo actual.
 - Cada cambio confirmado conserva el estado anterior, el nuevo, la persona o proceso que lo realizó y la fecha, junto con el motivo cuando corresponda.
 - Si otra persona ya cambió el estado mientras el agente revisaba el ticket, se informa la situación y se pide revisar los datos vigentes antes de continuar. No se sobrescribe el cambio anterior sin advertencia.
 - Si la operación falla, no se presenta el cambio como completado ni se deja un estado sin su registro correspondiente en el historial.
 
-Propuesta para la entrega 1. EP-09 define las reglas configurables, EP-05 y EP-10 controlan los accesos y EP-06 entrega los avisos aplicables. Las historias siguientes detallan las condiciones de algunos cambios. Los seis estados y la selección sin restricciones de transición ya están acordados; falta completar los demás permisos y condiciones de las acciones.
+Propuesta para la entrega 1. EP-09 define las reglas configurables, EP-05 y EP-10 controlan los accesos y EP-06 entrega los avisos aplicables. Las historias siguientes detallan las condiciones de algunos cambios. Los seis estados, nueve transiciones y permisos del núcleo están implementados; motivos de texto y solución documentada siguen pendientes.
 
 #### HU-02-02 — Registrar el trabajo realizado en una solicitud
 
@@ -313,13 +313,13 @@ Cuando no puede avanzar, el agente puede dejar el caso en espera explicando qué
 
 **Para revisar con el equipo:**
 
-- El agente puede elegir En espera sin restricciones de transición y debe indicar un motivo que explique qué impide continuar.
+- El agente puede elegir En espera con las transiciones y permisos de la máquina vigente y debe indicar un motivo que explique qué impide continuar.
 - El historial conserva el motivo, la fecha y la persona que dejó el caso en espera.
 - Al retomar el trabajo, se elige explícitamente el estado y queda constancia de cuándo se retomó, quién lo hizo y qué permitió continuar.
 - La información sobre la espera respeta los permisos del solicitante y del equipo de soporte.
 - Los tiempos de atención se tratan según EP-04. La espera no pausa el SLA por el solo hecho de cambiar el estado.
 
-Propuesta para la entrega 2. Complementa HU-02-01 y HU-02-03; utiliza las reglas de EP-09 y se relaciona con EP-04. Falta acordar los motivos de espera y qué esperas afectan los tiempos del servicio; no hay restricciones de transición para entrar o salir de En espera.
+Propuesta para la entrega 2. Complementa HU-02-01 y HU-02-03; utiliza las reglas de EP-09 y se relaciona con EP-04. Falta acordar los motivos de espera y qué esperas afectan los tiempos del servicio; En proceso pasa a En espera; desde En espera se reanuda, resuelve o cancela según los permisos vigentes.
 
 #### HU-02-05 — Documentar la solución y resolver el ticket
 
@@ -328,7 +328,7 @@ Cuando termina de atender el problema, el agente explica qué hizo y cuál fue e
 **Para revisar con el equipo:**
 
 - La solución debe contener una explicación; no se permite resolver un ticket con el campo vacío o compuesto solo por espacios.
-- Solo una persona autorizada puede resolver el caso; no se restringe el estado de origen, pero se comprueban las condiciones de la solución.
+- El agente asignado, supervisor o administrador resuelve solo desde En proceso o En espera y con agente asignado. La solución de texto aún no se implementa.
 - La solución, la persona que la registró y la fecha de resolución quedan asociadas al ticket y disponibles en su historial.
 - La explicación destinada al solicitante no debe exponer notas internas ni archivos restringidos. El contenido se presenta según los permisos acordados.
 - Marcar el ticket como resuelto no equivale a cerrarlo ni a afirmar que el solicitante aceptó la solución.
@@ -337,46 +337,43 @@ Propuesta para la entrega 1. Complementa la consulta de solución de HU-01-08 y 
 
 #### HU-02-06 — Cerrar un ticket cuando termina su atención
 
-El agente puede cerrar una solicitud cuando su atención terminó con éxito y se cumplen las condiciones acordadas. Cerrado distingue ese resultado de Cancelado, que significa que se decidió no continuar.
+El propietario confirma que el problema terminó y cierra el ticket Resuelto. Supervisor y administrador también pueden cerrarlo. Ser agente asignado no permite cerrar un ticket ajeno.
 
 **Para revisar con el equipo:**
 
-- El cierre lo realiza el agente, sin restricciones de transición y después de comprobar las condiciones definidas para el servicio.
-- Si falta una condición, se explica qué está pendiente y el ticket conserva su estado actual.
-- El historial registra la fecha de cierre y el agente que lo ejecutó.
-- Cerrar el caso no elimina su solución, sus actividades ni las referencias de comunicación; el HelpDesk no conserva el contenido de los mensajes. La consulta posterior sigue las reglas de acceso y retención.
-- Leer una solución o recibir una notificación no se interpreta por sí solo como aceptación del solicitante ni como autorización para cerrar.
+- Solo se permite Resuelto → Cerrado, con confirmación en pantalla.
+- El historial registra actor, estado anterior/nuevo y fecha; conserva la resolución y fija la fecha de cierre.
+- Cerrado es terminal: no se reabre ni cambia asignación.
+- Leer el detalle o recibir un aviso no confirma automáticamente el cierre.
 
-Propuesta para la entrega 1. Se apoya en HU-02-01, HU-02-05 y las reglas de EP-09. El agente es quien cierra. Falta decidir si se necesita confirmación previa del solicitante; no se presupone un plazo de confirmación.
+El núcleo está implementado. Solución de texto, adjuntos y notificaciones siguen fuera de esta etapa; se coordina con HU-02-01 y HU-02-09.
 
 #### HU-02-07 — Cancelar una solicitud con una razón clara
 
-Cuando una solicitud ya no debe continuar, solo el supervisor puede cancelarla explicando el motivo. Por ejemplo, podría haberse registrado por error o haber dejado de ser necesaria, si esas razones son aceptadas por el servicio.
+Cuando no corresponde continuar, el propietario de cualquier rol, supervisor o administrador puede cancelar únicamente desde Creado o En espera. Un agente no cancela tickets ajenos por estar asignado.
 
 **Para revisar con el equipo:**
 
-- La cancelación requiere un motivo y solo la realiza el supervisor. El solicitante no cancela directamente y no se restringe el estado de origen.
-- El sistema comprueba los permisos y las condiciones antes de cancelar, también si la operación se intenta mediante un acceso directo.
-- El historial conserva quién canceló, cuándo lo hizo y por qué. Las actividades y los archivos anteriores no se eliminan por cancelar el ticket.
-- Un caso cancelado se identifica como tal; no se presenta como resuelto ni se inventa una solución.
-- Si la cancelación no está permitida, el portal explica el impedimento y mantiene el estado actual.
+- Se comprueban rol, propiedad y estado actuales, también mediante acceso directo.
+- La pantalla pide confirmación; el núcleo no recibe motivos o comentarios de texto.
+- La operación fija canceled_at y registra actor/antes/después en actividad y auditoría sin simular resolución o cierre exitoso.
+- No se permite desde En proceso, Resuelto, Cerrado o Cancelado. Cancelado es terminal.
 
-Propuesta para la entrega 2. Utiliza HU-02-01, HU-02-09 y las reglas de EP-05 y EP-09. EP-06 gestiona los avisos aplicables. El solicitante no cancela directamente. Falta precisar el catálogo de motivos y si podrá pedir una revisión al supervisor.
+Implementado el núcleo de cancelación de HU-02-01 y HU-02-09. El catálogo de motivos y su captura textual quedan pendientes para una etapa posterior.
 
 #### HU-02-08 — Gestionar la reapertura de una solicitud
 
-Cuando el solicitante pide que se revise nuevamente un problema, el proceso de atención permite evaluar su petición y retomar el mismo caso si corresponde. El equipo conserva la solución anterior y los antecedentes para entender por qué fue necesario volver a atenderlo.
+El propietario, supervisor o administrador puede reabrir directamente un ticket Resuelto si el problema continúa. El agente solo puede hacerlo sobre un ticket propio, no por ser su agente asignado.
 
 **Para revisar con el equipo:**
 
-- La petición iniciada en HU-01-09 conserva el motivo, la persona que la presentó y la fecha. Antes de reabrir, se comprueban las reglas vigentes y los permisos.
-- Si se necesita revisión, una persona autorizada puede aceptar o rechazar la petición dejando una explicación. El solicitante puede conocer el resultado permitido desde su ticket.
-- Si las reglas permiten una reapertura directa, el sistema aplica esas condiciones sin simular una aprobación manual.
-- Una reapertura aceptada lleva el caso al estado que se acuerde y registra quién o qué proceso la ejecutó y cuándo. No se presupone la existencia de un estado llamado «reabierto».
-- Si la petición se rechaza o el caso no cumple las condiciones, se conserva la decisión y el ticket no cambia a un estado de atención.
-- La reapertura no borra la solución ni las fechas anteriores, y no reinicia por sí sola los SLA ni decide quién atenderá el caso.
+- Solo se permite Resuelto → En proceso; Cerrado y Cancelado no se reabren.
+- La pantalla confirma la operación; no hay aprobación, plazos ni solicitud separada.
+- Se conserva el agente asignado y se limpia resolved_at.
+- La resolución anterior permanece en el historial como evento; no se inventan ni borran transiciones.
+- No hay motivos de texto, SLA ni cálculo de primera respuesta en esta etapa.
 
-Propuesta para la entrega 2. Completa el proceso iniciado en HU-01-09. Utiliza HU-02-01 y HU-02-09; EP-03 determina la responsabilidad, EP-04 el tratamiento de tiempos, EP-09 las reglas y EP-06 los avisos. Se mantienen pendientes los estados elegibles, plazos, aprobación y tratamiento de peticiones repetidas ya señalados en EP-01.
+El núcleo está implementado y se coordina con HU-01-09, HU-02-01 y HU-02-09.
 
 #### HU-02-09 — Consultar la historia de atención de un caso
 
@@ -387,7 +384,7 @@ El agente o supervisor autorizado puede revisar el recorrido de una solicitud pa
 - El historial reúne el registro inicial, las actividades y los cambios relevantes, con sus fechas y responsables, en un orden que permita reconstruir la atención. Cada cambio de estado conserva quién lo hizo, de cuál a cuál y cuándo; HU-04-04 consulta ese historial para calcular la primera entrada en En proceso, sin una columna aparte.
 - Las soluciones, esperas, cancelaciones y reaperturas conservan sus motivos y antecedentes cuando correspondan. Una nueva etapa no borra las anteriores.
 - Los cambios originados en otras funciones, como la asignación de EP-03, se incorporan con su referencia al caso; el historial no ejecuta esas acciones.
-- Cada persona ve solo el contenido que tiene permitido consultar. Ser agente, supervisor o administrador no concede por sí solo acceso a todos los casos.
+- Cada persona ve solo el contenido que tiene permitido consultar. Agente, supervisor y administrador consultan todos los casos; solicitante solo los propios.
 - Las notas internas y los archivos restringidos mantienen sus controles de acceso, incluso mediante enlaces directos. La vista del solicitante sigue lo definido en HU-01-06.
 
 Propuesta para la entrega 1. Reúne la información producida por las funciones del ticket y aplica EP-05 y EP-10. Este historial sirve para seguir la atención; la auditoría de seguridad conserva su alcance propio en EP-10.
@@ -409,12 +406,12 @@ Se continúa la numeración de decisiones de EP-01. Cuando una definición ya ex
 
 | ID | Decisión necesaria | Historias afectadas |
 | --- | --- | --- |
-| D-10 | Acordado: Creado es inicial; Cerrado y Cancelado son finales; se elige entre los seis estados sin restricciones de transición. El agente cierra y solo el supervisor cancela. Falta completar los demás permisos y condiciones de las acciones. Complementa D-04 sobre lo que ve el solicitante. | HU-02-01, HU-02-04 a HU-02-08 |
+| D-10 | Implementado: Creado inicial, Cerrado/Cancelado terminales y nueve transiciones. Propietario/supervisor/administrador cierran o reabren Resuelto y cancelan Creado/En espera; agente asignado atiende/resuelve. Complementa D-04 sobre lo que ve el solicitante. | HU-02-01, HU-02-04 a HU-02-08 |
 | D-11 | Acordar qué actividades se registran, quién puede verlas y cómo corregirlas sin perder antecedentes. | HU-02-02, HU-02-09 |
 | D-12 | Definir cuándo se considera atendida una petición de información y qué motivos permiten dejar un caso en espera o retomarlo. Coordinar su efecto sobre SLA con EP-04. | HU-02-03, HU-02-04 |
-| D-13 | El agente cierra los tickets terminados con éxito. Falta acordar el contenido necesario de la solución, su corrección posterior y si se necesita confirmación previa del solicitante. | HU-02-05, HU-02-06 |
-| D-14 | Acordado: solo el supervisor cancela, con motivo y sin restricciones de transición; el solicitante no cancela directamente. Falta precisar el catálogo de motivos y si podrá solicitar una revisión. | HU-02-07 |
-| D-06, ampliación | Resolver las reglas de reapertura ya pendientes en EP-01 y acordar el estado de destino, la asignación y el efecto en los tiempos. | HU-02-08; HU-01-09 |
+| D-13 | Implementado: confirma el propietario o cierra supervisor/administrador, solo desde Resuelto. El agente asignado no cierra tickets ajenos. Solución textual y correcciones posteriores pendientes. | HU-02-05, HU-02-06 |
+| D-14 | Implementado: propietario de cualquier rol, supervisor o administrador cancela Creado/En espera. No hay motivo textual; catálogo y captura de motivos pendientes. | HU-02-07 |
+| D-06, ampliación | Implementado: Resuelto → En proceso conserva asignación y limpia resolved_at; no borra eventos de resolución. Efecto en futuros SLA pendiente. | HU-02-08; HU-01-09 |
 | D-08, seguimiento | Confirmar cuáles de estos cambios son eventos relevantes, sus destinatarios y los avisos por aplicación y Telegram. | Historias que originen eventos de atención |
 | D-09, seguimiento | Aplicar la retención y los objetivos de calidad acordados al historial, las soluciones y los archivos. | HU-02-02, HU-02-05, HU-02-09 |
 
@@ -1726,17 +1723,17 @@ Propuesta para la entrega 1. Se relaciona con HU-01-01, HU-03-08 y las consultas
 
 #### HU-09-02 — Configurar los estados y los cambios permitidos
 
-El responsable del servicio mantiene los seis estados acordados y sus permisos por rol. El estado se elige explícitamente, sin restricciones de transición ni un recorrido obligatorio.
+El responsable del servicio mantiene los seis estados acordados y sus permisos por rol. El estado se elige explícitamente, con las transiciones y permisos de la máquina vigente ni un recorrido obligatorio.
 
 **Para revisar con el equipo:**
 
 - Se mantienen Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado. Creado es inicial; Cerrado y Cancelado son finales.
-- Cada acción conserva sus condiciones y referencias de autorización: el agente cierra y solo el supervisor cancela. Configurar un estado no concede permiso para ejecutarla.
+- Cada acción conserva sus condiciones y referencias de autorización: propietario, supervisor o administrador cierra Resuelto y cancela Creado/En espera. Configurar un estado no concede permiso para ejecutarla.
 - Las reglas no permiten omitir condiciones obligatorias, como documentar una solución antes de resolver un caso, ni confundir resolución, cierre y cancelación.
 - Se valida que el estado elegido sea uno de los seis acordados. No se restringen los destinos según el estado de origen; se comprueban los permisos y las condiciones propias de la acción.
 - Antes de modificar o desactivar un estado utilizado, se define qué ocurre con los tickets que ya están en él. No se cambia su estado de forma silenciosa ni se borra su historial.
 
-Propuesta para la entrega 1. EP-02 ejecuta los cambios y EP-05 controla los permisos, sin restricciones de transición. Retoma D-10 y las condiciones pendientes de espera, solución, confirmación de cierre y reapertura. No incluye un diseñador libre de procesos o condiciones arbitrarias.
+Propuesta para la entrega 1. EP-02 ejecuta los cambios y EP-05 controla los permisos, con las transiciones y permisos de la máquina vigente. Retoma D-10 y las condiciones pendientes de espera, solución, confirmación de cierre y reapertura. No incluye un diseñador libre de procesos o condiciones arbitrarias.
 
 #### HU-09-03 — Mantener la estructura de equipos y niveles
 
@@ -1878,7 +1875,7 @@ Las reglas de negocio pendientes en las épicas anteriores se resuelven una sola
 | D-63 | Implementado: solo administrador mantiene categorías. Los permisos de configuración de políticas, credenciales y otros catálogos futuros siguen pendientes con D-35. | Todas las historias pertinentes |
 | D-64 | Acordar vigencia, alcance sobre casos existentes y pendientes, conservación de versiones y aplicación conjunta de cambios relacionados. | HU-09-10 y los catálogos o políticas afectados |
 | D-65 | Implementado: categorías planas con nombre de 1 a 80 caracteres y único sin distinguir mayúsculas; se desactivan conservando los tickets históricos. Subcategorías y reorganización jerárquica siguen pendientes con D-01, D-47 y D-55. | HU-09-01 |
-| D-66 | Los seis estados se eligen sin restricciones de transición. Falta precisar los demás permisos y condiciones de las acciones y las relaciones configurables de equipos y reglas. Retomar D-10, D-16, D-17 y D-22. | HU-09-02, HU-09-03, HU-09-04 |
+| D-66 | Los seis estados usan las nueve transiciones y permisos fijos del núcleo. No hay configuración dinámica de la máquina. Equipos y reglas configurables siguen pendientes. Retomar D-10, D-16, D-17 y D-22. | HU-09-02, HU-09-03, HU-09-04 |
 | D-67 | Acordar campos permitidos en plantillas, vista previa, uso de respuestas frecuentes y efecto de cambios de texto sobre envíos pendientes. Complementa D-08 y D-40. | HU-09-08 |
 | D-68 | Definir parámetros operativos de Telegram, comprobación de funcionamiento, sustitución de credenciales y manejo de pendientes durante los cambios. Complementa D-45 y D-46. | HU-09-09 |
 | D-23 a D-30, seguimiento | Llevar a configuración los criterios de prioridad, políticas y calendarios de SLA, pausas, umbrales y escalamientos acordados, sin cambiar su significado. | HU-09-05, HU-09-06, HU-09-07 |

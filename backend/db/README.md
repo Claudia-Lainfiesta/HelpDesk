@@ -81,7 +81,7 @@ La operación afecta a toda la base configurada: úsala solo en la base local
 dedicada a HelpDesk. No borra el volumen ni otras bases del contenedor.
 
 El seed es una transacción: inserta cuatro empleados y una cuenta temporal `@helpdesk.local`, cinco
-categorías y seis tickets, uno por estado. Usa `ON CONFLICT DO NOTHING`; para tickets
+categorías y siete tickets: uno por estado y otro Creado ya asignado. Usa `ON CONFLICT DO NOTHING`; para tickets
 también comprueba asunto y solicitante antes de insertar, sin introducir una
 restricción artificial sobre los asuntos de tickets reales. Los ejemplos
 existentes no se sobrescriben. Las secuencias pueden tener saltos al repetir
@@ -133,9 +133,8 @@ restablece contraseñas existentes. Consulta [la guía de autenticación](../doc
   usuarios ni tickets. Las FK por sí solas no impiden borrar filas sin referencias;
   la API aplica permisos y no expone rutas DELETE.
 - Los únicos triggers actualizan `updated_at` en users, categories y tickets.
-  La aplicación valida roles. Las transiciones y la escritura de fechas de
-  resolución/cierre/cancelación quedan pendientes; la base no obliga a pasar
-  por estados intermedios.
+  La aplicación valida roles. La API aplica las nueve transiciones permitidas y escribe fechas de resolución,
+  cierre y cancelación. La base mantiene códigos/FK; la máquina está en el servicio.
 - Las fechas son timestamptz; PostgreSQL conserva instantes y su presentación
   depende de la zona de la sesión. El ejecutor SQL usa UTC.
 
@@ -151,10 +150,10 @@ restablece contraseñas existentes. Consulta [la guía de autenticación](../doc
 | 6     | `cancelado`  | Cancelado  | true       |
 
 Cerrado representa una resolución exitosa; el texto actual del catálogo menciona
-confirmación del usuario. El acuerdo de producto establece que cierra el agente
-y solo cancela el supervisor; esos endpoints todavía no existen. Cancelado
+confirmación del usuario. El acuerdo vigente permite cierre al propietario, supervisor o administrador;
+la cancelación desde creado/en espera usa esos mismos derechos. Cancelado
 significa que se decidió no continuar, por ejemplo por un registro erróneo. Las
-reglas futuras se validarán en la aplicación; la base no restringe transiciones.
+reglas se validan en la aplicación; la base no restringe transiciones.
 
 El ejemplo cancelado conserva un agente asignado, pero `resolved_at` y
 `closed_at` quedan en NULL: cancelar no representa una resolución exitosa ni
@@ -172,6 +171,24 @@ erDiagram
     users o|--o{ tickets : assigned_agent_id
     categories ||--o{ tickets : category_id
     ticket_statuses ||--o{ tickets : status_id
+    tickets ||--o{ ticket_events : ticket_id
+    users ||--o{ ticket_events : actor_user_id
+    users o|--o{ ticket_events : from_agent_user_id
+    users o|--o{ ticket_events : to_agent_user_id
+    ticket_statuses o|--o{ ticket_events : from_status
+    ticket_statuses o|--o{ ticket_events : to_status
+
+    ticket_events {
+        bigint id PK
+        bigint ticket_id FK
+        text event_type "created, assigned, reassigned, unassigned, status_changed"
+        bigint actor_user_id FK
+        text from_status FK "Nullable"
+        text to_status FK "Nullable"
+        bigint from_agent_user_id FK "Nullable"
+        bigint to_agent_user_id FK "Nullable"
+        timestamptz created_at
+    }
 
     roles {
         smallint id PK
@@ -280,3 +297,13 @@ podman exec -i backend_postgres_1 psql -U helpdesk -d helpdesk < test/schema.sql
 Las pruebas de integración requieren PostgreSQL local y permiso `CREATEDB`.
 Crean una base temporal aislada y la eliminan al terminar; no resetean HelpDesk.
 Comprueban transacciones, inmutabilidad, exclusión mutua y protecciones locales.
+
+## Actividad de tickets
+
+`0013_ticket_activity.sql` incorpora actividad estructurada, con FK RESTRICT,
+validación de forma por evento e índice `(ticket_id, created_at DESC, id DESC)`.
+Solo hay un created por ticket. El backfill conserva solicitante/fecha de creación;
+no reconstruye transiciones desconocidas. Las operaciones nuevas guardan cambio,
+actividad y auditoría en una transacción. Consulta [tickets](../docs/tickets.md).
+El seed nuevo incluye siete escenarios y eventos válidos; ejemplos ya existentes
+conservan su historia. Repetir el seed no duplica tickets o eventos.

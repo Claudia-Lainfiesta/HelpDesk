@@ -6,8 +6,8 @@ Consulta [la guía de base de datos y su diagrama ER](db/README.md).
 Incluye autenticación con sesiones en el servidor. Consulta [la guía de autenticación](docs/auth.md).
 Incluye [administración de usuarios, cuentas temporales y categorías](docs/users-and-categories.md),
 con auditoría administrativa y [tickets reales](docs/tickets.md): alta propia,
-listado, búsqueda, filtros, paginación y detalle. No hay todavía asignación,
-transiciones, comentarios, adjuntos, prioridad, SLA ni reportes reales.
+listado, búsqueda, filtros, paginación y detalle. Incluye asignación, transiciones y actividad estructurada. No hay comentarios,
+adjuntos, prioridad, SLA ni reportes reales.
 
 ## Desarrollo local en Fedora con Podman
 
@@ -162,29 +162,33 @@ Las rutas protegidas exigen una cuenta activa, no vencida y una sesión válida.
 Si la contraseña es temporal solo se permiten me, logout y change-password,
 además de las rutas públicas de salud y recuperación.
 
-| Método | Ruta                            | Acceso                             | Propósito y resultado                                                                           |
-| ------ | ------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
-| GET    | `/api/health`                   | Público                            | 200 con status, service y time; no consulta PostgreSQL                                          |
-| GET    | `/api/health/db`                | Público                            | SELECT 1; 200 o 503 DATABASE_UNAVAILABLE                                                        |
-| POST   | `/api/auth/login`               | Público                            | `{ email, password }`; perfil 200 y cookie HttpOnly, o 401 genérico/429                         |
-| POST   | `/api/auth/logout`              | Sin exigir sesión                  | `{}`; revoca la actual, borra cookie, 204 idempotente                                           |
-| GET    | `/api/auth/me`                  | Sesión; admite contraseña temporal | Perfil 200 o 401                                                                                |
-| POST   | `/api/auth/change-password`     | Sesión; admite contraseña temporal | `{ currentPassword, newPassword }`; perfil 200, conserva sesión actual                          |
-| POST   | `/api/auth/recovery-request`    | Público                            | `{ email }`; 202 genérico; aviso elegible al administrador                                      |
-| GET    | `/api/users`                    | Administrador                      | `page,pageSize,q,role,active,temporary,expired`; página de cuentas                              |
-| GET    | `/api/users/:id`                | Administrador                      | Cuenta 200 o 404 USER_NOT_FOUND                                                                 |
-| POST   | `/api/users`                    | Administrador                      | Alta con nombre/correo/rol y temporalidad/notas opcionales; 201 y contraseña temporal una vez   |
-| PATCH  | `/api/users/:id`                | Administrador                      | Nombre, rol, vencimiento y notas; cuenta 200; correo inmutable                                  |
-| POST   | `/api/users/:id/deactivate`     | Administrador                      | `{}`; desactiva y revoca sesiones; cuenta 200                                                   |
-| POST   | `/api/users/:id/reactivate`     | Administrador                      | `{}`; reactiva sin renovar vencimiento; cuenta 200                                              |
-| POST   | `/api/users/:id/reset-password` | Administrador                      | `{}`; revoca sesiones, limpia bloqueo, exige cambio; contraseña temporal una vez                |
-| POST   | `/api/users/:id/unlock`         | Administrador                      | `{}`; limpia fallos y bloqueo, conserva contraseña y sesiones                                   |
-| GET    | `/api/categories`               | Sesión                             | `{ data }`; activas; includeInactive=true solo administrador                                    |
-| POST   | `/api/categories`               | Administrador                      | `{ name, description?, isActive? }`; categoría 201                                              |
-| PATCH  | `/api/categories/:id`           | Administrador                      | Campos de categoría modificados; 200; sin borrado                                               |
-| POST   | `/api/tickets`                  | Sesión                             | `{ subject, description, categoryId }`; 201 y ticket completo, siempre propio/creado/sin agente |
-| GET    | `/api/tickets`                  | Sesión                             | `page,pageSize,search,status,categoryId`; página según permisos                                 |
-| GET    | `/api/tickets/:id`              | Sesión                             | Ticket completo; 404 también para un ticket ajeno al solicitante                                |
+| Método | Ruta                             | Acceso                                      | Propósito y resultado                                                                           |
+| ------ | -------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| GET    | `/api/health`                    | Público                                     | 200 con status, service y time; no consulta PostgreSQL                                          |
+| GET    | `/api/health/db`                 | Público                                     | SELECT 1; 200 o 503 DATABASE_UNAVAILABLE                                                        |
+| POST   | `/api/auth/login`                | Público                                     | `{ email, password }`; perfil 200 y cookie HttpOnly, o 401 genérico/429                         |
+| POST   | `/api/auth/logout`               | Sin exigir sesión                           | `{}`; revoca la actual, borra cookie, 204 idempotente                                           |
+| GET    | `/api/auth/me`                   | Sesión; admite contraseña temporal          | Perfil 200 o 401                                                                                |
+| POST   | `/api/auth/change-password`      | Sesión; admite contraseña temporal          | `{ currentPassword, newPassword }`; perfil 200, conserva sesión actual                          |
+| POST   | `/api/auth/recovery-request`     | Público                                     | `{ email }`; 202 genérico; aviso elegible al administrador                                      |
+| GET    | `/api/users`                     | Administrador                               | `page,pageSize,q,role,active,temporary,expired`; página de cuentas                              |
+| GET    | `/api/users/:id`                 | Administrador                               | Cuenta 200 o 404 USER_NOT_FOUND                                                                 |
+| POST   | `/api/users`                     | Administrador                               | Alta con nombre/correo/rol y temporalidad/notas opcionales; 201 y contraseña temporal una vez   |
+| PATCH  | `/api/users/:id`                 | Administrador                               | Nombre, rol, vencimiento y notas; cuenta 200; correo inmutable                                  |
+| POST   | `/api/users/:id/deactivate`      | Administrador                               | `{}`; desactiva y revoca sesiones; cuenta 200                                                   |
+| POST   | `/api/users/:id/reactivate`      | Administrador                               | `{}`; reactiva sin renovar vencimiento; cuenta 200                                              |
+| POST   | `/api/users/:id/reset-password`  | Administrador                               | `{}`; revoca sesiones, limpia bloqueo, exige cambio; contraseña temporal una vez                |
+| POST   | `/api/users/:id/unlock`          | Administrador                               | `{}`; limpia fallos y bloqueo, conserva contraseña y sesiones                                   |
+| GET    | `/api/categories`                | Sesión                                      | `{ data }`; activas; includeInactive=true solo administrador                                    |
+| POST   | `/api/categories`                | Administrador                               | `{ name, description?, isActive? }`; categoría 201                                              |
+| PATCH  | `/api/categories/:id`            | Administrador                               | Campos de categoría modificados; 200; sin borrado                                               |
+| POST   | `/api/tickets`                   | Sesión                                      | `{ subject, description, categoryId }`; 201 y ticket completo, siempre propio/creado/sin agente |
+| GET    | `/api/tickets`                   | Sesión                                      | `page,pageSize,search,status,categoryId`; página según permisos                                 |
+| GET    | `/api/tickets/:id`               | Sesión                                      | Ticket completo; 404 también para un ticket ajeno al solicitante                                |
+| GET    | `/api/tickets/assignable-agents` | Supervisor o administrador                  | Agentes activos y no vencidos; solo id/nombre/correo                                            |
+| PATCH  | `/api/tickets/:id/assignment`    | Agente a sí mismo; supervisor/administrador | `{ agentId }` o null; ticket 200                                                                |
+| POST   | `/api/tickets/:id/transitions`   | Según acción, propiedad y asignación        | `{ action }`; ticket 200; nueve transiciones                                                    |
+| GET    | `/api/tickets/:id/events`        | Igual que detalle                           | `page,pageSize`; actividad estructurada paginada                                                |
 
 La [matriz de permisos](../Documentacion/README.md#permisos-implementados)
 refleja el núcleo actual. Los errores comunes son 400 INVALID_INPUT/INVALID_JSON,
@@ -192,7 +196,7 @@ refleja el núcleo actual. Los errores comunes son 400 INVALID_INPUT/INVALID_JSO
 PASSWORD_CHANGE_REQUIRED y 415 JSON_REQUIRED. Los códigos específicos, límites,
 cuerpos y ejemplos están en [auth](docs/auth.md), [usuarios/categorías](docs/users-and-categories.md),
 [recuperación](docs/email-and-recovery.md) y [tickets](docs/tickets.md).
-No hay endpoints de asignación, transiciones, comentarios, archivos, SLA o
+No hay endpoints de comentarios, archivos, SLA o
 reportes. Telegram solo tiene scripts de POC, sin webhook ni endpoint HTTP.
 
 ## Comprobaciones
@@ -322,5 +326,4 @@ Consulta los [hallazgos técnicos para EP-06](../Documentacion/Telegram-prueba-d
 
 Consulta [la API de tickets](docs/tickets.md): crear, listar con búsqueda/filtros y
 abrir detalle. Los números TK- son generados por PostgreSQL. El solicitante solo
-consulta sus tickets; los demás roles ven todos. No incluye asignación ni
-cambios de estado.
+consulta sus tickets; los demás roles ven todos. Incluye asignación, transiciones y actividad; no incluye comentarios, adjuntos ni SLA.

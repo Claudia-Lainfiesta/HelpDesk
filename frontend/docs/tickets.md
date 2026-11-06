@@ -40,12 +40,52 @@ El detalle muestra número, asunto, estado, categoría, solicitante, agente,
 creación y descripción. Agente nulo muestra «Sin asignar». La descripción usa
 interpolación de texto y `whitespace-pre-wrap`, sin interpretación HTML.
 Un 404 muestra «No se encontró el ticket.»; otros errores permiten reintentar.
-No se ofrecen botones de asignación o cambios de estado.
+El detalle incorpora los controles de asignación y transición descritos a continuación.
 
-`TicketsApi` tipa `listar`, `obtener` y `crear`; comparte interceptor de sesión,
+`TicketsApi` tipa listados, detalle, creación, agentes, asignación, transiciones y eventos; comparte interceptor de sesión,
 JSON y tratamiento de errores. No almacena sesiones, contraseñas ni tickets en
 localStorage o sessionStorage. Refrescar vuelve a consultar PostgreSQL.
 
 `npm run check` cubre API con HttpTestingController, URL, debounce, filtros,
 paginación, estados de pantalla, creación, doble envío, conservación del texto,
 notificación, navegación y detalle seguro. No necesita red ni backend.
+
+## Asignación y acciones del detalle
+
+`permisosTicket` combina rol y propiedad sin duplicar acciones. El listado conserva
+su rejilla y vuelve a consultar al entrar. Los cambios se hacen en `/tickets/:id`.
+Agente solo ve Asignarme cuando el ticket está libre en creado/en_proceso/en_espera.
+Supervisor y administrador ven selector de agentes válidos y Guardar asignación;
+reasignar/desasignar requieren app-confirmacion. Asignarme y asignación inicial son
+directas. La lista mínima de agentes no concede acceso a Usuarios.
+
+Con agente asignado, el agente responsable y supervisor/administrador ven:
+Creado → Iniciar atención; En proceso → Poner en espera/Marcar como resuelto;
+En espera → Reanudar atención/Marcar como resuelto. Sin agente no se ofrecen estas
+acciones. Propietario, supervisor o administrador pueden cancelar solo Creado y
+En espera, y cerrar/reabrir solo Resuelto. El propietario ve «El problema continúa»
+para reabrir. En Cerrado/Cancelado no hay controles; Resuelto no admite asignación.
+Ser agente asignado no concede cierre/reapertura de tickets ajenos.
+
+Resolver, reabrir, cerrar y cancelar requieren confirmación. Durante el envío se
+bloquean los controles y se impiden duplicados. El éxito actualiza el ticket y
+recarga la actividad sin recargar el navegador, con app-aviso-flotante. Un 409
+muestra el mensaje del servidor y avisa de actualización concurrente; recarga el
+detalle y actividad. Los errores de lectura de agentes/actividad tienen reintento.
+El backend sigue siendo la autoridad: el cliente solo envía agentId o action.
+
+## Actividad
+
+Se muestra más reciente primero, con fecha en zona del navegador y nombres,
+sin correo del actor. Paginación inicial 50, opciones 20/50/100. El texto se genera
+a partir de created, assigned, reassigned, unassigned y status_changed; no se guarda
+en SQL ni se interpreta HTML. Distingue autoasignación, reasignación, resolución,
+reapertura, cierre y cancelación. Conserva las referencias TK y la descripción.
+
+Para tickets previos solo se recuperó creación; no se inventan estados intermedios.
+Hay pruebas sin red para derechos combinados, controles, confirmaciones, todos los
+tipos de evento, paginación, error 409 y recarga. La matriz exacta y los nueve arcos
+permitidos están en [la documentación de API](../../backend/docs/tickets.md).
+
+No incorpora prioridad, comentarios, notas, adjuntos, correo/Telegram de tickets,
+SLA, tiempos de respuesta ni actualizaciones en tiempo real.

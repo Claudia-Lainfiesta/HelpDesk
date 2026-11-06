@@ -1,7 +1,7 @@
+import { ticketError } from './errors.js';
 import type { PoolClient } from 'pg';
 import type { UserProfile } from '../auth/types.js';
 import type { TicketFilters } from './validation.js';
-import { ApiError } from '../auth/errors.js';
 
 const select = `SELECT t.id::text, t.reference AS number, t.subject, t.description,
  s.code AS status, c.id::text AS category_id, c.name AS category_name,
@@ -55,7 +55,7 @@ export async function findTicket(client: Pick<PoolClient, 'query'>, id: string, 
     `${select} WHERE t.id=$1 ${user.role === 'solicitante' ? 'AND t.requester_id=$2' : ''}`,
     user.role === 'solicitante' ? [id, user.id] : [id],
   );
-  if (!result.rows[0]) throw new ApiError(404, 'TICKET_NOT_FOUND', 'No se encontró el ticket.');
+  if (!result.rows[0]) throw ticketError('TICKET_NOT_FOUND');
   return view(result.rows[0]);
 }
 export async function queryTickets(client: PoolClient, filters: TicketFilters, user: UserProfile) {

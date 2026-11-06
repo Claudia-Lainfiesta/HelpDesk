@@ -8,7 +8,7 @@ Corte de código: **6-nov-2026**. Los estados indican cobertura de la historia
 completa: En curso puede incluir un núcleo funcional ya probado y criterios
 más amplios todavía pendientes. No son fechas reales de ejecución ni aceptación
 formal del cliente. El núcleo de Sprint 1 funciona y Sprint 2 ya tiene tickets
-persistidos. Asignación, transiciones, archivos, conversación integrada, SLA y
+persistidos. Asignación, transiciones y actividad ya funcionan; archivos, conversación integrada, SLA y
 reportes continúan pendientes. [Funciones y permisos actuales](../README.md).
 
 ## Sprint 0: Cimientos (Semanas 1 y 2)
@@ -28,7 +28,7 @@ reportes continúan pendientes. [Funciones y permisos actuales](../README.md).
 | S0-09 | Mover el repositorio fuera de iCloud Drive y limpiar los residuos de documentación | | En curso |
 
 **Evidencia actual de cimientos:** stack Angular 22.2/TypeScript 6/Tailwind 4,
-Express 5/Node 22 y PostgreSQL 17 con Podman; doce migraciones y seed reproducible;
+Express 5/Node 22 y PostgreSQL 17 con Podman; trece migraciones y seed reproducible;
 calidad y workflow CI versionados; PDF de login/listado y pantallas reales.
 Hosting, ajustes de protección de GitHub, prueba en otros equipos y relevo con
 dos cuentas reales no se consideran verificados. La carpeta de trabajo actual
@@ -37,7 +37,7 @@ está en Fedora, fuera de iCloud; quedan metadatos Finder sin uso documental.
 **Decisiones del cliente cerradas el 29-oct-2026:**
 
 - Primera respuesta: primer cambio a En proceso, calculado con el historial de estados, sin columna aparte ni dependencia de Telegram.
-- El agente cierra los tickets terminados con éxito y solo el supervisor cancela, con motivo, cuando se decide no continuar.
+- Acuerdo sustituido el 6-nov-2026: propietario, supervisor o administrador cierra Resuelto y cancela Creado/En espera; se aplican nueve transiciones. No hay motivo textual en el núcleo actual.
 - El supervisor ajusta prioridades y concede excepciones de tiempo.
 - Plataforma web.
 - El supervisor revisa artículos y el administrador publica. Auditoría y respaldo corresponden técnicamente a supervisor y administrador; en la práctica los realiza presencialmente un tercero externo, con acceso local mediante cuentas temporales de auditoría creadas por el administrador, una por cada rol existente y con vencimiento automático, sin quinto rol y con las acciones registradas a nombre de la cuenta de auditoría utilizada.
@@ -72,12 +72,12 @@ de identidad y motivo obligatorio de cambios de rol no están completos.
 | HU-01-03 | EP-01 | Consultar mis solicitudes | Solicitante | En curso |
 | HU-01-05 | EP-01 | Consultar el detalle y el responsable de atención | Solicitante | En curso |
 | HU-03-02 | EP-03 | Identificar solicitudes que necesitan asignación | Supervisor | Por hacer |
-| HU-03-03 | EP-03 | Asignar un ticket al equipo y agente adecuados | Supervisor | Por hacer |
+| HU-03-03 | EP-03 | Asignar un ticket al equipo y agente adecuados | Supervisor | En curso |
 
 **Cobertura actual:** creación para la sesión, listado con búsqueda/filtros y
-paginación, y detalle con permisos. Tickets nuevos creados y sin agente; no hay
+paginación, y detalle con permisos. Tickets nuevos creados y sin agente; ya hay asignación manual y actividad; no hay
 registro por cuenta de otra persona ni adjuntos. Los tres núcleos de consulta y
-alta no dan por resueltas asignación, historial o criterios futuros de atención.
+alta se complementan ahora con asignación e historial; equipos, solución textual y otros criterios de atención siguen pendientes.
 
 ## Sprint 3: Atención y cierre (Semanas 7 y 8)
 
@@ -85,10 +85,10 @@ alta no dan por resueltas asignación, historial o criterios futuros de atenció
 
 | ID | Épica | Historia | Rol | Estado |
 |---|---|---|---|---|
-| HU-02-01 | EP-02 | Actualizar el estado de un ticket | Agente | Por hacer |
+| HU-02-01 | EP-02 | Actualizar el estado de un ticket | Agente | En curso |
 | HU-02-02 | EP-02 | Registrar el trabajo realizado | Agente | Por hacer |
 | HU-02-05 | EP-02 | Documentar la solución y resolver el ticket | Agente | Por hacer |
-| HU-02-06 | EP-02 | Cerrar un ticket cuando termina su atención | Agente | Por hacer |
+| HU-02-06 | EP-02 | Cerrar un ticket cuando termina su atención | Agente | En curso |
 | HU-01-08 | EP-01 | Consultar la solución de una solicitud | Solicitante | Por hacer |
 
 ## Sprint 4: Prioridad y Telegram (Semanas 9 y 10)
@@ -102,7 +102,7 @@ alta no dan por resueltas asignación, historial o criterios futuros de atenció
 | HU-05-09 | EP-05 | Vincular una identidad de Telegram | Solicitante | Por hacer |
 | HU-06-08 | EP-06 | Recibir avisos en la aplicación y en Telegram | Todos | Por hacer |
 
-Nota: se prevé usar valores fijos de ejemplo para SLA en el MVP; todavía no están implementados; su configuración completa (EP-09) queda para después. HU-04-04 ya no depende de Telegram, sino del historial de estados de HU-02-01 y HU-02-09. HU-02-01 y HU-02-02 están en Sprint 3 e incluyen el registro de cambios; HU-02-09 y HU-04-04 no tienen sprint asignado en este MVP. Hay que revisar esa cobertura antes de planificar HU-04-04; no se movieron ni agregaron historias a los sprints.
+Nota: se prevé usar valores fijos de ejemplo para SLA en el MVP; todavía no están implementados; su configuración completa (EP-09) queda para después. HU-04-04 ya no depende de Telegram, sino del historial de estados de HU-02-01 y HU-02-09. HU-02-01 y HU-02-02 están en Sprint 3 e incluyen el registro de cambios; HU-02-09 y HU-04-04 no tienen sprint asignado en este MVP. El historial estructurado ya existe; hay que revisar el cálculo y la atribución antes de planificar HU-04-04; no se movieron ni agregaron historias a los sprints.
 
 ## Sprint 5: Pruebas y entrega (Semanas 11 y 12)
 
@@ -117,3 +117,13 @@ Nota: se prevé usar valores fijos de ejemplo para SLA en el MVP; todavía no es
 ## Fuera del MVP (Product Backlog restante)
 
 78 historias para fases posteriores: base de conocimiento (EP-07), reportes y satisfacción (EP-08), reasignación y transferencia, escalamiento, auditoría y respaldos, y el resto de EP-01 a EP-06 y EP-09. El detalle está en `UserStoryMapping.md`.
+
+
+**Ampliación implementada · 6-nov-2026:** asignación/reasignación/desasignación,
+nueve transiciones, derechos por propiedad, cierre de Resuelto por propietario o
+gestión, cancelación de Creado/En espera y actividad estructurada. Los núcleos de
+HU-03-03, HU-02-01, HU-02-06, HU-02-07, HU-02-08 y HU-02-09 están implementados;
+equipos, solución textual, motivos, notas y notificaciones no lo están. No se
+movieron historias entre sprints. Las decisiones iniciales de cierre por agente,
+cancelación exclusiva del supervisor y estados libres quedan sustituidas por
+[la máquina vigente](../../backend/docs/tickets.md).

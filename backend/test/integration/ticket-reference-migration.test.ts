@@ -82,5 +82,35 @@ describe.skipIf(!url)('referencia pública TK y conservación de tickets', () =>
       [category, user],
     );
     expect(created.rows[0].reference).toBe('TK-000002');
+    await client.query(
+      "UPDATE tickets SET status_id=(SELECT id FROM ticket_statuses WHERE code='resuelto') WHERE id=42",
+    );
+    const historyMigration = (await loadMigrations()).find(
+      (m) => m.filename === '0013_ticket_activity.sql',
+    )!;
+    await client.query(historyMigration.sql);
+    const history = (
+      await client.query(
+        'SELECT ticket_id::text,event_type,actor_user_id::text,from_status,to_status,created_at FROM ticket_events ORDER BY ticket_id',
+      )
+    ).rows;
+    expect(history).toHaveLength(4);
+    expect(
+      history.every(
+        (e) =>
+          e.event_type === 'created' &&
+          e.actor_user_id === user &&
+          e.from_status === null &&
+          e.to_status === null,
+      ),
+    ).toBe(true);
+    expect(history[0].created_at).toEqual(before[0].created_at);
+    expect(
+      (
+        await client.query(
+          'SELECT count(*)::int AS n FROM tickets t JOIN ticket_events e ON e.ticket_id=t.id AND e.created_at=t.created_at',
+        )
+      ).rows[0].n,
+    ).toBe(4);
   });
 });

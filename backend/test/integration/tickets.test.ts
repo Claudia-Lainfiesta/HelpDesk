@@ -3,6 +3,7 @@ import pg from 'pg';
 import type { Express } from 'express';
 import request from 'supertest';
 import { beforeAll, afterAll, beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
+import { readFile } from 'node:fs/promises';
 import { loadMigrations } from '../../src/db/migrations.js';
 import { hashPassword } from '../../src/auth/password.js';
 const url = process.env.DATABASE_URL?.trim();
@@ -15,7 +16,12 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
   const schema = `hd_tickets_${randomUUID().replaceAll('-', '')}`;
   const origin = 'http://localhost:4200';
   type Account = { id: string; cookie: string };
-  let solicitante: Account, otro: Account, agente: Account, admin: Account, supervisor: Account;
+  let solicitante: Account,
+    otro: Account,
+    agente: Account,
+    agente2: Account,
+    admin: Account,
+    supervisor: Account;
   let category: string;
   let logs: unknown[][];
   let sensitive: string[];
@@ -59,6 +65,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
     solicitante = await account('solicitante');
     otro = await account('solicitante');
     agente = await account('agente');
+    agente2 = await account('agente');
     admin = await account('administrador');
     supervisor = await account('supervisor');
     category = (
@@ -72,6 +79,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
       for (const secret of sensitive) expect(JSON.stringify(logs)).not.toContain(secret);
     } finally {
       await pool.query('DELETE FROM audit_events');
+      await pool.query('DELETE FROM ticket_events');
       await pool.query('DELETE FROM tickets');
       await pool.query('DELETE FROM sessions');
       await pool.query('DELETE FROM users');
@@ -278,7 +286,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
   ])('rechaza filtro inválido %s', async (query) =>
     expect((await list(solicitante, query)).status).toBe(400),
   );
-  it('conserva categoría histórica inactiva y no ofrece cambios de estado ni asignación', async () => {
+  it('conserva categoría histórica inactiva y rechaza escritura arbitraria de estado', async () => {
     const r = await create();
     await pool.query('UPDATE categories SET is_active=false WHERE id=$1', [category]);
     expect((await detail(r.body.id)).body.category.name).toBe('Categoría de prueba');
@@ -311,6 +319,417 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
       expect(big.rows[0].reference).toBe('TK-1000001');
       await client.query('ROLLBACK');
     } finally {
+      client.release();
+    }
+  });
+
+  const assign = (id: string, to: string | null, actor: Account = admin) =>
+    request(app)
+      .patch(`/api/tickets/${id}/assignment`)
+      .set('Cookie', actor.cookie)
+      .set('Origin', origin)
+      .send({ agentId: to });
+  const transition = (id: string, action: string, actor: Account = agente) =>
+    request(app)
+      .post(`/api/tickets/${id}/transitions`)
+      .set('Cookie', actor.cookie)
+      .set('Origin', origin)
+      .send({ action });
+  const events = (id: string, actor: Account = solicitante, query = '') =>
+    request(app).get(`/api/tickets/${id}/events${query}`).set('Cookie', actor.cookie);
+  async function state(
+    status: string = 'creado',
+    assigned: string | null = agente.id,
+    owner: Account = solicitante,
+  ) {
+    const t = (await create(owner)).body;
+    await pool.query(
+      `UPDATE tickets SET status_id=(SELECT id FROM ticket_statuses WHERE code=$2),assigned_agent_id=$3,
+      resolved_at=CASE WHEN $2 IN ('resuelto','cerrado') THEN now() ELSE NULL END,
+      closed_at=CASE WHEN $2='cerrado' THEN now() ELSE NULL END,canceled_at=CASE WHEN $2='cancelado' THEN now() ELSE NULL END WHERE id=$1`,
+      [t.id, status, assigned],
+    );
+    return (await detail(t.id, owner)).body;
+  }
+  it('protege los cuatro endpoints nuevos con sesión y contraseña definitiva', async () => {
+    const t = (await create()).body;
+    for (const [method, path] of [
+      ['get', '/api/tickets/assignable-agents'],
+      ['get', `/api/tickets/${t.id}/events`],
+      ['patch', `/api/tickets/${t.id}/assignment`],
+      ['post', `/api/tickets/${t.id}/transitions`],
+    ] as const) {
+      const req = request(app)[method](path);
+      if (method !== 'get') req.set('Origin', origin).send({});
+      expect((await req).status).toBe(401);
+    }
+    await pool.query('UPDATE users SET must_change_password=true WHERE id=$1', [admin.id]);
+    expect((await assign(t.id, agente.id)).body.error.code).toBe('PASSWORD_CHANGE_REQUIRED');
+    expect((await events(t.id, admin)).status).toBe(403);
+  });
+  it('solicitante ajeno recibe 404 tanto en actividad como en mutaciones', async () => {
+    const t = await state();
+    expect((await events(t.id, otro)).status).toBe(404);
+    expect((await assign(t.id, agente.id, otro)).status).toBe(404);
+    expect((await transition(t.id, 'cancel', otro)).status).toBe(404);
+    expect((await assign(t.id, agente.id, solicitante)).status).toBe(403);
+  });
+  it('agente solo se asigna tickets libres, sin cambiar estado y sin duplicar eventos', async () => {
+    const t = (await create()).body;
+    expect((await assign(t.id, agente2.id, agente)).status).toBe(403);
+    const r = await assign(t.id, agente.id, agente);
+    expect(r.status).toBe(200);
+    expect(r.body.status).toBe('creado');
+    expect(r.body.assignedAgent.id).toBe(agente.id);
+    expect((await assign(t.id, agente.id, agente)).body.error.code).toBe(
+      'TICKET_ASSIGNMENT_UNCHANGED',
+    );
+    expect((await assign(t.id, agente2.id, agente2)).body.error.code).toBe(
+      'TICKET_ALREADY_ASSIGNED',
+    );
+    expect((await assign(t.id, null, agente)).status).toBe(403);
+    expect((await assign(t.id, agente2.id, agente)).status).toBe(403);
+    const history = (await events(t.id)).body.data;
+    expect(history.map((e: { type: string }) => e.type)).toEqual(['assigned', 'created']);
+    expect(history[0]).toMatchObject({
+      actor: { id: agente.id },
+      fromAgent: null,
+      toAgent: { id: agente.id },
+      fromStatus: null,
+      toStatus: null,
+    });
+  });
+  it.each(['supervisor', 'administrador'])(
+    '%s asigna, reasigna y desasigna con historia y auditoría',
+    async (role) => {
+      const actor = role === 'supervisor' ? supervisor : admin;
+      const t = (await create()).body;
+      expect((await assign(t.id, agente.id, actor)).status).toBe(200);
+      expect((await assign(t.id, agente.id, actor)).body.error.code).toBe(
+        'TICKET_ASSIGNMENT_UNCHANGED',
+      );
+      expect((await assign(t.id, agente2.id, actor)).status).toBe(200);
+      const r = await assign(t.id, null, actor);
+      expect(r.status).toBe(200);
+      expect(r.body.assignedAgent).toBeNull();
+      const data = (await events(t.id)).body.data;
+      expect(data.map((e: { type: string }) => e.type)).toEqual([
+        'unassigned',
+        'reassigned',
+        'assigned',
+        'created',
+      ]);
+      expect(data[1]).toMatchObject({
+        actor: { id: actor.id },
+        fromAgent: { id: agente.id },
+        toAgent: { id: agente2.id },
+      });
+      const audit = (
+        await pool.query(
+          'SELECT action,metadata FROM audit_events WHERE target_id=$1 ORDER BY id',
+          [t.id],
+        )
+      ).rows;
+      expect(audit.map((r) => r.action)).toEqual([
+        'ticket.created',
+        'ticket.assigned',
+        'ticket.reassigned',
+        'ticket.unassigned',
+      ]);
+      expect(audit[2].metadata).toEqual({ fromAgentId: agente.id, toAgentId: agente2.id });
+    },
+  );
+  it('lista mínima de agentes válidos; bloqueo de login no afecta asignabilidad', async () => {
+    await pool.query("UPDATE users SET locked_until=now()+interval '1 day' WHERE id=$1", [
+      agente.id,
+    ]);
+    await pool.query('UPDATE users SET is_active=false WHERE id=$1', [agente2.id]);
+    for (const actor of [admin, supervisor]) {
+      const r = await request(app)
+        .get('/api/tickets/assignable-agents')
+        .set('Cookie', actor.cookie);
+      expect(r.status).toBe(200);
+      expect(r.body).toEqual([{ id: agente.id, fullName: 'Empleado', email: expect.any(String) }]);
+      expect(Object.keys(r.body[0]).sort()).toEqual(['email', 'fullName', 'id']);
+    }
+    for (const actor of [agente, solicitante])
+      expect(
+        (await request(app).get('/api/tickets/assignable-agents').set('Cookie', actor.cookie))
+          .status,
+      ).toBe(403);
+    const t = (await create()).body;
+    expect((await assign(t.id, agente.id)).status).toBe(200);
+    for (const id of [admin.id, supervisor.id, solicitante.id, agente2.id, '999999999'])
+      expect((await assign(t.id, id)).body.error.code).toBe('AGENT_NOT_ASSIGNABLE');
+    await pool.query(
+      "UPDATE users SET is_active=true,expires_at=now()-interval '1 minute' WHERE id=$1",
+      [agente2.id],
+    );
+    expect((await assign(t.id, agente2.id)).body.error.code).toBe('AGENT_NOT_ASSIGNABLE');
+    await pool.query('UPDATE users SET is_active=false WHERE id=$1', [agente.id]);
+    expect((await detail(t.id)).body.assignedAgent.id).toBe(agente.id);
+    expect((await assign(t.id, null)).status).toBe(200);
+  });
+  it.each(['resuelto', 'cerrado', 'cancelado'])('no cambia asignación desde %s', async (status) => {
+    const t = await state(status);
+    for (const actor of [admin, supervisor, agente2])
+      expect((await assign(t.id, agente2.id, actor)).status).toBe(409);
+  });
+  it('dos agentes concurrentes: solo uno se asigna y se registra un único cambio', async () => {
+    const t = (await create()).body;
+    const result = await Promise.all([
+      assign(t.id, agente.id, agente),
+      assign(t.id, agente2.id, agente2),
+    ]);
+    expect(result.map((r) => r.status).sort()).toEqual([200, 409]);
+    expect(result.find((r) => r.status === 409)!.body.error.code).toBe('TICKET_ALREADY_ASSIGNED');
+    expect((await events(t.id)).body.total).toBe(2);
+    expect(
+      (
+        await pool.query(
+          "SELECT count(*)::int AS n FROM audit_events WHERE action='ticket.assigned'",
+        )
+      ).rows[0].n,
+    ).toBe(1);
+  });
+  const validTransitions = [
+    ['creado', 'start', 'en_proceso'],
+    ['creado', 'cancel', 'cancelado'],
+    ['en_proceso', 'wait', 'en_espera'],
+    ['en_proceso', 'resolve', 'resuelto'],
+    ['en_espera', 'resume', 'en_proceso'],
+    ['en_espera', 'resolve', 'resuelto'],
+    ['en_espera', 'cancel', 'cancelado'],
+    ['resuelto', 'reopen', 'en_proceso'],
+    ['resuelto', 'close', 'cerrado'],
+  ] as const;
+  it.each(validTransitions)(
+    '%s con %s termina en %s y registra actor/antes/después',
+    async (from, action, to) => {
+      const t = await state(from);
+      const actor = ['cancel', 'reopen', 'close'].includes(action) ? solicitante : agente;
+      const r = await transition(t.id, action, actor);
+      expect(r.status).toBe(200);
+      expect(r.body.status).toBe(to);
+      expect(r.body.assignedAgent.id).toBe(agente.id);
+      expect(r.body.createdAt).toBe(t.createdAt);
+      expect(new Date(r.body.updatedAt).getTime()).toBeGreaterThanOrEqual(
+        new Date(t.updatedAt).getTime(),
+      );
+      if (to === 'resuelto') {
+        expect(r.body.resolvedAt).not.toBeNull();
+        expect(r.body.closedAt).toBeNull();
+      }
+      if (action === 'reopen') expect(r.body.resolvedAt).toBeNull();
+      if (to === 'cerrado') {
+        expect(r.body.resolvedAt).toBe(t.resolvedAt);
+        expect(r.body.closedAt).not.toBeNull();
+      }
+      if (to === 'cancelado') {
+        expect(r.body.canceledAt).not.toBeNull();
+        expect(r.body.resolvedAt).toBeNull();
+        expect(r.body.closedAt).toBeNull();
+      }
+      expect((await events(t.id)).body.data[0]).toMatchObject({
+        type: 'status_changed',
+        actor: { id: actor.id },
+        fromStatus: from,
+        toStatus: to,
+      });
+      expect(
+        (await pool.query("SELECT metadata FROM audit_events WHERE action='ticket.status_changed'"))
+          .rows[0].metadata,
+      ).toEqual({ fromStatus: from, toStatus: to });
+    },
+  );
+  it.each(['start', 'wait', 'resume', 'resolve'])(
+    '%s exige agente incluso al supervisor',
+    async (action) => {
+      const from = {
+        start: 'creado',
+        wait: 'en_proceso',
+        resume: 'en_espera',
+        resolve: 'en_proceso',
+      }[action]!;
+      const t = await state(from, null);
+      expect((await transition(t.id, action, supervisor)).body.error.code).toBe(
+        'TICKET_AGENT_REQUIRED',
+      );
+    },
+  );
+  it.each(['start', 'wait', 'resume', 'resolve'])(
+    'otro agente no puede %s y supervisor/admin sí',
+    async (action) => {
+      const from = {
+        start: 'creado',
+        wait: 'en_proceso',
+        resume: 'en_espera',
+        resolve: 'en_proceso',
+      }[action]!;
+      for (const actor of [supervisor, admin]) {
+        const t = await state(from);
+        expect((await transition(t.id, action, agente2)).status).toBe(403);
+        expect((await transition(t.id, action, actor)).status).toBe(200);
+      }
+    },
+  );
+  it.each(['close', 'reopen', 'cancel'])(
+    '%s distingue propietario del agente asignado, incluso si propietario es agente',
+    async (action) => {
+      const from = action === 'cancel' ? 'creado' : 'resuelto';
+      const t = await state(from, agente.id, agente2);
+      expect((await transition(t.id, action, agente)).status).toBe(403);
+      expect((await transition(t.id, action, agente2)).status).toBe(200);
+      for (const actor of [supervisor, admin]) {
+        const other = await state(from);
+        expect((await transition(other.id, action, actor)).status).toBe(200);
+      }
+      const owned = await state('en_proceso', agente.id, agente2);
+      expect((await transition(owned.id, 'resolve', agente2)).status).toBe(403);
+    },
+  );
+  it.each(['creado', 'en_proceso', 'en_espera', 'resuelto', 'cerrado', 'cancelado'])(
+    'rechaza todas las acciones incompatibles con %s',
+    async (from) => {
+      const t = await state(from);
+      for (const action of ['start', 'wait', 'resume', 'resolve', 'reopen', 'close', 'cancel']) {
+        if (validTransitions.some(([f, a]) => f === from && a === action)) continue;
+        expect((await transition(t.id, action, admin)).status).toBe(409);
+      }
+      expect((await events(t.id)).body.total).toBe(1);
+    },
+  );
+  it('transiciones concurrentes no producen historial duplicado', async () => {
+    const t = await state('creado');
+    const r = await Promise.all([transition(t.id, 'start'), transition(t.id, 'start')]);
+    expect(r.map((v) => v.status).sort()).toEqual([200, 409]);
+    expect((await events(t.id)).body.total).toBe(2);
+  });
+  it.each(['activity', 'audit'])(
+    'si falla %s, revierte asignación y estado junto con ambos registros',
+    async (kind) => {
+      const t = (await create()).body;
+      const table = kind === 'activity' ? 'ticket_events' : 'audit_events';
+      const constraint = kind === 'activity' ? "event_type='created'" : "action='ticket.created'";
+      await pool.query(`ALTER TABLE ${table} ADD CONSTRAINT reject_mutation CHECK(${constraint})`);
+      try {
+        expect((await assign(t.id, agente.id)).status).toBe(500);
+        expect((await detail(t.id)).body.assignedAgent).toBeNull();
+        await pool.query('UPDATE tickets SET assigned_agent_id=$2 WHERE id=$1', [t.id, agente.id]);
+        expect((await transition(t.id, 'start')).status).toBe(500);
+        expect((await detail(t.id)).body.status).toBe('creado');
+        expect((await events(t.id)).body.total).toBe(1);
+        expect((await pool.query('SELECT count(*)::int AS n FROM audit_events')).rows[0].n).toBe(1);
+      } finally {
+        await pool.query(`ALTER TABLE ${table} DROP CONSTRAINT reject_mutation`);
+      }
+    },
+  );
+  it('actividad paginada, ordenada, mínima y autorizada como el detalle', async () => {
+    const t = (await create()).body;
+    await assign(t.id, agente.id);
+    await transition(t.id, 'start');
+    await transition(t.id, 'resolve');
+    const a = (await events(t.id, solicitante, '?page=1&pageSize=2')).body;
+    const b = (await events(t.id, solicitante, '?page=2&pageSize=2')).body;
+    expect(a).toMatchObject({ total: 4, page: 1, pageSize: 2 });
+    expect(a.data).toHaveLength(2);
+    expect(b.data).toHaveLength(2);
+    expect(a.data[0].toStatus).toBe('resuelto');
+    expect(b.data[1].type).toBe('created');
+    expect(Object.keys(a.data[0].actor).sort()).toEqual(['fullName', 'id', 'role']);
+    for (const actor of [agente, supervisor, admin])
+      expect((await events(t.id, actor)).status).toBe(200);
+    for (const query of ['?page=0', '?pageSize=101', '?actorId=1'])
+      expect((await events(t.id, admin, query)).status).toBe(400);
+  });
+  it('rechaza campos de autoridad, acciones inválidas, cuerpos no JSON y origen distinto', async () => {
+    const t = await state();
+    for (const body of [
+      { action: 'start', actorId: admin.id },
+      { targetStatus: 'cerrado' },
+      { action: 'start', fromStatus: 'creado' },
+      { action: 'destroy' },
+    ]) {
+      expect(
+        (
+          await request(app)
+            .post(`/api/tickets/${t.id}/transitions`)
+            .set('Cookie', admin.cookie)
+            .set('Origin', origin)
+            .send(body)
+        ).status,
+      ).toBe(400);
+    }
+    expect(
+      (
+        await request(app)
+          .patch(`/api/tickets/${t.id}/assignment`)
+          .set('Cookie', admin.cookie)
+          .set('Origin', origin)
+          .send({ agentId: agente.id, role: 'administrador' })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await request(app)
+          .post(`/api/tickets/${t.id}/transitions`)
+          .set('Cookie', admin.cookie)
+          .set('Origin', 'http://otro.invalid')
+          .send({ action: 'start' })
+      ).status,
+    ).toBe(403);
+  });
+
+  it('seed desde vacío ofrece siete escenarios y cronologías válidas, sin duplicar al repetir', async () => {
+    const sql = await readFile(new URL('../../db/seeds/dev.sql', import.meta.url), 'utf8');
+    const client = await pool.connect();
+    try {
+      const hash = await hashPassword(randomBytes(24).toString('hex'));
+      for (let i = 0; i < 2; i++) {
+        await client.query('BEGIN');
+        await client.query("SELECT set_config('helpdesk.seed_password_hash',$1,true)", [hash]);
+        await client.query(sql);
+        await client.query('COMMIT');
+      }
+      const tickets = (
+        await client.query(
+          'SELECT t.id::text,s.code AS status,t.assigned_agent_id::text AS agent_id,t.created_at,t.resolved_at,t.closed_at,t.canceled_at FROM tickets t JOIN ticket_statuses s ON s.id=t.status_id ORDER BY t.id',
+        )
+      ).rows;
+      expect(tickets).toHaveLength(7);
+      for (const t of tickets) {
+        const h = (
+          await client.query(
+            'SELECT * FROM ticket_events WHERE ticket_id=$1 ORDER BY created_at,id',
+            [t.id],
+          )
+        ).rows;
+        expect(h[0].event_type).toBe('created');
+        expect(h[0].created_at).toEqual(t.created_at);
+        let status = 'creado';
+        let agent: string | null = null;
+        for (const e of h.slice(1)) {
+          if (e.event_type === 'assigned') {
+            expect(agent).toBeNull();
+            agent = String(e.to_agent_user_id);
+          } else {
+            expect(e.from_status).toBe(status);
+            expect(validTransitions.some(([f, , to]) => f === status && to === e.to_status)).toBe(
+              true,
+            );
+            status = e.to_status;
+          }
+        }
+        expect(status).toBe(t.status);
+        expect(agent).toBe(t.agent_id);
+        const last = h.at(-1)!;
+        if (status === 'cerrado') expect(last.created_at).toEqual(t.closed_at);
+        if (status === 'resuelto') expect(last.created_at).toEqual(t.resolved_at);
+        if (status === 'cancelado') expect(last.created_at).toEqual(t.canceled_at);
+      }
+    } finally {
+      await client.query('ROLLBACK');
       client.release();
     }
   });

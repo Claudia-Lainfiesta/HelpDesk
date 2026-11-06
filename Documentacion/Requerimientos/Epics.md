@@ -8,7 +8,7 @@ recuperación asistida por SMTP, categorías y creación/listado/detalle real de
 tickets. Todos crean para sí; solicitante consulta solo los suyos y agente,
 supervisor y administrador consultan todos. Los nuevos nacen `creado`, sin agente.
 
-Asignación, transiciones, historial de estados, comentarios, notas internas,
+Asignación, transiciones e historial estructurado ya funcionan. Comentarios, notas internas,
 adjuntos, prioridad, SLA, conocimiento, reportes, conversación y notificaciones
 integradas están pendientes. Telegram es una POC separada, en memoria. La
 referencia pública es `TK-XXXXXX`, mínimo seis dígitos, sin truncar números largos.
@@ -92,26 +92,26 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 
 ### EP-02. Gestión del ciclo de vida y seguimiento del ticket
 
-**Descripción:** Gestionar cada ticket desde su creación hasta su resolución y cierre, conservando un registro de las acciones realizadas. El sistema organizará el trabajo mediante estados elegidos explícitamente, sin restricciones de transición y con permisos por rol, de modo que los participantes conozcan la situación del caso, las acciones pendientes y la solución aplicada.
+**Descripción:** Gestionar cada ticket desde su creación hasta su resolución y cierre, conservando un registro de las acciones realizadas. El sistema organizará el trabajo mediante estados elegidos explícitamente, con las nueve transiciones autorizadas de la máquina vigente y con permisos por rol, de modo que los participantes conozcan la situación del caso, las acciones pendientes y la solución aplicada.
 
 **Actores principales:** Agentes de soporte, supervisores y solicitantes en las acciones habilitadas para ellos.
 
 **Papel de cada rol:**
 
-- **Agente:** lleva el ticket desde su registro hasta su resolución: actualiza el estado, registra actividades, pide información al solicitante, deja el caso en espera cuando corresponde, documenta la solución, resuelve y cierra los tickets que terminaron con éxito.
-- **Supervisor:** consulta el historial de los casos dentro de su alcance y es el único rol que puede cancelar un ticket, con motivo, cuando se decide no continuar.
-- **Solicitante:** aporta la información que se le pide, puede solicitar la reapertura y consulta la solución; no cambia estados.
-- **Administrador:** no ejecuta el flujo; los estados y sus permisos se configuran mediante EP-09, sin imponer un recorrido entre estados.
+- **Agente:** lleva el ticket desde su registro hasta su resolución: actualiza el estado, registra actividades, pide información al solicitante, deja el caso en espera cuando corresponde, documenta la solución, resuelve los tickets asignados a él; no cierra casos ajenos por ser el agente.
+- **Supervisor:** asigna, reasigna, desasigna y gestiona las acciones de estado según la máquina vigente; consulta todos los casos.
+- **Solicitante:** como propietario cancela Creado/En espera y cierra o reabre Resuelto; consulta solo sus tickets.
+- **Administrador:** gestiona asignación y estados con los mismos permisos operativos que supervisor; no puede ser agente asignado.
 
 **Alcance funcional:**
 
-- Gestionar los seis estados acordados: Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado. El estado se elige explícitamente, sin restricciones de transición; el agente cierra y solo el supervisor cancela.
+- Gestionar los seis estados acordados: Creado, En proceso, En espera, Resuelto, Cerrado y Cancelado. El estado se elige explícitamente, con las nueve transiciones autorizadas de la máquina vigente; el propietario, supervisor o administrador cierra Resuelto y cancela solo Creado/En espera.
 - Registrar actividades de atención, cambios relevantes y sus responsables y fechas.
 - Documentar la solución antes de resolver el ticket y aplicar las condiciones de cierre.
 - Gestionar solicitudes de información, cancelaciones y reaperturas con su justificación.
 - Conservar el historial del caso, incluido quién cambió cada estado, de cuál a cuál y cuándo, y mostrar cada información según los permisos del usuario.
 
-**Límites:** Los seis estados y la selección sin restricciones de transición están acordados. EP-09 configura sus permisos; esta épica comprueba los permisos y las condiciones propias de cada acción. El historial aporta la primera entrada en «En proceso» para EP-04, sin una columna aparte de primera respuesta. No calcula SLA ni decide reglas de asignación.
+**Límites:** Los seis estados y la selección con las nueve transiciones autorizadas de la máquina vigente están acordados. EP-09 configura sus permisos; esta épica comprueba los permisos y las condiciones propias de cada acción. El historial aporta la primera entrada en «En proceso» para EP-04, sin una columna aparte de primera respuesta. No calcula SLA ni decide reglas de asignación.
 
 **Resultado esperado:** Cada ticket tiene una situación identificable y una historia de atención que permite reconstruir cómo se resolvió.
 
@@ -295,7 +295,7 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 **Alcance funcional:**
 
 - Administrar categorías, subcategorías y opciones de clasificación de solicitudes.
-- Mantener los seis estados acordados y sus permisos por rol, con selección explícita y sin restricciones de transición.
+- Mantener los seis estados acordados y sus permisos por rol, con selección explícita y con las nueve transiciones autorizadas de la máquina vigente.
 - Mantener equipos, niveles de atención y reglas básicas de enrutamiento.
 - Configurar prioridades, objetivos de SLA, horarios, días no laborables y reglas de escalamiento.
 - Administrar plantillas de notificación y respuestas frecuentes.
@@ -343,8 +343,8 @@ Se mantiene el registro y seguimiento de solicitudes mediante el portal y se est
 Las decisiones cerradas el 29-oct-2026 están en [Decisiones-de-producto.md](../Decisiones-de-producto.md). Las siguientes definiciones siguen pendientes al convertir las épicas en historias de usuario:
 
 - **Accesos:** La matriz del núcleo está implementada: todos crean para sí, solicitante ve solo los suyos y los otros tres roles ven todos. Solo administrador gestiona cuentas y categorías. Queda pendiente la matriz de módulos futuros, equipos, notas, adjuntos y reportes.
-- **Flujo:** Los seis estados, la selección sin restricciones de transición, el cierre por el agente y la cancelación solo por el supervisor ya están acordados. Falta precisar condiciones de espera, contenido de la solución, posible confirmación previa al cierre y reglas de reapertura.
-- **Atención:** Categorías planas implementadas; quedan pendientes subcategorías, equipos, niveles, responsables y criterios de asignación y escalamiento.
+- **Flujo:** Los seis estados y las nueve transiciones están implementados. Cierre/reapertura de Resuelto y cancelación de Creado/En espera corresponden al propietario, supervisor o administrador. Motivos de texto, contenido de solución y sus correcciones posteriores siguen pendientes.
+- **Atención:** Categorías planas implementadas; quedan pendientes subcategorías, equipos, niveles, asignación automática y escalamiento; la asignación manual a agente ya funciona.
 - **Tiempos:** Matriz de impacto y urgencia, objetivos de SLA, horarios, pausas y efecto de los cambios sobre tickets en curso.
 - **Integración con Telegram:** El canal está decidido. Falta concretar y validar el mecanismo de conversación bidireccional, la vinculación verificable de identidades, la identificación del ticket en cada conversación, el tratamiento de archivos y los reintentos ante fallos. Telegram no se incorpora como canal de creación de tickets.
 - **Notificaciones por ambos canales:** Precisar el catálogo de eventos importantes y relevantes y sus destinatarios. Todos los eventos incluidos deberán generar notificaciones en la aplicación y en Telegram. Definir el manejo operativo de cuentas sin vinculación, caídas del canal y envíos pendientes.

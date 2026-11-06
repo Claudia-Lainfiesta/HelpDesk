@@ -2,6 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { EstadoTicket } from '../../shared/ui/insignia-estado';
+import { AccionTicket } from './permisos-ticket';
+import { Rol } from '../auth/modelos';
 import { Pagina } from '../administracion/modelos';
 export interface PersonaTicket {
   id: string;
@@ -35,6 +37,16 @@ export interface FiltrosTickets {
   status?: EstadoTicket;
   categoryId?: string;
 }
+export interface EventoTicket {
+  id: string;
+  type: 'created' | 'assigned' | 'reassigned' | 'unassigned' | 'status_changed';
+  actor: { id: string; fullName: string; role: Rol };
+  fromStatus: EstadoTicket | null;
+  toStatus: EstadoTicket | null;
+  fromAgent: { id: string; fullName: string } | null;
+  toAgent: { id: string; fullName: string } | null;
+  createdAt: string;
+}
 @Injectable({ providedIn: 'root' })
 export class TicketsApi {
   private readonly http = inject(HttpClient);
@@ -47,6 +59,22 @@ export class TicketsApi {
   }
   obtener(id: string) {
     return this.http.get<Ticket>(`${this.base}/${encodeURIComponent(id)}`);
+  }
+  agentesAsignables() {
+    return this.http.get<PersonaTicket[]>(`${this.base}/assignable-agents`);
+  }
+  asignar(id: string, agentId: string | null) {
+    return this.http.patch<Ticket>(`${this.base}/${encodeURIComponent(id)}/assignment`, {
+      agentId,
+    });
+  }
+  transicion(id: string, action: AccionTicket) {
+    return this.http.post<Ticket>(`${this.base}/${encodeURIComponent(id)}/transitions`, { action });
+  }
+  eventos(id: string, page = 1, pageSize = 50) {
+    return this.http.get<Pagina<EventoTicket>>(`${this.base}/${encodeURIComponent(id)}/events`, {
+      params: { page, pageSize },
+    });
   }
   crear(datos: CrearTicket) {
     return this.http.post<Ticket>(this.base, datos);

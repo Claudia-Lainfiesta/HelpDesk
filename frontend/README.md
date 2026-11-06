@@ -49,7 +49,7 @@ aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
 - `/recuperar-contrasena`: solicita ayuda con aviso administrativo, sin restablecimiento automático.
 - `/tickets`: listado real paginado, búsqueda, filtros y creación.
   Muestra referencias `TK-XXXXXX` recibidas de la API, mínimo seis dígitos.
-- `/tickets/:id`: detalle persistido con autorización.
+- `/tickets/:id`: detalle, asignación, acciones de estado y actividad con autorización.
 - `/categorias` y `/usuarios`: administración real, disponible solo para el administrador.
 - `/reportes`: marcador para supervisor y administrador.
 - `/sin-permiso` y página 404: explican por qué no se puede acceder.
@@ -69,8 +69,7 @@ sesión vencida que quizá nunca existió. La restauración tiene un límite de 
 
 Las guardas y la navegación por rol mejoran la experiencia. La autorización
 real sigue en el backend. La [guía de tickets](docs/tickets.md) describe creación,
-listado y detalle persistidos. Asignación y cambios de estado quedan para la
-siguiente etapa. No hay recuperación automática por enlace.
+listado, detalle, asignación, transiciones y actividad persistidos. No hay recuperación automática por enlace.
 
 ## Recuperación asistida
 

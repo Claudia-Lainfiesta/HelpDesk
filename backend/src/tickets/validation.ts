@@ -30,3 +30,23 @@ export const ticketFiltersSchema = z
   .strict();
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
 export type TicketFilters = z.infer<typeof ticketFiltersSchema>;
+
+export const assignmentSchema = z.object({ agentId: idSchema.nullable() }).strict();
+export const transitionActions = [
+  'start',
+  'wait',
+  'resume',
+  'resolve',
+  'reopen',
+  'close',
+  'cancel',
+] as const;
+export type TransitionAction = (typeof transitionActions)[number];
+export type TicketStatus = (typeof ticketStatuses)[number];
+export const transitionSchema = z.object({ action: z.enum(transitionActions) }).strict();
+export const eventFiltersSchema = z
+  .object({
+    page: z.coerce.number().int().min(1).max(1000000).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .strict();

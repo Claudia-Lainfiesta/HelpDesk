@@ -22,14 +22,17 @@ las épicas, historias y calendarios describen también trabajo futuro.
   sin agente. Referencia pública `TK-XXXXXX`, mínimo seis dígitos; si el número
   supera 999999 se conserva completo, por ejemplo `TK-1000001`.
 - Auditoría de operaciones de usuarios, categorías, recuperación elegible y alta
-  de tickets. No equivale a un historial de estados ni a toda la futura EP-10.
+  de tickets y sus cambios de asignación/estado. El historial funcional del ticket
+  está separado de la auditoría global; EP-10 completa sigue pendiente.
 - POC independiente de Telegram con sesiones en memoria y pruebas sin red.
   No está vinculada a usuarios o tickets reales ni envía notificaciones del caso.
 
-No hay asignación manual, transiciones de estado, conversación integrada,
+Hay asignación/reasignación y nueve transiciones con historial estructurado.
+No hay conversación integrada,
 comentarios, notas internas, adjuntos, prioridad, SLA, base de conocimiento ni
 reportes reales. `/reportes` es un marcador. Los otros cinco estados aparecen
-en el catálogo, las insignias, filtros y datos del seed, pero no son editables.
+en el catálogo, las insignias, filtros y datos del seed. Los cambios se ejecutan
+como acciones semánticas autorizadas; Cerrado y Cancelado son terminales.
 
 ## Permisos implementados
 
@@ -78,3 +81,17 @@ No hay README ni paquete npm en la raíz. Cada proyecto lleva sus instrucciones:
 
 Para levantar el proyecto usa las instrucciones de backend/frontend. Los comandos
 npm se ejecutan en su carpeta; no existe un `npm start` en la raíz.
+
+
+## Gestión de tickets · 6-nov-2026
+
+El detalle permite al agente asignarse un ticket libre y atender los asignados a
+él. Supervisor y administrador asignan, reasignan, desasignan y gestionan estados.
+Solo agentes activos/no vencidos son destinos nuevos. Asignar no cambia estado.
+El propietario de cualquier rol puede cancelar Creado/En espera y cerrar o reabrir
+Resuelto; supervisor y administrador también. No se cancela En proceso ni se
+reabren terminales. Estas decisiones sustituyen cierre por agente, cancelación
+exclusiva del supervisor y transición libre de los acuerdos iniciales.
+
+[Máquina exacta, permisos, eventos y API](../backend/docs/tickets.md).
+[Controles y actividad de la interfaz](../frontend/docs/tickets.md).

@@ -139,6 +139,9 @@ describe('Tickets y detalle', () => {
     reload.flush({ data: [ticket], total: 1, page: 1, pageSize: 20 });
     await pagina.fixture.whenStable();
     http.expectOne('/api/tickets/123').flush(ticket);
+    http
+      .expectOne('/api/tickets/123/events?page=1&pageSize=50')
+      .flush({ data: [], page: 1, pageSize: 50, total: 0 });
     await pagina.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe('/tickets/123');
     expect(TestBed.inject(Avisos).aviso()?.mensaje).toBe('Ticket TK-000123 creado correctamente.');
@@ -159,6 +162,9 @@ describe('Tickets y detalle', () => {
     pagina = await RouterTestingHarness.create('/tickets/123');
     expect(pagina.routeNativeElement!.textContent).toContain('Cargando ticket');
     http.expectOne('/api/tickets/123').flush(ticket);
+    http
+      .expectOne('/api/tickets/123/events?page=1&pageSize=50')
+      .flush({ data: [], page: 1, pageSize: 50, total: 0 });
     await pagina.fixture.whenStable();
     const e = pagina.routeNativeElement!;
     expect(e.textContent).toContain('TK-000123');
@@ -188,6 +194,9 @@ describe('Tickets y detalle', () => {
     expect(d.error()).toContain('conectar');
     d.recargar.next();
     http.expectOne('/api/tickets/123').flush(ticket);
+    http
+      .expectOne('/api/tickets/123/events?page=1&pageSize=50')
+      .flush({ data: [], page: 1, pageSize: 50, total: 0 });
     await pagina.fixture.whenStable();
     expect(pagina.routeNativeElement!.textContent).toContain(ticket.number);
   });

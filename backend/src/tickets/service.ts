@@ -2,6 +2,7 @@ import { pool } from '../db/pool.js';
 import { transaction } from '../db/transaction.js';
 import { ApiError } from '../auth/errors.js';
 import type { UserProfile } from '../auth/types.js';
+import { recordActivity } from './activity.js';
 import { recordAudit } from '../audit/audit.js';
 import { findTicket, queryTickets } from './repository.js';
 import type { CreateTicketInput, TicketFilters } from './validation.js';
@@ -34,6 +35,7 @@ export function createTicket(input: CreateTicketInput, user: UserProfile, ip?: s
       [input.subject, input.description, input.categoryId, user.id],
     );
     const ticket = await findTicket(client, inserted.rows[0]!.id, user);
+    await recordActivity(client, { ticketId: ticket.id, type: 'created', actorId: user.id });
     await recordAudit(client, {
       actor: { userId: user.id, ...(ip ? { ip } : {}) },
       action: 'ticket.created',

@@ -3,7 +3,7 @@
 Cualquier cuenta autenticada y con contraseña definitiva puede crear un ticket
 para sí misma. Un solicitante solo lista y abre los suyos; agente, supervisor y
 administrador consultan todos. Un detalle ajeno al solicitante responde 404,
-igual que uno inexistente. No hay asignación ni cambios de estado en esta etapa.
+igual que uno inexistente. La asignación y las transiciones se realizan mediante las acciones documentadas abajo.
 
 ## Crear
 
@@ -98,13 +98,13 @@ npm run db:seed:dev
 npm run dev
 ```
 
-El seed incluye seis tickets persistidos, diferentes solicitantes/categorías y
+El seed incluye siete tickets persistidos, diferentes solicitantes/categorías y
 los seis estados, con fechas de resolución, cierre y cancelación coherentes.
 Repetirlo no duplica registros ni restablece contraseñas.
 
 `npm run check` incluye pruebas con PostgreSQL en esquemas privados si se exporta
 `DATABASE_URL`; de lo contrario las integraciones se omiten con mensaje. No
-implementa asignación, transiciones, historial, prioridad, adjuntos ni Telegram.
+implementa prioridad, comentarios, adjuntos, SLA ni Telegram de tickets.
 
 ## Referencia canónica y auditoría
 
@@ -123,6 +123,147 @@ acepta el formato canónico. No se promete compatibilidad con el prefijo anterio
 [Referencia técnica de PostgreSQL 17](https://www.postgresql.org/docs/17/sql-altertable.html).
 
 Los estados del catálogo son `creado`, `en_proceso`, `en_espera`, `resuelto`,
-`cerrado` y `cancelado`. Actualmente toda alta usa `creado`; los demás estados
-pueden verse en seed, filtros e insignias. No existen endpoints para cambiarlos
-ni para rellenar fechas de resolución, cierre o cancelación desde la aplicación.
+`cerrado` y `cancelado`. Toda alta usa `creado`, sin agente. Las acciones siguientes controlan las transiciones y fechas.
+
+## Asignación y concurrencia
+
+`GET /api/tickets/assignable-agents` solo permite supervisor y administrador.
+Devuelve un arreglo `{ id, fullName, email }`, ordenado por nombre e ID, con
+agentes activos y no vencidos. Un bloqueo de login no excluye un agente.
+No concede acceso a `/api/users`. Cuentas inactivas, vencidas o que cambiaron de
+rol conservan sus asignaciones históricas; no se ofrecen para nuevas asignaciones.
+
+```http
+PATCH /api/tickets/123/assignment
+Content-Type: application/json
+Origin: http://localhost:4200
+```
+
+```json
+{ "agentId": "42" }
+```
+
+`agentId: null` desasigna. Devuelve el ticket completo con 200. Solo puede
+modificarse en creado, en_proceso o en_espera. El agente únicamente se asigna a
+sí mismo si está libre. Supervisor y administrador asignan/reasignan/desasignan;
+no pueden ser destino porque únicamente el rol real agente es asignable.
+Asignar no cambia el estado. Repetir la asignación devuelve 409 sin evento nuevo.
+
+Cada mutación abre una transacción, estabiliza la cuenta del actor con FOR SHARE,
+bloquea la fila base del ticket con FOR UPDATE y después lee su estado vigente.
+Vuelve a comprobar rol, propiedad y asignación; bloquea también el agente destino
+frente a baja/cambio de rol. Actualiza, inserta actividad y auditoría y confirma.
+Un fallo revierte los tres registros. Dos agentes sobre el mismo ticket libre
+producen un éxito y un conflicto. No se confía en actor/rol/estado anterior del cliente.
+
+## Acciones de estado
+
+```http
+POST /api/tickets/123/transitions
+```
+
+```json
+{ "action": "start" }
+```
+
+Devuelve 200 con el ticket completo. No admite `status`, `targetStatus`,
+`fromStatus` o `actorId`. Todas las escrituras conservan sesión, CSRF y JSON.
+
+| Acción  | Origen     | Destino    | Permiso                                     | Requiere agente                         |
+| ------- | ---------- | ---------- | ------------------------------------------- | --------------------------------------- |
+| start   | creado     | en_proceso | Agente asignado, supervisor o administrador | Sí                                      |
+| wait    | en_proceso | en_espera  | Agente asignado, supervisor o administrador | Sí                                      |
+| resume  | en_espera  | en_proceso | Agente asignado, supervisor o administrador | Sí                                      |
+| resolve | en_proceso | resuelto   | Agente asignado, supervisor o administrador | Sí                                      |
+| resolve | en_espera  | resuelto   | Agente asignado, supervisor o administrador | Sí                                      |
+| reopen  | resuelto   | en_proceso | Propietario, supervisor o administrador     | No añade condición; conserva asignación |
+| close   | resuelto   | cerrado    | Propietario, supervisor o administrador     | No                                      |
+| cancel  | creado     | cancelado  | Propietario, supervisor o administrador     | No                                      |
+| cancel  | en_espera  | cancelado  | Propietario, supervisor o administrador     | No                                      |
+
+Cerrado y cancelado son terminales: sin transiciones ni cambios de asignación.
+Resuelto solo permite cerrar o reabrir; no permite modificar asignación.
+No se cancela desde en_proceso. No se reabren tickets cerrados.
+
+La propiedad es independiente del rol único. Un agente propietario puede cerrar,
+reabrir o cancelar su ticket en los estados permitidos, aunque otro agente lo
+atienda. No obtiene por eso permiso para iniciar/esperar/resolver; necesita ser
+el agente asignado o tener rol supervisor/administrador.
+
+| Acción                                  | Propietario sin otro permiso | Agente asignado ajeno          | Otro agente            | Supervisor/administrador |
+| --------------------------------------- | ---------------------------- | ------------------------------ | ---------------------- | ------------------------ |
+| Ver detalle/actividad                   | Sí                           | Sí                             | Sí                     | Sí                       |
+| Asignarse si está libre y activo        | Solo si tiene rol agente     | Solo si está libre             | Sí                     | No; asigna a un agente   |
+| Asignar otro / reasignar / desasignar   | No                           | No                             | No                     | Sí, en estados activos   |
+| Iniciar / esperar / reanudar / resolver | No                           | Sí, según transición           | No                     | Sí, con agente asignado  |
+| Cancelar creado o en_espera             | Sí                           | Solo si también es propietario | Solo si es propietario | Sí                       |
+| Cancelar en_proceso                     | No                           | No                             | No                     | No                       |
+| Reabrir o cerrar resuelto               | Sí                           | Solo si también es propietario | Solo si es propietario | Sí                       |
+
+`createdAt` nunca cambia. El trigger actualiza `updatedAt` al mutar. Resolver fija
+`resolvedAt`; reabrir la limpia y conserva agente e historial. Cerrar conserva
+resolución y fija `closedAt`. Cancelar fija solo `canceledAt`, sin simular éxito.
+No se solicitan comentarios ni motivos de texto en estas acciones.
+
+## Actividad y auditoría
+
+`GET /api/tickets/123/events?page=1&pageSize=50` tiene los permisos del detalle:
+propietario y los tres roles de soporte; solicitante ajeno recibe 404. Devuelve
+`{ data, page, pageSize, total }`, con páginas desde 1 y tamaños de 1 a 100.
+Orden: fecha descendente e ID descendente. Total y datos usan una misma instantánea.
+
+```json
+{
+  "data": [
+    {
+      "id": "20",
+      "type": "status_changed",
+      "actor": { "id": "7", "fullName": "Juan Ejemplo", "role": "agente" },
+      "fromStatus": "creado",
+      "toStatus": "en_proceso",
+      "fromAgent": null,
+      "toAgent": null,
+      "createdAt": "2026-11-06T21:00:00.000Z"
+    }
+  ],
+  "page": 1,
+  "pageSize": 50,
+  "total": 1
+}
+```
+
+Tipos: created, assigned, reassigned, unassigned y status_changed. Las asignaciones
+incluyen `fromAgent`/`toAgent` con ID y nombre o null; estados null. Los cambios de
+estado contienen códigos anterior/nuevo; agentes null. Created no inventa cambios.
+El rol y nombre del actor son los actuales, no una copia histórica; IDs y códigos
+anteriores/nuevos permanecen. No devuelve correo, notas ni credenciales del actor.
+
+La migración 0013 crea ticket_events, sus FK RESTRICT e índice por ticket/fecha.
+Recupera exclusivamente created con solicitante y fecha originales para tickets
+anteriores. No infiere transiciones pasadas. El seed nuevo incluye siete casos,
+uno creado asignado y los seis estados, con cronologías ficticias válidas. Repetir
+seed no inventa eventos para ejemplos existentes ni modifica su historial.
+
+La actividad es funcional y visible según permisos. La auditoría global registra
+además ticket.created, ticket.assigned, ticket.reassigned, ticket.unassigned y
+ticket.status_changed. Solo IDs, número/categoría o códigos estructurados; sin
+asuntos, descripciones, mensajes, contraseñas ni tokens. No hay API de edición o
+borrado de actividad ni auditoría.
+
+## Errores de operaciones
+
+| HTTP | Código                      | Significado                                               |
+| ---- | --------------------------- | --------------------------------------------------------- |
+| 404  | TICKET_NOT_FOUND            | Inexistente o solicitante sobre ticket ajeno              |
+| 403  | TICKET_ACTION_FORBIDDEN     | Puede verlo, pero no realizar la acción                   |
+| 409  | TICKET_ASSIGNMENT_UNCHANGED | Asignación repetida, sin evento                           |
+| 409  | TICKET_ALREADY_ASSIGNED     | Otro agente ganó la asignación                            |
+| 409  | AGENT_NOT_ASSIGNABLE        | Destino inexistente, inactivo, vencido o de otro rol      |
+| 409  | TICKET_AGENT_REQUIRED       | Debe asignarse antes de iniciar/esperar/reanudar/resolver |
+| 409  | INVALID_TICKET_TRANSITION   | Estado incompatible o terminal                            |
+| 400  | INVALID_INPUT               | Campos extra, ID, acción o paginación inválidos           |
+
+La implementación valida el estado vigente y permite una acción si sigue siendo
+válida. No usa versión del cliente ni detecta todos los casos de volver al mismo
+estado entre dos lecturas. Ante conflicto, el frontend anuncia y recarga detalle
+más actividad. No hay WebSockets ni control optimista por versión.

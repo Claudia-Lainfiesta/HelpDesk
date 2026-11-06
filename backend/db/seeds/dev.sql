@@ -17,21 +17,25 @@ INSERT INTO categories (name, description) VALUES
   ('Otros', 'Solicitudes de soporte general.')
 ON CONFLICT DO NOTHING;
 
+CREATE TEMP TABLE seed_ticket_ids ON COMMIT DROP AS
+WITH inserted AS (
 INSERT INTO tickets (
   subject, description, category_id, status_id, requester_id, assigned_agent_id,
-  resolved_at, closed_at, canceled_at
+  resolved_at, closed_at, canceled_at, created_at, updated_at
 )
 SELECT sample.subject, sample.description, categories.id, ticket_statuses.id, requester.id,
-  CASE WHEN sample.status_code = 'creado' THEN NULL ELSE agent.id END,
-  CASE WHEN sample.status_code IN ('resuelto', 'cerrado') THEN now() ELSE NULL END,
-  CASE WHEN sample.status_code = 'cerrado' THEN now() ELSE NULL END,
-  CASE WHEN sample.status_code = 'cancelado' THEN now() ELSE NULL END
+  CASE WHEN sample.status_code = 'creado' AND sample.subject <> 'Ejemplo: solicitud asignada sin iniciar' THEN NULL ELSE agent.id END,
+  CASE WHEN sample.status_code IN ('resuelto', 'cerrado') THEN now()-interval '5 minutes' ELSE NULL END,
+  CASE WHEN sample.status_code = 'cerrado' THEN now()-interval '4 minutes' ELSE NULL END,
+  CASE WHEN sample.status_code = 'cancelado' THEN now()-interval '4 minutes' ELSE NULL END,
+  now()-interval '10 minutes', now()
 FROM (VALUES
   ('Ejemplo: teclado sin respuesta', 'El teclado de la estación de trabajo no responde.', 'Hardware', 'creado'),
   ('Ejemplo: aplicación no abre', 'La herramienta de trabajo se cierra al iniciar.', 'Software', 'en_proceso'),
   ('Ejemplo: conexión intermitente', 'La conexión se interrumpe; se espera una prueba del solicitante.', 'Redes e internet', 'en_espera'),
   ('Ejemplo: acceso restablecido', 'Se restableció el acceso; se espera confirmación del solicitante.', 'Accesos y cuentas', 'resuelto'),
   ('Ejemplo: consulta atendida', 'Se atendió la consulta y el solicitante confirmó el cierre.', 'Otros', 'cerrado'),
+  ('Ejemplo: solicitud asignada sin iniciar', 'El agente está asignado y aún no ha iniciado atención.', 'Hardware', 'creado'),
   ('Ejemplo: solicitud registrada por error', 'Se decidió no continuar porque la solicitud se registró por error.', 'Otros', 'cancelado')
 ) AS sample(subject, description, category_name, status_code)
 JOIN categories ON lower(categories.name) = lower(sample.category_name)
@@ -44,7 +48,30 @@ WHERE NOT EXISTS (
   WHERE tickets.subject = sample.subject AND tickets.requester_id = requester.id
 )
 ORDER BY ticket_statuses.sort_order
-ON CONFLICT DO NOTHING;
+ON CONFLICT DO NOTHING
+RETURNING id
+) SELECT id FROM inserted;
+
+-- Cronología ficticia solo para los ejemplos insertados en esta ejecución.
+-- No se reconstruye ni se modifica la historia de ejemplos existentes.
+INSERT INTO ticket_events(ticket_id,event_type,actor_user_id,from_status,to_status,from_agent_user_id,to_agent_user_id,created_at)
+SELECT t.id,step.type,
+  CASE WHEN step.type='created' OR step.to_status IN ('cerrado','cancelado') THEN t.requester_id
+       WHEN step.type='assigned' THEN (SELECT id FROM users WHERE email='carla.supervisora@helpdesk.local')
+       ELSE t.assigned_agent_id END,
+  step.from_status,step.to_status,NULL,
+  CASE WHEN step.type='assigned' THEN t.assigned_agent_id ELSE NULL END,
+  t.created_at+step.minutes*interval '1 minute'
+FROM seed_ticket_ids n JOIN tickets t ON t.id=n.id JOIN ticket_statuses s ON s.id=t.status_id
+CROSS JOIN LATERAL (
+  SELECT 0 AS minutes,'created' AS type,NULL::text AS from_status,NULL::text AS to_status
+  UNION ALL SELECT 1,'assigned',NULL,NULL WHERE t.assigned_agent_id IS NOT NULL
+  UNION ALL SELECT 2,'status_changed','creado','en_proceso' WHERE s.code IN ('en_proceso','en_espera','resuelto','cerrado')
+  UNION ALL SELECT 3,'status_changed','en_proceso','en_espera' WHERE s.code='en_espera'
+  UNION ALL SELECT 5,'status_changed','en_proceso','resuelto' WHERE s.code IN ('resuelto','cerrado')
+  UNION ALL SELECT 6,'status_changed','resuelto','cerrado' WHERE s.code='cerrado'
+  UNION ALL SELECT 6,'status_changed','creado','cancelado' WHERE s.code='cancelado'
+) step ORDER BY t.id,step.minutes;
 
 INSERT INTO users (full_name,email,role_id,password_hash,must_change_password,is_temporary,expires_at,notes)
 SELECT 'Auditoría temporal','auditoria.temporal@helpdesk.local',id,
