@@ -71,7 +71,7 @@ peticiones a servicios de fuentes. Los SVG de `app-icono` son locales, de trazo
 que se eligió un componente SVG compatible con Angular 22.
 
 Nombres de íconos: `ticket`, `etiqueta`, `usuarios`, `reporte`, `buscar`, `mas`,
-`correo`, `candado`, `salir`, `llave`, `desplegar` y `menu`. Al acompañar texto
+`correo`, `candado`, `salir`, `llave`, `desplegar`, `menu`, `cerrar`, `copiar`, `acciones` y `editar`. Al acompañar texto
 son decorativos (`aria-hidden`). Si un ícono va solo, usa su entrada `etiqueta`
 o un `aria-label` en el botón que lo contiene.
 
@@ -111,10 +111,47 @@ El identificador pertenece al input, sin duplicarlo en el host. Label, ayuda y
 error están asociados mediante `for` y `aria-describedby`. Los botones cargando
 quedan deshabilitados; la lógica de envío también impide peticiones duplicadas.
 
+## Componentes de administración
+
+| Componente            | Uso y entradas principales                                                                                           |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `app-selector`        | CVA; `opciones` con valor, etiqueta y deshabilitada; etiqueta, ayuda y error asociados                               |
+| `app-area-texto`      | CVA; notas y descripciones, máximo configurable (2000 por defecto)                                                   |
+| `app-campo-fecha`     | CVA `datetime-local`; valor en la zona del navegador                                                                 |
+| `app-interruptor`     | CVA booleano; etiqueta enlazada y `role="switch"`                                                                    |
+| `app-modal`           | Título enlazado, foco atrapado, Escape, retorno del foco y bloqueo del fondo; `ocupado` impide cerrar durante envíos |
+| `app-confirmacion`    | Modal con mensaje, cancelar, confirmar y variante de peligro                                                         |
+| `app-menu-acciones`   | Acciones por fila, explicaciones de deshabilitados, flechas, Home/End y Escape                                       |
+| `app-tabla-paginada`  | Encabezados, rejilla y filas proyectadas; carga, vacío y error con reintento                                         |
+| `app-paginador`       | Rango mostrado, tamaño y anterior/siguiente; evita avanzar fuera de rango                                            |
+| `app-aviso-flotante`  | Servicio `Avisos`, región de estado y cierre automático a los seis segundos                                          |
+| `app-clave-temporal`  | Valor transferido con `entregar`, copia explícita y cierre único que lo retira                                       |
+| `app-insignia-cuenta` | Temporal, Vencida, Inactiva, Directorio, Bloqueada, Activa y etiqueta de rol                                         |
+
+Los controles nuevos comparten `ControlCampo`, implementan formularios reactivos
+y usan altura de 46 px, superficie suave y radio de botón. Los diálogos y menús
+usan superficie, borde de línea y sombra de tarjeta. El fondo del modal usa
+`primario` con opacidad, sin añadir colores. Las insignias reutilizan aviso,
+peligro, estado-cerrado, info y éxito; los roles usan superficie-suave y línea.
+No se necesitan tokens nuevos.
+
+```html
+<app-selector identificador="rol" etiqueta="Rol" [opciones]="roles" formControlName="roleCode" />
+<app-campo-fecha
+  identificador="vencimiento"
+  etiqueta="Fecha de vencimiento"
+  formControlName="expiresAt"
+/>
+```
+
+Consulta los [flujos de administración](pantallas-administracion.md) para las
+reglas de cuenta temporal, confirmaciones y tratamiento de la clave.
+
 ## Galería y producción
 
 Con `npm start`, abre http://localhost:4200/guia-ui. Incluye la paleta completa,
-botones, íconos, campos, insignias, filtros, alertas y tarjetas. No exige una
+botones, íconos, campos, insignias, filtros, alertas, tarjetas y los componentes
+de administración (tablas, paginación, menús, diálogos, confirmaciones y avisos). No exige una
 sesión porque es una herramienta local de desarrollo.
 
 Producción reemplaza `rutas-desarrollo.ts` por
@@ -152,8 +189,8 @@ La lista de tickets se desplaza dentro de su contenedor en anchos pequeños.
 
 Tickets usa los seis ejemplos del PDF, un servicio local tipado y filtros en el
 cliente. La nota «Datos de ejemplo» permanece visible. Nuevo ticket muestra un
-aviso de disponibilidad futura. Categorías, usuarios y reportes son marcadores
-protegidos por rol; todavía no consumen APIs de negocio.
+aviso de disponibilidad futura. Categorías y usuarios consumen sus APIs reales
+y están protegidos para el administrador. Reportes sigue como marcador por rol.
 
 Las diferencias intencionales respecto del PDF son los SVG propios, Figtree,
 los tamaños y radios semánticos pedidos, la nota de ejemplos y las opciones

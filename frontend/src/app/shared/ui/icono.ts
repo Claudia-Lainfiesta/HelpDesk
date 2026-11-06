@@ -16,6 +16,10 @@ const trazos = {
   salir: ['M9 3H4v18h5', 'M9 12h12m-4-4 4 4-4 4'],
   llave: ['M8 14a5 5 0 1 1 5-5l8 0v4h-3v3h-4v-3Z'],
   desplegar: ['m6 9 6 6 6-6'],
+  cerrar: ['M6 6l12 12M6 18 18 6'],
+  copiar: ['M9 9h12v12H9Z', 'M15 9V3H3v12h6'],
+  acciones: ['M5 12h.01M12 12h.01M19 12h.01'],
+  editar: ['m16 3 5 5L9 20l-6 1 1-6Z', 'm14 5 5 5'],
   menu: ['M3 6h18M3 12h18M3 18h18'],
 } as const;
 export type NombreIcono = keyof typeof trazos;

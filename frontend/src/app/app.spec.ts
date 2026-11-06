@@ -43,12 +43,15 @@ describe('Aplicación y navegación', () => {
       http.expectNone('/api/health');
     },
   );
-  it('un acceso directo no autorizado muestra Sin permiso', async () => {
-    restaurar('agente');
-    const pagina = await RouterTestingHarness.create('/usuarios');
-    expect(TestBed.inject(Router).url).toBe('/sin-permiso');
-    expect(pagina.routeNativeElement!.textContent).toContain('Sin permiso');
-  });
+  it.each(['/usuarios', '/categorias'])(
+    'un acceso directo a %s no autorizado muestra Sin permiso',
+    async (ruta) => {
+      restaurar('agente');
+      const pagina = await RouterTestingHarness.create(ruta);
+      expect(TestBed.inject(Router).url).toBe('/sin-permiso');
+      expect(pagina.routeNativeElement!.textContent).toContain('Sin permiso');
+    },
+  );
   it('una contraseña temporal no permite salir del cambio obligatorio', async () => {
     restaurar('administrador', true);
     const pagina = await RouterTestingHarness.create('/tickets');

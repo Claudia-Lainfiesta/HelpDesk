@@ -1,0 +1,143 @@
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1>Usuarios</h1>
+    <p class="mt-2 text-texto-suave">Administra las cuentas y su acceso al HelpDesk.</p>
+  </div>
+  <app-boton icono="mas" (accion)="nuevo()">Nuevo usuario</app-boton>
+</div>
+<div class="mb-5 max-w-lg">
+  <app-campo-texto
+    identificador="buscar-usuarios"
+    etiqueta="Buscar por nombre o correo"
+    tipo="search"
+    icono="buscar"
+    marcador="Buscar por nombre o correo"
+    [ocultarEtiqueta]="true"
+    [formControl]="busqueda"
+  />
+</div>
+<div class="mb-6 flex flex-wrap items-end gap-4">
+  <app-selector
+    identificador="filtro-rol"
+    etiqueta="Rol"
+    [opciones]="opcionesRol"
+    [formControl]="rol"
+  /><app-selector
+    identificador="filtro-estado"
+    etiqueta="Estado"
+    [opciones]="opcionesEstado"
+    [formControl]="estado"
+  /><app-selector
+    identificador="filtro-acceso"
+    etiqueta="Tipo de acceso"
+    [opciones]="opcionesProveedor"
+    [formControl]="proveedor"
+  />
+  <div class="flex flex-wrap gap-4 pb-3">
+    <app-interruptor
+      identificador="filtro-temporales"
+      etiqueta="Temporales"
+      [formControl]="temporales"
+    /><app-interruptor
+      identificador="filtro-vencidas"
+      etiqueta="Vencidas"
+      [formControl]="vencidas"
+    />
+  </div>
+</div>
+<app-tabla-paginada
+  nombre="usuarios"
+  [columnas]="columnas"
+  [rejilla]="rejilla"
+  [anchoMinimo]="1080"
+  [cargando]="cargando()"
+  [error]="error()"
+  [vacia]="!cuentas().length"
+  (reintentar)="recargar.next()"
+>
+  @for (cuenta of cuentas(); track cuenta.id) {
+    <app-tarjeta
+      role="row"
+      class="grid items-center gap-4 px-5 py-4"
+      [style.grid-template-columns]="rejilla"
+    >
+      <div role="cell" class="min-w-0">
+        <p class="font-semibold text-texto">{{ cuenta.fullName }}</p>
+        <p class="mt-1 break-all text-xs text-texto-suave">{{ cuenta.email }}</p>
+        @if (propio(cuenta)) {
+          <p class="mt-1 text-xs text-info">Tu cuenta</p>
+        }
+      </div>
+      <div role="cell">
+        <app-insignia-cuenta tipo="Rol">{{ nombreRol(cuenta.roleCode) }}</app-insignia-cuenta>
+      </div>
+      <div role="cell" class="space-y-2">
+        @if (cuenta.authProvider === 'directory') {
+          <app-insignia-cuenta tipo="Directorio" />
+        } @else {
+          <p>Local</p>
+        }
+        @if (cuenta.temporary) {
+          <app-insignia-cuenta tipo="Temporal" />
+          <p class="text-xs text-texto-suave">Vence {{ cuenta.expiresAt | fechaLocal }}</p>
+        }
+      </div>
+      <div role="cell" class="flex flex-wrap gap-1">
+        @if (!cuenta.isActive) {
+          <app-insignia-cuenta tipo="Inactiva" />
+        }
+        @if (vencida(cuenta)) {
+          <app-insignia-cuenta tipo="Vencida" />
+        }
+        @if (bloqueada(cuenta)) {
+          <app-insignia-cuenta tipo="Bloqueada" />
+        }
+        @if (cuenta.isActive && !vencida(cuenta) && !bloqueada(cuenta)) {
+          <app-insignia-cuenta tipo="Activa" />
+        }
+      </div>
+      <div role="cell" class="text-xs text-texto-suave">{{ cuenta.lastLoginAt | fechaLocal }}</div>
+      <div role="cell">
+        <app-menu-acciones
+          [nombre]="cuenta.fullName"
+          [acciones]="acciones(cuenta)"
+          (seleccionado)="elegir(cuenta, $event)"
+        />
+      </div>
+    </app-tarjeta>
+  }
+</app-tabla-paginada>
+@if (!error()) {
+  <app-paginador
+    [pagina]="filtros().page"
+    [tamano]="filtros().pageSize"
+    [total]="total()"
+    [cargando]="cargando()"
+    (cambiarPagina)="pagina($event)"
+    (seleccionarTamano)="filtrar({ pageSize: $event })"
+  />
+}
+@if (formularioAbierto()) {
+  <app-formulario-usuario
+    [cuenta]="editarCuenta()"
+    [propio]="!!editarCuenta() && propio(editarCuenta()!)"
+    (cerrar)="formularioAbierto.set(false); editarCuenta.set(null)"
+    (guardado)="guardado($event)"
+  />
+}
+@if (pendiente(); as accion) {
+  <app-confirmacion
+    [titulo]="accion.titulo"
+    [mensaje]="accion.mensaje"
+    [etiqueta]="accion.titulo"
+    [peligro]="accion.peligro"
+    [cargando]="procesando()"
+    [error]="errorAccion()"
+    (cancelar)="pendiente.set(null)"
+    (confirmar)="ejecutar()"
+  />
+}
+@if (mostrarClave()) {
+  <app-clave-temporal [nombre]="nombreClave()" (cerrar)="cerrarClave()" />
+}
+<app-aviso-flotante />

@@ -1,0 +1,110 @@
+<app-modal
+  [titulo]="cuenta() ? 'Editar usuario' : 'Nuevo usuario'"
+  [ocupado]="cargando()"
+  (cerrar)="cerrar.emit()"
+>
+  <form [formGroup]="formulario" (ngSubmit)="enviar()" class="space-y-5" novalidate>
+    @if (error()) {
+      <app-alerta variante="peligro">{{ error() }}</app-alerta>
+    }
+    <app-campo-texto
+      identificador="usuario-nombre"
+      etiqueta="Nombre completo"
+      autocompletar="name"
+      formControlName="fullName"
+      [error]="campo('fullName')"
+    />
+    @if (cuenta(); as actual) {
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p class="font-semibold text-texto-suave">Correo (solo lectura)</p>
+          <p class="mt-2 break-all">{{ actual.email }}</p>
+        </div>
+        <div>
+          <p class="font-semibold text-texto-suave">Tipo de acceso (solo lectura)</p>
+          <p class="mt-2">{{ actual.authProvider === 'local' ? 'Local' : 'Directorio' }}</p>
+        </div>
+      </div>
+    } @else {
+      <app-campo-texto
+        identificador="usuario-correo"
+        etiqueta="Correo"
+        tipo="email"
+        autocompletar="email"
+        formControlName="email"
+        [error]="campo('email')"
+      />
+    }
+    <app-selector
+      identificador="usuario-rol"
+      etiqueta="Rol"
+      [opciones]="roles"
+      formControlName="roleCode"
+      [error]="campo('roleCode')"
+      [ayuda]="propio() ? 'No puedes cambiar tu propio rol.' : ''"
+    />
+    @if (!cuenta()) {
+      <app-selector
+        identificador="usuario-acceso"
+        etiqueta="Tipo de acceso"
+        [opciones]="opcionesAcceso()"
+        formControlName="authProvider"
+        [error]="campo('authProvider')"
+        [ayuda]="
+          formulario.controls.temporary.value
+            ? 'Las cuentas temporales siempre usan acceso local.'
+            : 'El inicio de sesión con directorio estará disponible más adelante.'
+        "
+      />
+      <app-interruptor
+        identificador="usuario-temporal"
+        etiqueta="Cuenta temporal (por ejemplo, de auditoría)"
+        formControlName="temporary"
+      />
+    }
+    @if ((cuenta() && cuenta()?.authProvider === 'local') || formulario.controls.temporary.value) {
+      <app-campo-fecha
+        identificador="usuario-vencimiento"
+        etiqueta="Fecha de vencimiento"
+        formControlName="expiresAt"
+        [error]="errores()['expiresAt'] || ''"
+        [ayuda]="
+          cuenta()?.expirationRequired
+            ? 'El vencimiento es obligatorio. El servidor valida el máximo desde la creación original.'
+            : cuenta()
+              ? 'Deja vacía la fecha para quitar un vencimiento opcional. El servidor valida el plazo máximo.'
+              : 'Si la dejas vacía, el sistema aplica su duración estándar configurada. El servidor valida el plazo máximo.'
+        "
+      />
+    }
+    <app-area-texto
+      identificador="usuario-notas"
+      etiqueta="Notas"
+      formControlName="notes"
+      [error]="campo('notes')"
+      ayuda="Comentario administrativo, hasta 2000 caracteres. No incluyas contraseñas."
+    />
+    @if (confirmando()) {
+      <app-alerta variante="aviso"
+        >Vas a cambiar el rol o el vencimiento de esta cuenta. El nuevo acceso se aplicará en su
+        siguiente petición. ¿Confirmas el cambio?</app-alerta
+      >
+      <div class="flex justify-end gap-3">
+        <app-boton
+          variante="secundario"
+          [deshabilitado]="cargando()"
+          (accion)="confirmando.set(false)"
+          >Volver</app-boton
+        ><app-boton [cargando]="cargando()" (accion)="enviar(true)">Confirmar cambios</app-boton>
+      </div>
+    } @else {
+      <div class="flex justify-end gap-3">
+        <app-boton variante="secundario" [deshabilitado]="cargando()" (accion)="cerrar.emit()"
+          >Cancelar</app-boton
+        ><app-boton tipo="submit" [cargando]="cargando()">{{
+          cuenta() ? 'Guardar cambios' : 'Crear usuario'
+        }}</app-boton>
+      </div>
+    }
+  </form></app-modal
+>

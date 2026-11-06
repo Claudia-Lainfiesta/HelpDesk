@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ChangeDetectorRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -10,10 +18,35 @@ import { Tarjeta } from '../../shared/ui/tarjeta';
 import { Filtro } from '../../shared/ui/filtro';
 import { InsigniaEstado, EstadoTicket } from '../../shared/ui/insignia-estado';
 
+import { Selector } from '../../shared/ui/selector';
+import { AreaTexto } from '../../shared/ui/area-texto';
+import { CampoFecha } from '../../shared/ui/campo-fecha';
+import { Interruptor } from '../../shared/ui/interruptor';
+import { Modal } from '../../shared/ui/modal';
+import { Confirmacion } from '../../shared/ui/confirmacion';
+import { Paginador } from '../../shared/ui/paginador';
+import { TablaPaginada } from '../../shared/ui/tabla-paginada';
+import { MenuAcciones } from '../../shared/ui/menu-acciones';
+import { ClaveTemporal } from '../../shared/ui/clave-temporal';
+import { InsigniaCuenta } from '../../shared/ui/insignia-cuenta';
+import { AvisoFlotante, Avisos } from '../../shared/ui/aviso-flotante';
+
 @Component({
   selector: 'app-guia-ui',
   standalone: true,
   imports: [
+    Selector,
+    AreaTexto,
+    CampoFecha,
+    Interruptor,
+    Modal,
+    Confirmacion,
+    Paginador,
+    TablaPaginada,
+    MenuAcciones,
+    ClaveTemporal,
+    InsigniaCuenta,
+    AvisoFlotante,
     RouterLink,
     ReactiveFormsModule,
     Boton,
@@ -115,10 +148,149 @@ import { InsigniaEstado, EstadoTicket } from '../../shared/ui/insignia-estado';
         >
       }
     </section>
+    <app-tarjeta
+      ><section class="space-y-5 p-6">
+        <h2 class="text-xl font-bold text-primario">Administración: controles e insignias</h2>
+        <div class="grid gap-5 md:grid-cols-2">
+          <app-selector
+            identificador="guia-selector"
+            etiqueta="Rol"
+            [opciones]="[
+              { valor: 'agente', etiqueta: 'Agente' },
+              { valor: 'supervisor', etiqueta: 'Supervisor' },
+            ]"
+            [formControl]="rol"
+          /><app-campo-fecha
+            identificador="guia-fecha"
+            etiqueta="Fecha y hora"
+            [formControl]="fecha"
+            ayuda="La zona horaria es la del navegador."
+          /><app-area-texto
+            identificador="guia-notas"
+            etiqueta="Notas"
+            [formControl]="notas"
+          /><app-interruptor
+            identificador="guia-temporal"
+            etiqueta="Cuenta temporal"
+            [formControl]="temporal"
+          />
+        </div>
+        <div class="flex flex-wrap gap-3">
+          @for (tipo of tiposCuenta; track tipo) {
+            <app-insignia-cuenta [tipo]="tipo" />
+          }
+          <app-insignia-cuenta tipo="Rol">Agente</app-insignia-cuenta>
+        </div>
+      </section></app-tarjeta
+    >
+    <app-tarjeta
+      ><section class="space-y-5 p-6">
+        <h2 class="text-xl font-bold text-primario">Diálogos, acciones y avisos</h2>
+        <div class="flex flex-wrap items-center gap-3">
+          <app-boton (accion)="modal.set(true)">Abrir diálogo</app-boton
+          ><app-boton variante="secundario" (accion)="confirmacion.set(true)"
+            >Pedir confirmación</app-boton
+          ><app-boton variante="secundario" (accion)="abrirClave()">Clave de demostración</app-boton
+          ><app-boton
+            variante="secundario"
+            (accion)="avisos.mostrar('Cambios guardados en la demostración.')"
+            >Mostrar aviso</app-boton
+          ><app-menu-acciones
+            nombre="Ejemplo"
+            [acciones]="[
+              { codigo: 'editar', etiqueta: 'Editar' },
+              { codigo: 'desactivar', etiqueta: 'Desactivar', peligro: true },
+            ]"
+            (seleccionado)="avisos.mostrar('Acción de demostración: ' + $event)"
+          />
+        </div></section
+    ></app-tarjeta>
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold text-primario">Tabla y paginación</h2>
+      <app-tabla-paginada
+        nombre="ejemplos"
+        [columnas]="['Nombre', 'Estado']"
+        rejilla="1fr 140px"
+        [anchoMinimo]="420"
+        ><app-tarjeta role="row" class="grid grid-cols-2 p-5"
+          ><span role="cell">Registro de demostración</span
+          ><span role="cell">Activo</span></app-tarjeta
+        ></app-tabla-paginada
+      ><app-paginador
+        [pagina]="pagina()"
+        [tamano]="tamano()"
+        [total]="45"
+        (cambiarPagina)="pagina.set($event)"
+        (seleccionarTamano)="tamano.set($event); pagina.set(1)"
+      /><app-tabla-paginada
+        nombre="ejemplos"
+        [columnas]="['Nombre']"
+        rejilla="1fr"
+        [vacia]="true"
+      /><app-tabla-paginada
+        nombre="ejemplos"
+        [columnas]="['Nombre']"
+        rejilla="1fr"
+        [cargando]="true"
+      /><app-tabla-paginada
+        nombre="ejemplos"
+        [columnas]="['Nombre']"
+        rejilla="1fr"
+        error="Ejemplo de error recuperable."
+        (reintentar)="avisos.mostrar('Reintento de demostración.')"
+      />
+    </section>
+    @if (modal()) {
+      <app-modal titulo="Diálogo de demostración" (cerrar)="modal.set(false)"
+        ><p class="mb-4 text-texto-suave">Prueba Tab, Mayús + Tab y Escape.</p>
+        <app-boton (accion)="modal.set(false)">Terminar</app-boton></app-modal
+      >
+    }
+    @if (confirmacion()) {
+      <app-confirmacion
+        titulo="Confirmar acción"
+        mensaje="Este ejemplo no modifica datos."
+        [peligro]="true"
+        (cancelar)="confirmacion.set(false)"
+        (confirmar)="confirmacion.set(false); avisos.mostrar('Confirmación recibida.')"
+      />
+    }
+    @if (claveVisible()) {
+      <app-clave-temporal
+        nombre="Ejemplo generado en el navegador"
+        (cerrar)="claveVisible.set(false)"
+      />
+    }
+    <app-aviso-flotante />
   </main>`,
 })
 export class GuiaUi {
   private readonly documento = inject(DOCUMENT);
+  protected readonly avisos = inject(Avisos);
+  private readonly cambios = inject(ChangeDetectorRef);
+  private readonly clave = viewChild(ClaveTemporal);
+  protected readonly modal = signal(false);
+  protected readonly confirmacion = signal(false);
+  protected readonly claveVisible = signal(false);
+  protected readonly pagina = signal(1);
+  protected readonly tamano = signal(20);
+  protected readonly rol = new FormControl('agente', { nonNullable: true });
+  protected readonly fecha = new FormControl('', { nonNullable: true });
+  protected readonly notas = new FormControl('', { nonNullable: true });
+  protected readonly temporal = new FormControl(false, { nonNullable: true });
+  protected readonly tiposCuenta = [
+    'Temporal',
+    'Vencida',
+    'Inactiva',
+    'Directorio',
+    'Bloqueada',
+    'Activa',
+  ] as const;
+  protected abrirClave() {
+    this.claveVisible.set(true);
+    this.cambios.detectChanges();
+    this.clave()?.entregar(crypto.randomUUID());
+  }
   private readonly nombres = [
     'transparent',
     'current',

@@ -1,7 +1,7 @@
 # HelpDesk · Frontend
 
 Base del Sprint 1 con Angular 22.2, Tailwind CSS 4, TypeScript 6 y Vitest.
-Incluye diseño semántico, acceso local, sesiones y un esqueleto de navegación.
+Incluye diseño semántico, acceso local, sesiones y administración de usuarios y categorías.
 
 ## Desarrollo
 
@@ -16,7 +16,8 @@ npm start
 Abre http://localhost:4200. Para la galería de componentes, abre
 http://localhost:4200/guia-ui; solo se registra durante el desarrollo.
 La referencia visual está en `docs/referencia/HelpDesk-diseno.pdf`.
-Consulta la [guía de diseño y tokens](docs/diseno.md).
+Consulta la [guía de diseño y tokens](docs/diseno.md) y los
+[flujos de administración](docs/pantallas-administracion.md).
 
 El backend debe tener sus migraciones aplicadas y estar ejecutándose según
 [su README](../backend/README.md). En otra terminal, desde `backend/`:
@@ -47,7 +48,7 @@ aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
 - `/cambiar-contrasena`: cambio voluntario u obligatorio por contraseña temporal.
 - `/recuperar-contrasena`: indica que hay que contactar al administrador.
 - `/tickets`: seis ejemplos locales del PDF, buscador y filtros por estado.
-- `/categorias` y `/usuarios`: marcadores disponibles para el administrador.
+- `/categorias` y `/usuarios`: administración real, disponible solo para el administrador.
 - `/reportes`: marcador para supervisor y administrador.
 - `/sin-permiso` y página 404: explican por qué no se puede acceder.
 
@@ -65,9 +66,25 @@ El 401 inicial de `/me` sin cookie se trata como visitante, sin anunciar una
 sesión vencida que quizá nunca existió. La restauración tiene un límite de 8 segundos.
 
 Las guardas y la navegación por rol mejoran la experiencia. La autorización
-real sigue en el backend. No hay todavía administración visual, gestión real
-de tickets, directorio corporativo ni recuperación por correo. Nuevo ticket
+real sigue en el backend. No hay todavía gestión real de tickets,
+directorio corporativo ni recuperación por correo. Nuevo ticket
 muestra un aviso; no crea registros ni llama a una API de tickets.
+
+## Usuarios y categorías
+
+Los usuarios tienen filtros compartibles mediante la URL, búsqueda con espera de
+300 ms y paginación. Altas y acciones sensibles usan diálogos y confirmaciones.
+Las cuentas temporales siempre son locales y mantienen el vencimiento obligatorio
+cuando lo exige la API. Los controles de la fila propia explican las restricciones.
+
+La contraseña temporal se muestra una vez tras alta local o restablecimiento,
+con copia explícita y confirmación de entrega. Al terminar se retira de la vista
+y se eliminan sus referencias; nunca se guarda en rutas, almacenamiento ni logs.
+Las categorías pueden crearse, editarse, desactivarse y reactivarse sin borrado.
+Los registros existentes conservan sus referencias.
+
+La guía `/guia-ui` permite probar controles, tablas, menús, diálogos y avisos sin
+sesión. Los ensayos con contraseña de demostración generan el valor en el navegador.
 
 ## Calidad y producción
 
@@ -92,7 +109,8 @@ El workflow existente ejecuta `npm run check`, por lo que cubre también
 `lint:tokens`. No necesitas una instalación global ni ejecutar pruebas con backend.
 
 Vitest utiliza HttpTestingController y el enrutador de pruebas. Cubre sesión,
-errores, guardas, formularios, componentes, navegación por rol y filtros locales.
+errores, guardas, formularios, componentes, navegación por rol, filtros locales
+y administración (parámetros, paginación, confirmaciones y clave de una sola visualización).
 `npm test` termina después de una ejecución. El protector de tokens prueba
 archivos temporales con colores inválidos y verifica que falle con ruta y línea.
 

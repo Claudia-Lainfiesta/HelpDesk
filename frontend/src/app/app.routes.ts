@@ -43,21 +43,15 @@ export const routes: Routes = [
         path: 'categorias',
         title: 'Categorías · HelpDesk',
         canActivate: [rolGuard('administrador')],
-        data: { titulo: 'Categorías' },
         loadComponent: () =>
-          import('./features/informacion/pagina-informativa').then(
-            (modulo) => modulo.PaginaInformativa,
-          ),
+          import('./features/categorias/categorias').then((modulo) => modulo.Categorias),
       },
       {
         path: 'usuarios',
         title: 'Usuarios · HelpDesk',
         canActivate: [rolGuard('administrador')],
-        data: { titulo: 'Usuarios' },
         loadComponent: () =>
-          import('./features/informacion/pagina-informativa').then(
-            (modulo) => modulo.PaginaInformativa,
-          ),
+          import('./features/usuarios/usuarios').then((modulo) => modulo.Usuarios),
       },
       {
         path: 'reportes',
