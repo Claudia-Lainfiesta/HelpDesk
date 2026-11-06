@@ -5,7 +5,6 @@ export function cuentaPrueba(cambios: Partial<Cuenta> = {}): Cuenta {
     fullName: 'Persona de prueba',
     email: 'persona@helpdesk.local',
     roleCode: 'agente',
-    authProvider: 'local',
     isActive: true,
     mustChangePassword: false,
     expiresAt: null,

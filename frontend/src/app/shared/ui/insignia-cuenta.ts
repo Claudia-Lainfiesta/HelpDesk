@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 export type TipoInsigniaCuenta =
-  'Temporal' | 'Vencida' | 'Inactiva' | 'Directorio' | 'Bloqueada' | 'Activa' | 'Rol';
+  'Temporal' | 'Vencida' | 'Inactiva' | 'Bloqueada' | 'Activa' | 'Rol';
 @Component({
   selector: 'app-insignia-cuenta',
   standalone: true,
@@ -19,7 +19,6 @@ export class InsigniaCuenta {
     Temporal: 'border-transparent bg-aviso-suave text-aviso',
     Vencida: 'border-transparent bg-peligro-suave text-peligro',
     Inactiva: 'border-transparent bg-estado-cerrado-suave text-estado-cerrado',
-    Directorio: 'border-transparent bg-info-suave text-info',
     Bloqueada: 'border-transparent bg-peligro-suave text-peligro',
     Activa: 'border-transparent bg-exito-suave text-exito',
     Rol: 'border-linea bg-superficie-suave text-texto-suave',

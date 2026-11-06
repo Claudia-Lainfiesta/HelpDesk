@@ -6,7 +6,7 @@ export async function registerRecovery(email: string, ip?: string): Promise<Reco
   return transaction(async (client) => {
     const result = await client.query<RecoveryNotice>(
       `SELECT id::text, full_name AS "fullName", email FROM users
-       WHERE lower(email) = $1 AND auth_provider = 'local' AND is_active
+       WHERE lower(email) = $1 AND is_active
          AND (expires_at IS NULL OR expires_at > clock_timestamp())`,
       [email],
     );

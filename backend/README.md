@@ -140,7 +140,7 @@ requiere desarrollo local y permiso CREATEDB.
 Para probar cuentas, ejecuta `npm run db:seed:dev`. `SEED_DEV_PASSWORD` permite
 elegir una contraseña de desarrollo; si está vacía, se genera un valor aleatorio
 local en `.seed-dev-password` (ignorado por Git, permisos 600). El seed solo
-asigna contraseña a los ejemplos que todavía no la tienen; repetirlo no la
+crea los ejemplos con hash de contraseña; repetirlo no la
 restablece. La [guía de autenticación](docs/auth.md) explica cómo probar el acceso
 sin poner contraseñas en argumentos ni mostrar cookies en la terminal.
 
@@ -273,3 +273,10 @@ Telegram: `npm run check`. La integración PostgreSQL previa conserva su skip
 habitual si no está exportada `DATABASE_URL`.
 
 Consulta los [hallazgos técnicos para EP-06](../Documentacion/Telegram-prueba-de-concepto.md).
+
+## Tickets
+
+Consulta [la API de tickets](docs/tickets.md): crear, listar con búsqueda/filtros y
+abrir detalle. Los números HD- son generados por PostgreSQL. El solicitante solo
+consulta sus tickets; los demás roles ven todos. No incluye asignación ni
+cambios de estado.

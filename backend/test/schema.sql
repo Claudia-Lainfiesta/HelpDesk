@@ -15,15 +15,15 @@ BEGIN
   SELECT id INTO STRICT category FROM categories WHERE name = 'Hardware';
 
   BEGIN
-    INSERT INTO users (full_name, email, role_id)
-    VALUES ('Correo duplicado', 'ANA.SOLICITANTE@HELPDESK.LOCAL', role);
+    INSERT INTO users (full_name, email, role_id, password_hash)
+    VALUES ('Correo duplicado', 'ANA.SOLICITANTE@HELPDESK.LOCAL', role, (SELECT password_hash FROM users WHERE id=requester));
     RAISE EXCEPTION 'FALLO: se aceptó un correo duplicado con otra capitalización.';
   EXCEPTION WHEN unique_violation THEN
     RAISE NOTICE 'OK: correo duplicado rechazado (23505).';
   END;
 
   BEGIN
-    INSERT INTO users (full_name, email) VALUES ('Sin rol', 'sin.rol@helpdesk.local');
+    INSERT INTO users (full_name, email, password_hash) VALUES ('Sin rol', 'sin.rol@helpdesk.local', (SELECT password_hash FROM users WHERE id=requester));
     RAISE EXCEPTION 'FALLO: se aceptó un usuario sin role_id.';
   EXCEPTION WHEN not_null_violation THEN
     RAISE NOTICE 'OK: usuario sin role_id rechazado (23502).';
@@ -64,7 +64,7 @@ BEGIN
     (1000001, 'Prueba de referencia larga', 'Se revierte al terminar.', category, requester)
   RETURNING reference, status_id INTO generated_reference, default_status;
 
-  IF generated_reference <> 'TK-1000001' THEN
+  IF generated_reference <> 'HD-1000001' THEN
     RAISE EXCEPTION 'FALLO: referencia larga incorrecta: %', generated_reference;
   END IF;
   IF default_status <> (SELECT id FROM ticket_statuses WHERE code = 'creado') THEN

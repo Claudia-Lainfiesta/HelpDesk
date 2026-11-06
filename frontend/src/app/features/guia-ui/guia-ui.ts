@@ -282,7 +282,6 @@ export class GuiaUi {
     'Temporal',
     'Vencida',
     'Inactiva',
-    'Directorio',
     'Bloqueada',
     'Activa',
   ] as const;

@@ -7,15 +7,23 @@ const metadataSchema = z
   .object({
     role: role.optional(),
     previousRole: role.optional(),
-    authProvider: z.enum(['local', 'directory']).optional(),
     expiresAt: z.iso.datetime({ offset: true }).nullable().optional(),
     previousExpiresAt: z.iso.datetime({ offset: true }).nullable().optional(),
+    ticketNumber: z
+      .string()
+      .regex(/^HD-\d{6,}$/)
+      .optional(),
+    categoryId: z
+      .string()
+      .regex(/^[1-9]\d*$/)
+      .optional(),
     isActive: z.boolean().optional(),
     changedFields: z.array(z.enum(['fullName', 'notes', 'name', 'description'])).optional(),
   })
   .strict();
 
 export type AuditAction =
+  | 'ticket.created'
   | 'auth.recovery_requested'
   | 'users.created'
   | 'users.updated'
@@ -38,7 +46,7 @@ export interface AuditEvent {
   actor: AuditActor | null;
   ip?: string;
   action: AuditAction;
-  targetType: 'user' | 'category';
+  targetType: 'user' | 'category' | 'ticket';
   targetId: string;
   metadata?: z.infer<typeof metadataSchema>;
 }

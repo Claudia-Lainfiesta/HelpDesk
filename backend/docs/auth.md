@@ -70,7 +70,7 @@ inesperados registran únicamente código y estado, sin el error original.
 y responde `202` con el mismo mensaje genérico para cuentas elegibles y no
 elegibles. Es público, exige JSON y origen permitido y tiene límites propios:
 10 por IP cada 15 minutos y 3 por correo normalizado cada hora. El aviso solo
-se genera para local activa y no vencida (también si está bloqueada). Se procesa
+se genera para una cuenta activa y no vencida (también si está bloqueada). Se procesa
 antes de cargar sesión y no modifica credenciales ni sesiones. Consulta el
 contrato completo, auditoría y variables en la guía de correo.
 
@@ -101,12 +101,12 @@ Perfil de ejemplo sin credenciales:
 ```
 
 Login compara el correo sin distinguir mayúsculas. Un correo inexistente,
-contraseña incorrecta, cuenta inactiva, vencida, bloqueada o sin contraseña
+contraseña incorrecta, cuenta inactiva, vencida o bloqueada
 produce exactamente el mismo 401 `INVALID_CREDENTIALS`. Las entradas con
 estructura inválida responden 400 `INVALID_INPUT`.
-Las cuentas `directory` no tienen hash y tampoco pueden iniciar sesión hasta
-que se implemente el acceso corporativo. El administrador puede restablecer
-contraseñas locales, revocando todas las sesiones y exigiendo cambio al ingresar.
+HelpDesk utiliza autenticación local mediante correo y contraseña.
+Todas las cuentas requieren un hash Argon2id. El administrador puede restablecer
+contraseñas, revocando todas las sesiones y exigiendo cambio al ingresar.
 Change-password usa 401 para contraseña actual incorrecta, 400
 `PASSWORD_POLICY` para una contraseña nueva inválida y 401
 `AUTHENTICATION_REQUIRED` si la sesión ya no es válida. `requireRole(...)`
@@ -193,8 +193,7 @@ npm run db:seed:dev
 npm run auth:purge-sessions
 ```
 
-El seed conserva las protecciones de desarrollo y host local. Asigna contraseña
-a los cuatro usuarios de ejemplo solo si no tienen hash. Puedes definir
+El seed conserva las protecciones de desarrollo y host local. Crea las cuentas de ejemplo con hash obligatorio, incluyendo una cuenta temporal. Puedes definir
 `SEED_DEV_PASSWORD` en tu entorno local; si está vacía, el primer seed genera
 una contraseña aleatoria en `backend/.seed-dev-password`, con permisos 600 e
 ignorada por Git y Prettier. Esa es la opción predeterminada solo para

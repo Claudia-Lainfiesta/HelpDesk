@@ -1,12 +1,10 @@
 import { Rol } from '../auth/modelos';
 
-export type Proveedor = 'local' | 'directory';
 export interface Cuenta {
   id: string;
   fullName: string;
   email: string;
   roleCode: Rol;
-  authProvider: Proveedor;
   isActive: boolean;
   mustChangePassword: boolean;
   expiresAt: string | null;
@@ -25,7 +23,6 @@ export interface AltaCuenta {
   fullName: string;
   email: string;
   roleCode: Rol;
-  authProvider?: Proveedor;
   temporary?: boolean;
   expiresAt?: string | null;
   notes?: string | null;
@@ -40,7 +37,6 @@ export interface FiltrosUsuarios {
   q?: string;
   role?: Rol;
   active?: boolean;
-  provider?: Proveedor;
   temporary?: boolean;
   expired?: boolean;
 }

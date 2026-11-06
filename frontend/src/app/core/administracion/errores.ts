@@ -7,10 +7,6 @@ export const erroresAdministracion: Record<string, { mensaje: string; campo?: st
     mensaje: 'Revisa el vencimiento: debe ser futuro y respetar el plazo máximo de la cuenta.',
     campo: 'expiresAt',
   },
-  TEMP_LOCAL_REQUIRED: {
-    mensaje: 'Las cuentas temporales deben usar acceso local.',
-    campo: 'authProvider',
-  },
   TEMP_EXPIRY_REQUIRED: {
     mensaje: 'Esta cuenta temporal debe conservar una fecha de vencimiento.',
     campo: 'expiresAt',
@@ -21,10 +17,7 @@ export const erroresAdministracion: Record<string, { mensaje: string; campo?: st
     mensaje: 'Para cambiar tu contraseña, usa Cambiar contraseña en tu menú.',
   },
   LAST_ADMINISTRATOR: {
-    mensaje: 'Debe quedar otro administrador activo, con acceso local y sin vencimiento.',
-  },
-  DIRECTORY_ACCOUNT: {
-    mensaje: 'La contraseña de esta cuenta se gestiona en el directorio corporativo.',
+    mensaje: 'Debe quedar otro administrador activo, con contraseña y sin vencimiento.',
   },
   USER_NOT_FOUND: { mensaje: 'La cuenta ya no está disponible. Actualiza la lista.' },
   CATEGORY_EXISTS: { mensaje: 'Ya existe una categoría con ese nombre.', campo: 'name' },

@@ -126,7 +126,7 @@ quedan deshabilitados; la lógica de envío también impide peticiones duplicada
 | `app-paginador`       | Rango mostrado, tamaño y anterior/siguiente; evita avanzar fuera de rango                                            |
 | `app-aviso-flotante`  | Servicio `Avisos`, región de estado y cierre automático a los seis segundos                                          |
 | `app-clave-temporal`  | Valor transferido con `entregar`, copia explícita y cierre único que lo retira                                       |
-| `app-insignia-cuenta` | Temporal, Vencida, Inactiva, Directorio, Bloqueada, Activa y etiqueta de rol                                         |
+| `app-insignia-cuenta` | Temporal, Vencida, Inactiva, Bloqueada, Activa y etiqueta de rol                                                     |
 
 Los controles nuevos comparten `ControlCampo`, implementan formularios reactivos
 y usan altura de 46 px, superficie suave y radio de botón. Los diálogos y menús
@@ -187,12 +187,12 @@ más cierre de sesión. A partir de 1024 px la navegación está visible; por de
 usa un botón. El contenido útil tiene aproximadamente 1180 px de ancho máximo.
 La lista de tickets se desplaza dentro de su contenedor en anchos pequeños.
 
-Tickets usa los seis ejemplos del PDF, un servicio local tipado y filtros en el
-cliente. La nota «Datos de ejemplo» permanece visible. Nuevo ticket muestra un
-aviso de disponibilidad futura. Categorías y usuarios consumen sus APIs reales
-y están protegidos para el administrador. Reportes sigue como marcador por rol.
+Tickets, categorías y usuarios consumen sus APIs reales. Tickets incorpora
+paginación, filtros en la URL y modal de creación; mantiene filas en tarjetas,
+insignias semánticas y descripción en texto plano. Reportes sigue como marcador
+por rol. Consulta [los flujos de tickets](tickets.md).
 
 Las diferencias intencionales respecto del PDF son los SVG propios, Figtree,
-los tamaños y radios semánticos pedidos, la nota de ejemplos y las opciones
+los tamaños y radios semánticos pedidos, la paginación y las opciones
 funcionales de sesión. Se usa un botón sólido de marca, sin degradados ni
 sombras fuertes. No hay un diseño móvil completo.

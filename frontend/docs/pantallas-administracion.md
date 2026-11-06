@@ -8,31 +8,30 @@ pero esta pantalla de administración está reservada al administrador.
 
 ## Usuarios
 
-El listado usa `GET /api/users` y conserva `q`, `role`, `active`, `provider`,
+El listado usa `GET /api/users` y conserva `q`, `role`, `active`,
 `temporary`, `expired`, `page` y `pageSize` en la URL. Buscar espera 300 ms;
 cambiar un filtro vuelve a la primera página. Recargar o compartir el enlace
 restaura la vista. Los valores inválidos se normalizan antes de enviarlos.
 La paginación admite hasta 100 registros. Un interruptor apagado no filtra;
 si un enlace incluye expresamente `temporary=false` o `expired=false`, se respeta.
 
-Cada fila muestra nombre, correo, rol, proveedor, vencimiento, estado y último
+Cada fila muestra nombre, correo, rol, vencimiento, estado y último
 acceso. Las fechas ISO de la API se presentan en español con la zona del
 navegador, también al editar mediante `datetime-local`. Puede haber varias
 insignias simultáneas: por ejemplo, una cuenta inactiva y vencida.
 
-«Nuevo usuario» pide nombre, correo y rol. Una cuenta local recibe contraseña
-temporal; la de directorio no recibe contraseña ni puede iniciar sesión todavía.
-Marcar «Cuenta temporal» fija acceso local y muestra el vencimiento. Si se deja
+«Nuevo usuario» pide nombre, correo y rol. Siempre recibe contraseña temporal.
+Marcar «Cuenta temporal» muestra el vencimiento. Si se deja
 vacío al crear, el servidor aplica su duración estándar. El frontend no fija
 los días ni el máximo: son configurables en el servidor y la API los valida.
 
-Editar permite nombre, rol, vencimiento y notas. Correo y proveedor son de solo
+Editar permite nombre, rol, vencimiento y notas. El correo es de solo
 lectura. `expirationRequired` impide quitar el vencimiento de una cuenta que
 nació temporal; el máximo se cuenta desde la creación original. Las fechas sin
 cambios no se reenvían, para poder editar otra información de cuentas vencidas.
 Los cambios de rol o vencimiento piden confirmación antes de enviar PATCH.
 
-El menú ofrece restablecer solo para acceso local y desbloquear solo mientras
+El menú ofrece restablecer contraseña y desbloquear solo mientras
 `lockedUntil` siga en el futuro. Desactivar revoca sesiones; reactivar no
 renueva vencimientos. Todas estas acciones piden confirmación. El administrador
 no puede desactivarse, restablecerse la contraseña ni editar su propio rol;
@@ -41,7 +40,7 @@ la interfaz explica los controles deshabilitados. La API protege además al
 
 ## Contraseña temporal
 
-La respuesta de alta local o restablecimiento se transfiere al diálogo
+La respuesta de alta o restablecimiento se transfiere al diálogo
 `app-clave-temporal`. El campo `temporaryPassword` se elimina del objeto recibido;
 no se guarda en servicios compartidos, rutas, URL, historial, consola ni
 almacenamiento del navegador. No hay una petición para volver a consultarlo.
@@ -75,24 +74,22 @@ nuevos; los tickets existentes la conservan. No se ofrece borrado.
 El mapa único está en `src/app/core/administracion/errores.ts`. Conserva también
 el mensaje recibido del servidor, incluidos detalles y códigos nuevos.
 
-| Código                                 | Mensaje o acción                                             |
-| -------------------------------------- | ------------------------------------------------------------ |
-| `EMAIL_EXISTS`                         | Correo ya registrado; asociado al correo                     |
-| `INVALID_ROLE`                         | Elegir uno de los cuatro roles; asociado al rol              |
-| `INVALID_EXPIRATION`                   | Fecha futura dentro del máximo; asociado al vencimiento      |
-| `TEMP_LOCAL_REQUIRED`                  | Cuenta temporal con acceso local; asociado al proveedor      |
-| `TEMP_EXPIRY_REQUIRED`                 | Mantener vencimiento obligatorio; asociado al vencimiento    |
-| `SELF_DEACTIVATION`                    | No desactivar la propia cuenta                               |
-| `SELF_ROLE_CHANGE`                     | No cambiar el propio rol                                     |
-| `SELF_PASSWORD_RESET`                  | Usar Cambiar contraseña en el menú personal                  |
-| `LAST_ADMINISTRATOR`                   | Conservar otro administrador activo, local y sin vencimiento |
-| `DIRECTORY_ACCOUNT`                    | Contraseña gestionada en el directorio                       |
-| `USER_NOT_FOUND`                       | Actualizar la lista de usuarios                              |
-| `CATEGORY_EXISTS`                      | Nombre ya registrado; asociado al nombre                     |
-| `CATEGORY_NOT_FOUND`                   | Actualizar la lista de categorías                            |
-| `INVALID_INPUT` y códigos no conocidos | Mostrar el mensaje de la API en la alerta                    |
-| `401`                                  | El interceptor vuelve al inicio de sesión                    |
-| `PASSWORD_CHANGE_REQUIRED`             | El interceptor exige cambiar contraseña                      |
+| Código                                 | Mensaje o acción                                          |
+| -------------------------------------- | --------------------------------------------------------- |
+| `EMAIL_EXISTS`                         | Correo ya registrado; asociado al correo                  |
+| `INVALID_ROLE`                         | Elegir uno de los cuatro roles; asociado al rol           |
+| `INVALID_EXPIRATION`                   | Fecha futura dentro del máximo; asociado al vencimiento   |
+| `TEMP_EXPIRY_REQUIRED`                 | Mantener vencimiento obligatorio; asociado al vencimiento |
+| `SELF_DEACTIVATION`                    | No desactivar la propia cuenta                            |
+| `SELF_ROLE_CHANGE`                     | No cambiar el propio rol                                  |
+| `SELF_PASSWORD_RESET`                  | Usar Cambiar contraseña en el menú personal               |
+| `LAST_ADMINISTRATOR`                   | Conservar otro administrador activo y sin vencimiento     |
+| `USER_NOT_FOUND`                       | Actualizar la lista de usuarios                           |
+| `CATEGORY_EXISTS`                      | Nombre ya registrado; asociado al nombre                  |
+| `CATEGORY_NOT_FOUND`                   | Actualizar la lista de categorías                         |
+| `INVALID_INPUT` y códigos no conocidos | Mostrar el mensaje de la API en la alerta                 |
+| `401`                                  | El interceptor vuelve al inicio de sesión                 |
+| `PASSWORD_CHANGE_REQUIRED`             | El interceptor exige cambiar contraseña                   |
 
 Las tablas distinguen carga, vacío y error con «Reintentar». Cada operación
 correcta vuelve a consultar la lista y anuncia un aviso flotante de seis segundos.

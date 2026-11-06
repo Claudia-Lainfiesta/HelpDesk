@@ -75,7 +75,7 @@ describe('Pantalla de usuarios', () => {
   });
   it('restaura filtros de la URL y pagina preservándolos', async () => {
     await abrir(
-      '/usuarios?role=agente&provider=local&active=false&temporary=true&expired=true&q=Ana&page=2&pageSize=10',
+      '/usuarios?role=agente&active=false&temporary=true&expired=true&q=Ana&page=2&pageSize=10',
     );
     const r = http.expectOne((r) => r.url === '/api/users');
     expect(r.request.params.get('role')).toBe('agente');
@@ -106,12 +106,10 @@ describe('Pantalla de usuarios', () => {
     expect(TestBed.inject(Router).url).toContain('q=ana');
     r.flush({ data: [], total: 0, page: 1, pageSize: 20 });
   });
-  it('solo ofrece restablecer en locales y desbloquear en bloqueadas', async () => {
+  it('ofrece restablecer en todas las cuentas y desbloquear en bloqueadas', async () => {
     await abrir();
     lista();
-    expect(
-      componente.acciones(cuentaPrueba({ authProvider: 'directory' })).map((a) => a.codigo),
-    ).not.toContain('restablecer');
+    expect(componente.acciones(cuentaPrueba()).map((a) => a.codigo)).toContain('restablecer');
     expect(componente.acciones(cuentaPrueba()).map((a) => a.codigo)).not.toContain('desbloquear');
     expect(
       componente
@@ -205,7 +203,6 @@ describe('Pantalla de usuarios', () => {
       pageSize: 20,
       role: undefined,
       active: undefined,
-      provider: undefined,
     });
   });
 });
@@ -241,22 +238,19 @@ describe('Formulario de usuario', () => {
     expect(f.componentInstance.errores()['expiresAt']).toContain('futuras');
     http.expectNone('/api/users');
   });
-  it('temporal obliga a local y sin fecha delega el plazo al servidor', () => {
+  it('cuenta temporal sin fecha delega el plazo al servidor', () => {
     const f = crear();
     const c = f.componentInstance;
     c.formulario.patchValue({
       fullName: 'Auditoría',
       email: 'auditoria@helpdesk.local',
-      authProvider: 'directory',
     });
     c.formulario.controls.temporary.setValue(true);
     f.detectChanges();
-    expect(c.formulario.controls.authProvider.value).toBe('local');
-    expect(c.formulario.controls.authProvider.disabled).toBe(true);
     expect(f.nativeElement.textContent).toContain('duración estándar');
     c.enviar();
     const r = http.expectOne('/api/users');
-    expect(r.request.body).toMatchObject({ authProvider: 'local', temporary: true });
+    expect(r.request.body).toMatchObject({ temporary: true });
     expect(r.request.body.expiresAt).toBeUndefined();
     r.flush(cuentaPrueba({ temporary: true }));
   });
@@ -275,7 +269,7 @@ describe('Formulario de usuario', () => {
     expect(f.componentInstance.campo('email')).toContain('Ese correo ya está registrado');
     expect(f.nativeElement.querySelector('[id="usuario-correo-error"]')).not.toBeNull();
   });
-  it('editar conserva proveedor y correo y exige confirmar cambios sensibles', () => {
+  it('editar conserva correo y exige confirmar cambios sensibles', () => {
     const f = crear(cuentaPrueba());
     f.componentInstance.formulario.patchValue({ roleCode: 'supervisor' });
     f.componentInstance.enviar();

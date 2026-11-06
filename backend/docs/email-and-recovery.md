@@ -28,8 +28,7 @@ vencimiento ni sesiones. Se procesa antes de `attachSession`, por lo que ni
 siquiera actualiza `last_seen_at`. Una cookie de contraseña temporal no bloquea
 esta ruta pública; las restricciones del resto de la API se conservan.
 Las cuentas bloqueadas siguen siendo elegibles si están activas y no vencidas.
-Las cuentas `directory`, inactivas o vencidas no generan aviso. La recuperación
-del directorio se incorporará con el mecanismo corporativo posterior.
+Las cuentas inactivas o vencidas no generan aviso.
 
 ## Contrato público y límites
 
@@ -47,11 +46,11 @@ normaliza a minúsculas. Solo se admite ese campo. La respuesta lleva
 
 ```json
 {
-  "message": "Si el correo corresponde a una cuenta local habilitada, administración recibirá un aviso. Si tu acceso se gestiona mediante el directorio corporativo, utiliza el procedimiento de recuperación de la empresa."
+  "message": "Si el correo corresponde a una cuenta habilitada, administración recibirá un aviso."
 }
 ```
 
-El status y cuerpo no indican existencia, proveedor, activación o vencimiento,
+El status y cuerpo no indican existencia, activación o vencimiento,
 incluso si SMTP falla. Un correo inválido devuelve `400 INVALID_INPUT`.
 Las protecciones globales siguen rechazando origen inválido con 403 y cuerpo
 no JSON con 415. Un fallo de base de datos responde con el error interno genérico;
@@ -116,10 +115,10 @@ npm run dev
 ```
 
 En otra terminal, desde `frontend/`, ejecuta `npm start`. Abre la recuperación
-y solicita ayuda para una cuenta local habilitada. Mailpit captura el aviso en
+y solicita ayuda para una cuenta habilitada. Mailpit captura el aviso en
 http://127.0.0.1:8025 sin entregarlo a Internet. Verifica remitente, destinatario,
-asunto y la ausencia de credenciales. Un correo inexistente, una cuenta de
-directorio, una inactiva o una vencida muestran la misma confirmación y no
+asunto y la ausencia de credenciales. Un correo inexistente, una cuenta
+inactiva o una vencida muestran la misma confirmación y no
 agregan mensajes. Después, un reset administrativo debe seguir mostrando la
 clave exclusivamente en HelpDesk, sin añadir mensajes a Mailpit.
 
@@ -160,7 +159,7 @@ npm run dev
 
 `mail:check` comprueba conexión y autenticación sin enviar correo y solo indica
 éxito o un error saneado. Después abre `/recuperar-contrasena` y solicita ayuda
-para una cuenta local habilitada; verifica el aviso en el buzón administrativo.
+para una cuenta habilitada; verifica el aviso en el buzón administrativo.
 No incluyas claves, mensajes SMTP originales ni `.env` en capturas o reportes.
 
 ## Fallos, seguridad y alcance
@@ -177,8 +176,7 @@ tras responder puede perder el aviso; un fallo SMTP tampoco cambia el `202` ni
 se comunica al solicitante como confirmación de entrega. El evento de auditoría
 registra la solicitud elegible, no garantiza que el correo se haya entregado.
 Una cola con confirmaciones y reintentos queda para una etapa posterior.
-No se implementa registro público, recuperación automática ni recuperación del
-directorio. El canal concreto para verificar identidad y entregar la contraseña
+No se implementa registro público ni recuperación automática. El canal concreto para verificar identidad y entregar la contraseña
 continúa siendo parte del procedimiento administrativo, no de este endpoint.
 
 ## Pruebas y CI

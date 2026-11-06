@@ -40,8 +40,6 @@ export function createMailer(config: MailConfig) {
           `Usuario: ${account.fullName}`,
           `Correo: ${account.email}`,
           '',
-          'La cuenta utiliza acceso local.',
-          '',
           'Para continuar:',
           '1. Inicia sesión en HelpDesk como administrador.',
           '2. Abre Usuarios.',

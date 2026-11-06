@@ -213,39 +213,12 @@ describe.skipIf(!databaseUrl)(
       await expectEvent('users.created', created.id);
     });
 
-    it('alta directory sin contraseña y login 401 genérico; reset explícitamente rechazado', async () => {
-      const response = await create({ authProvider: 'directory' });
-      expect(response.status).toBe(201);
-      expect(response.body).not.toHaveProperty('temporaryPassword');
-      expect(
-        (await pool.query('SELECT password_hash FROM users WHERE id = $1', [response.body.id]))
-          .rows[0].password_hash,
-      ).toBeNull();
-      const password = randomBytes(24).toString('base64url');
-      secrets.push(password);
-      const login = await call(
-        'post',
-        '/api/auth/login',
-        { email: response.body.email, password },
-        null,
-      );
-      expect(login.status).toBe(401);
-      expect(login.body).toEqual({
-        error: { code: 'INVALID_CREDENTIALS', message: 'Credenciales incorrectas' },
-      });
-      const reset = await call('post', `/api/users/${response.body.id}/reset-password`);
-      expect(reset.status).toBe(409);
-      expect(reset.body.error.code).toBe('DIRECTORY_ACCOUNT');
-      let rejected = false;
-      try {
-        await pool.query("UPDATE users SET password_hash = 'invalid' WHERE id = $1", [
-          response.body.id,
-        ]);
-      } catch (error) {
-        rejected =
-          typeof error === 'object' && error !== null && 'code' in error && error.code === '23514';
-      }
-      expect(rejected).toBe(true);
+    it('exige hash en PostgreSQL y rechaza propiedades y filtros fuera del contrato', async () => {
+      await expect(
+        pool.query('UPDATE users SET password_hash=NULL WHERE id=$1', [agent.id]),
+      ).rejects.toMatchObject({ code: '23502' });
+      expect((await create({ campoDesconocido: 'externo' })).status).toBe(400);
+      expect((await call('get', '/api/users?provider=otro')).status).toBe(400);
     });
 
     it('rechaza correo duplicado sin distinguir mayúsculas y un rol fuera del catálogo', async () => {
@@ -256,16 +229,14 @@ describe.skipIf(!databaseUrl)(
         (await call('patch', `/api/users/${agent.id}`, { email: 'otro@example.invalid' })).status,
       ).toBe(400);
       expect(
-        (await call('patch', `/api/users/${agent.id}`, { authProvider: 'directory' })).status,
+        (await call('patch', `/api/users/${agent.id}`, { campoDesconocido: true })).status,
       ).toBe(400);
     });
 
     it.each([
-      { temporary: true, authProvider: 'directory' },
       { expiresAt: new Date(Date.now() - 86400000).toISOString() },
       { temporary: true, expiresAt: new Date(Date.now() + 31 * 86400000).toISOString() },
-      { authProvider: 'directory', expiresAt: new Date(Date.now() + 86400000).toISOString() },
-    ])('rechaza proveedor o vencimiento inválido: %j', async (body) => {
+    ])('rechaza vencimiento inválido: %j', async (body) => {
       expect((await create(body)).status).toBe(400);
     });
 
@@ -438,7 +409,7 @@ describe.skipIf(!databaseUrl)(
       }
     });
 
-    it('no permite retirar al último administrador permanente; otro temporal, inactivo, vencido o directory no lo sustituye', async () => {
+    it('no permite retirar al último administrador permanente; otro temporal, inactivo o vencido no lo sustituye', async () => {
       const temporary = await fixture('administrador');
       await pool.query(
         "UPDATE users SET is_temporary = true, expires_at = clock_timestamp() + interval '7 days' WHERE id = $1",
@@ -452,8 +423,6 @@ describe.skipIf(!databaseUrl)(
         "UPDATE users SET expires_at = clock_timestamp() - interval '1 second' WHERE id = $1",
         [expired.id],
       );
-      const directory = await create({ authProvider: 'directory', roleCode: 'administrador' });
-      expect(directory.status).toBe(201);
       for (const [method, path, body] of [
         ['post', `/api/users/${admin.id}/deactivate`, {}],
         ['patch', `/api/users/${admin.id}`, { roleCode: 'agente' }],
@@ -507,7 +476,7 @@ describe.skipIf(!databaseUrl)(
     it('lista con paginación, todos los filtros y búsqueda literal por correo o nombre', async () => {
       const mark = randomUUID();
       const first = await create({ fullName: `${mark} Uno`, temporary: true });
-      const second = await create({ fullName: `${mark} Dos`, authProvider: 'directory' });
+      const second = await create({ fullName: `${mark} Dos` });
       await call('post', `/api/users/${second.body.id}/deactivate`);
       const list = await call('get', `/api/users?q=${mark}&pageSize=1&page=1`);
       expect(list.status).toBe(200);
@@ -520,8 +489,8 @@ describe.skipIf(!databaseUrl)(
         page: 3,
       });
       for (const filter of [
-        'role=solicitante&provider=local&active=true&temporary=true&expired=false',
-        'provider=directory&active=false&temporary=false',
+        'role=solicitante&active=true&temporary=true&expired=false',
+        'active=false&temporary=false',
       ]) {
         expect((await call('get', `/api/users?q=${mark}&${filter}`)).body.total).toBe(1);
       }

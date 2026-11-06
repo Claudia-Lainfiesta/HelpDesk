@@ -48,8 +48,9 @@ export class Paginador {
   readonly cambiarPagina = output<number>();
   readonly seleccionarTamano = output<number>();
   readonly identificador = `paginador-${++siguientePaginador}`;
+  readonly opcionesTamanos = input<readonly number[]>([10, 20, 50, 100]);
   readonly tamanos = computed(() =>
-    [...new Set([10, 20, 50, 100, this.tamano()])].sort((a, b) => a - b),
+    [...new Set([...this.opcionesTamanos(), this.tamano()])].sort((a, b) => a - b),
   );
   readonly inicio = computed(() =>
     this.total() === 0 ? 0 : (this.pagina() - 1) * this.tamano() + 1,

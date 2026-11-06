@@ -23,13 +23,7 @@ import {
   switchMap,
 } from 'rxjs';
 import { UsuariosApi } from '../../core/administracion/usuarios-api';
-import {
-  Cuenta,
-  CuentaConClave,
-  FiltrosUsuarios,
-  Proveedor,
-  roles,
-} from '../../core/administracion/modelos';
+import { Cuenta, CuentaConClave, FiltrosUsuarios, roles } from '../../core/administracion/modelos';
 import { Rol } from '../../core/auth/modelos';
 import { AuthService } from '../../core/auth/auth.service';
 import { errorAdministracion } from '../../core/administracion/errores';
@@ -60,14 +54,12 @@ export function leerFiltros(parametros: {
   const booleano = (clave: string) =>
     parametros.get(clave) === 'true' ? true : parametros.get(clave) === 'false' ? false : undefined;
   const rol = parametros.get('role');
-  const proveedor = parametros.get('provider');
   return {
     page: numero('page', 1, 1000000),
     pageSize: numero('pageSize', 20, 100),
     q: (parametros.get('q') ?? '').trim().slice(0, 100) || undefined,
     role: roles.some((r) => r.valor === rol) ? (rol as Rol) : undefined,
     active: booleano('active'),
-    provider: proveedor === 'local' || proveedor === 'directory' ? proveedor : undefined,
     temporary: booleano('temporary'),
     expired: booleano('expired'),
   };
@@ -113,7 +105,6 @@ export class Usuarios implements OnDestroy {
   readonly busqueda = new FormControl('', { nonNullable: true });
   readonly rol = new FormControl('', { nonNullable: true });
   readonly estado = new FormControl('', { nonNullable: true });
-  readonly proveedor = new FormControl('', { nonNullable: true });
   readonly temporales = new FormControl(false, { nonNullable: true });
   readonly vencidas = new FormControl(false, { nonNullable: true });
   readonly opcionesRol = [{ valor: '', etiqueta: 'Todos los roles' }, ...roles];
@@ -122,13 +113,8 @@ export class Usuarios implements OnDestroy {
     { valor: 'true', etiqueta: 'Activos' },
     { valor: 'false', etiqueta: 'Inactivos' },
   ];
-  readonly opcionesProveedor = [
-    { valor: '', etiqueta: 'Todos los accesos' },
-    { valor: 'local', etiqueta: 'Local' },
-    { valor: 'directory', etiqueta: 'Directorio' },
-  ];
-  readonly columnas = ['Usuario', 'Rol', 'Acceso', 'Estado', 'Último acceso', 'Acciones'];
-  readonly rejilla = 'minmax(210px, 1.7fr) 130px 180px 130px 150px 64px';
+  readonly columnas = ['Usuario', 'Rol', 'Estado', 'Último acceso', 'Acciones'];
+  readonly rejilla = 'minmax(250px, 1.7fr) 130px 160px 150px 64px';
   readonly formularioAbierto = signal(false);
   readonly editarCuenta = signal<Cuenta | null>(null);
   readonly pendiente = signal<{
@@ -154,7 +140,6 @@ export class Usuarios implements OnDestroy {
           this.estado.setValue(filtros.active === undefined ? '' : String(filtros.active), {
             emitEvent: false,
           });
-          this.proveedor.setValue(filtros.provider ?? '', { emitEvent: false });
           this.temporales.setValue(filtros.temporary === true, { emitEvent: false });
           this.vencidas.setValue(filtros.expired === true, { emitEvent: false });
           this.cargando.set(true);
@@ -186,11 +171,6 @@ export class Usuarios implements OnDestroy {
       .pipe(takeUntilDestroyed(this.destruir))
       .subscribe((active) =>
         this.filtrar({ active: active === '' ? undefined : active === 'true' }),
-      );
-    this.proveedor.valueChanges
-      .pipe(takeUntilDestroyed(this.destruir))
-      .subscribe((provider) =>
-        this.filtrar({ provider: (provider || undefined) as Proveedor | undefined }),
       );
     this.temporales.valueChanges
       .pipe(takeUntilDestroyed(this.destruir))
@@ -224,18 +204,14 @@ export class Usuarios implements OnDestroy {
     const propio = this.propio(cuenta);
     return [
       { codigo: 'editar', etiqueta: 'Editar' },
-      ...(cuenta.authProvider === 'local'
-        ? [
-            {
-              codigo: 'restablecer',
-              etiqueta: 'Restablecer contraseña',
-              deshabilitada: propio,
-              explicacion: propio
-                ? 'Para tu cuenta, usa Cambiar contraseña en el menú superior.'
-                : undefined,
-            },
-          ]
-        : []),
+      {
+        codigo: 'restablecer',
+        etiqueta: 'Restablecer contraseña',
+        deshabilitada: propio,
+        explicacion: propio
+          ? 'Para tu cuenta, usa Cambiar contraseña en el menú superior.'
+          : undefined,
+      },
       ...(this.bloqueada(cuenta) ? [{ codigo: 'desbloquear', etiqueta: 'Desbloquear' }] : []),
       cuenta.isActive
         ? {

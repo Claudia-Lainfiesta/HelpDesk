@@ -28,9 +28,8 @@ import { validarCorreo } from '../acceso/validadores';
         </p>
         @if (exito()) {
           <app-alerta variante="exito" class="mt-5 block"
-            >Solicitud recibida. Si el correo corresponde a una cuenta local habilitada,
-            administración recibirá un aviso. Por seguridad no confirmamos si la cuenta
-            existe.</app-alerta
+            >Solicitud recibida. Si el correo corresponde a una cuenta habilitada, administración
+            recibirá un aviso. Por seguridad no confirmamos si la cuenta existe.</app-alerta
           >
         }
         @if (error()) {
@@ -55,10 +54,6 @@ import { validarCorreo } from '../acceso/validadores';
             >Solicitar recuperación</app-boton
           >
         </form>
-        <p class="mt-5 text-sm leading-relaxed text-texto-suave">
-          Si utilizas el acceso corporativo, la recuperación de esa contraseña se realiza mediante
-          el directorio de la empresa.
-        </p>
         <a
           routerLink="/iniciar-sesion"
           class="mt-6 inline-block rounded-boton font-semibold text-primario underline underline-offset-4"

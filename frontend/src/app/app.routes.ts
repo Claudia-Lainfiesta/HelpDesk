@@ -40,6 +40,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/tickets/tickets').then((modulo) => modulo.Tickets),
       },
       {
+        path: 'tickets/:id',
+        title: 'Detalle del ticket · HelpDesk',
+        loadComponent: () =>
+          import('./features/tickets/detalle-ticket').then((m) => m.DetalleTicket),
+      },
+      {
         path: 'categorias',
         title: 'Categorías · HelpDesk',
         canActivate: [rolGuard('administrador')],

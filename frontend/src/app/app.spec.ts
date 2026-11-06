@@ -35,11 +35,12 @@ describe('Aplicación y navegación', () => {
         (enlace) => enlace.getAttribute('href'),
       );
       expect(navegacion).toEqual(enlaces);
-      expect(pagina.routeNativeElement!.textContent).toContain('Datos de ejemplo');
-      expect(pagina.routeNativeElement!.querySelectorAll('app-tarjeta[role="row"]')).toHaveLength(
-        6,
-      );
-      http.expectNone('/api/tickets');
+      http.expectOne((r) => r.url === '/api/categories').flush({ data: [] });
+      http
+        .expectOne((r) => r.url === '/api/tickets')
+        .flush({ data: [], total: 0, page: 1, pageSize: 20 });
+      await pagina.fixture.whenStable();
+      expect(pagina.routeNativeElement!.textContent).toContain('Todavía no hay tickets.');
       http.expectNone('/api/health');
     },
   );
@@ -61,25 +62,5 @@ describe('Aplicación y navegación', () => {
   it('sin sesión vuelve a iniciar sesión', async () => {
     await RouterTestingHarness.create('/tickets');
     expect(TestBed.inject(Router).url).toContain('/iniciar-sesion?returnUrl=');
-  });
-  it('filtra los ejemplos por texto y estado sin pedir tickets al servidor', async () => {
-    restaurar('agente');
-    const pagina = await RouterTestingHarness.create('/tickets');
-    const elemento = pagina.routeNativeElement!;
-    const campo = elemento.querySelector<HTMLInputElement>('input[type="search"]')!;
-    campo.value = 'VPN';
-    campo.dispatchEvent(new Event('input', { bubbles: true }));
-    pagina.detectChanges();
-    expect(elemento.querySelectorAll('app-tarjeta[role="row"]')).toHaveLength(1);
-    campo.value = '';
-    campo.dispatchEvent(new Event('input', { bubbles: true }));
-    pagina.detectChanges();
-    const filtro = Array.from(
-      elemento.querySelectorAll<HTMLButtonElement>('app-filtro button'),
-    ).find((boton) => boton.textContent?.trim() === 'Creado')!;
-    filtro.click();
-    pagina.detectChanges();
-    expect(elemento.querySelectorAll('app-tarjeta[role="row"]')).toHaveLength(1);
-    expect(elemento.querySelector('[role="rowgroup"]')?.textContent).toContain('TK-000128');
   });
 });

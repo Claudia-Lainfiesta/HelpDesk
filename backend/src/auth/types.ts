@@ -19,7 +19,7 @@ export interface UserRow {
   full_name: string;
   email: string;
   role: RoleCode;
-  password_hash: string | null;
+  password_hash: string;
   must_change_password: boolean;
   failed_login_attempts: number;
   locked_until: Date | null;

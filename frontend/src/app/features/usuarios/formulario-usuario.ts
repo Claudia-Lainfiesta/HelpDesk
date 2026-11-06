@@ -24,7 +24,6 @@ import {
   CambioCuenta,
   Cuenta,
   CuentaConClave,
-  Proveedor,
   roles,
 } from '../../core/administracion/modelos';
 import { UsuariosApi } from '../../core/administracion/usuarios-api';
@@ -67,7 +66,6 @@ export class FormularioUsuario implements OnInit {
     fullName: ['', [Validators.required, Validators.maxLength(200), Validators.pattern(/\S/)]],
     email: ['', [validarCorreo, Validators.maxLength(254)]],
     roleCode: ['solicitante' as Rol, Validators.required],
-    authProvider: ['local' as Proveedor, Validators.required],
     temporary: [false],
     expiresAt: [''],
     notes: ['', Validators.maxLength(2000)],
@@ -81,33 +79,14 @@ export class FormularioUsuario implements OnInit {
         expiresAt: fechaParaCampo(cuenta.expiresAt),
       });
       this.formulario.controls.email.disable();
-      this.formulario.controls.authProvider.disable();
       this.formulario.controls.temporary.disable();
       if (this.propio()) this.formulario.controls.roleCode.disable();
     }
-    this.formulario.controls.temporary.valueChanges
-      .pipe(takeUntilDestroyed(this.destruir))
-      .subscribe((temporal) => {
-        if (temporal) {
-          this.formulario.controls.authProvider.setValue('local');
-          this.formulario.controls.authProvider.disable();
-        } else if (!this.cuenta()) this.formulario.controls.authProvider.enable();
-      });
     this.formulario.valueChanges.pipe(takeUntilDestroyed(this.destruir)).subscribe(() => {
       this.errores.set({});
       this.error.set('');
       this.confirmando.set(false);
     });
-  }
-  opcionesAcceso() {
-    return [
-      { valor: 'local', etiqueta: 'Local' },
-      {
-        valor: 'directory',
-        etiqueta: 'Directorio',
-        deshabilitada: this.formulario.controls.temporary.value,
-      },
-    ];
   }
   campo(nombre: keyof typeof this.formulario.controls) {
     if (this.errores()[nombre]) return this.errores()[nombre];
@@ -156,7 +135,6 @@ export class FormularioUsuario implements OnInit {
       fullName: valor.fullName.trim(),
       email: valor.email.trim(),
       roleCode: valor.roleCode,
-      authProvider: valor.authProvider,
       temporary: valor.temporary,
       notes: valor.notes.trim() || null,
       ...(valor.temporary && valor.expiresAt

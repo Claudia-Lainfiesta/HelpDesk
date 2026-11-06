@@ -29,9 +29,9 @@ npm run db:seed:dev
 npm run dev
 ```
 
-Usa una cuenta local de ejemplo del seed o una creada por el administrador.
+Usa una cuenta de ejemplo del seed o una creada por el administrador.
 La contraseña de desarrollo se gestiona en el backend; no está incrustada en
-el frontend. Las cuentas de directorio todavía no admiten inicio de sesión.
+el frontend. HelpDesk utiliza autenticación local mediante correo y contraseña.
 Si el ejecutor informa un checksum distinto, restaura la migración original
 antes de continuar; no edites migraciones aplicadas para saltar la comprobación.
 
@@ -47,7 +47,8 @@ aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
 - `/iniciar-sesion`: acceso mediante correo y contraseña.
 - `/cambiar-contrasena`: cambio voluntario u obligatorio por contraseña temporal.
 - `/recuperar-contrasena`: solicita ayuda con aviso administrativo, sin restablecimiento automático.
-- `/tickets`: seis ejemplos locales del PDF, buscador y filtros por estado.
+- `/tickets`: listado real paginado, búsqueda, filtros y creación.
+- `/tickets/:id`: detalle persistido con autorización.
 - `/categorias` y `/usuarios`: administración real, disponible solo para el administrador.
 - `/reportes`: marcador para supervisor y administrador.
 - `/sin-permiso` y página 404: explican por qué no se puede acceder.
@@ -66,15 +67,15 @@ El 401 inicial de `/me` sin cookie se trata como visitante, sin anunciar una
 sesión vencida que quizá nunca existió. La restauración tiene un límite de 8 segundos.
 
 Las guardas y la navegación por rol mejoran la experiencia. La autorización
-real sigue en el backend. No hay todavía gestión real de tickets,
-directorio corporativo ni recuperación automática por enlace. Nuevo ticket
-muestra un aviso; no crea registros ni llama a una API de tickets.
+real sigue en el backend. La [guía de tickets](docs/tickets.md) describe creación,
+listado y detalle persistidos. Asignación y cambios de estado quedan para la
+siguiente etapa. No hay recuperación automática por enlace.
 
 ## Recuperación asistida
 
 La pantalla pide un correo y llama a `POST /api/auth/recovery-request`. Muestra
-una confirmación genérica, sin indicar existencia, proveedor o estado de la
-cuenta. El servidor avisa a administración únicamente para cuentas locales
+una confirmación genérica, sin indicar existencia o estado de la
+cuenta. El servidor avisa a administración únicamente para cuentas
 activas y no vencidas. La solicitud no cambia contraseña ni sesiones y tampoco
 envía contraseñas por correo. Administración comprueba la identidad antes del
 restablecimiento existente y entrega la clave temporal por otro medio.
@@ -82,7 +83,6 @@ restablecimiento existente y entrega la clave temporal por otro medio.
 El formulario recorta el correo, impide doble envío, limpia el campo al aceptar
 y no guarda el correo en URL, almacenamiento ni consola. Un exceso muestra el
 mensaje genérico de límite; los fallos de red usan el tratamiento habitual.
-Los usuarios de directorio se orientan al procedimiento corporativo posterior.
 
 Para comprobar los avisos locales, desde `backend/` ejecuta `npm run mail:up`
 y abre http://127.0.0.1:8025. Consulta la [guía de correo y recuperación](../backend/docs/email-and-recovery.md)
@@ -93,10 +93,10 @@ entrega: todavía no hay cola persistente ni reintentos durables.
 
 Los usuarios tienen filtros compartibles mediante la URL, búsqueda con espera de
 300 ms y paginación. Altas y acciones sensibles usan diálogos y confirmaciones.
-Las cuentas temporales siempre son locales y mantienen el vencimiento obligatorio
+Las cuentas temporales mantienen el vencimiento obligatorio
 cuando lo exige la API. Los controles de la fila propia explican las restricciones.
 
-La contraseña temporal se muestra una vez tras alta local o restablecimiento,
+La contraseña temporal se muestra una vez tras alta o restablecimiento,
 con copia explícita y confirmación de entrega. Al terminar se retira de la vista
 y se eliminan sus referencias; nunca se guarda en rutas, almacenamiento ni logs.
 Las categorías pueden crearse, editarse, desactivarse y reactivarse sin borrado.
@@ -128,7 +128,7 @@ El workflow existente ejecuta `npm run check`, por lo que cubre también
 `lint:tokens`. No necesitas una instalación global ni ejecutar pruebas con backend.
 
 Vitest utiliza HttpTestingController y el enrutador de pruebas. Cubre sesión,
-errores, guardas, formularios, componentes, navegación por rol, filtros locales
+errores, guardas, formularios, componentes, navegación por rol, búsqueda y filtros de tickets en servidor
 y administración (parámetros, paginación, confirmaciones y clave de una sola visualización).
 `npm test` termina después de una ejecución. El protector de tokens prueba
 archivos temporales con colores inválidos y verifica que falle con ruta y línea.

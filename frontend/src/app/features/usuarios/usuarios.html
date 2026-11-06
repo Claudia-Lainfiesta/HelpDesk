@@ -27,11 +27,6 @@
     etiqueta="Estado"
     [opciones]="opcionesEstado"
     [formControl]="estado"
-  /><app-selector
-    identificador="filtro-acceso"
-    etiqueta="Tipo de acceso"
-    [opciones]="opcionesProveedor"
-    [formControl]="proveedor"
   />
   <div class="flex flex-wrap gap-4 pb-3">
     <app-interruptor
@@ -64,23 +59,16 @@
       <div role="cell" class="min-w-0">
         <p class="font-semibold text-texto">{{ cuenta.fullName }}</p>
         <p class="mt-1 break-all text-xs text-texto-suave">{{ cuenta.email }}</p>
+        @if (cuenta.temporary) {
+          <app-insignia-cuenta tipo="Temporal" />
+          <p class="text-xs text-texto-suave">Vence {{ cuenta.expiresAt | fechaLocal }}</p>
+        }
         @if (propio(cuenta)) {
           <p class="mt-1 text-xs text-info">Tu cuenta</p>
         }
       </div>
       <div role="cell">
         <app-insignia-cuenta tipo="Rol">{{ nombreRol(cuenta.roleCode) }}</app-insignia-cuenta>
-      </div>
-      <div role="cell" class="space-y-2">
-        @if (cuenta.authProvider === 'directory') {
-          <app-insignia-cuenta tipo="Directorio" />
-        } @else {
-          <p>Local</p>
-        }
-        @if (cuenta.temporary) {
-          <app-insignia-cuenta tipo="Temporal" />
-          <p class="text-xs text-texto-suave">Vence {{ cuenta.expiresAt | fechaLocal }}</p>
-        }
       </div>
       <div role="cell" class="flex flex-wrap gap-1">
         @if (!cuenta.isActive) {

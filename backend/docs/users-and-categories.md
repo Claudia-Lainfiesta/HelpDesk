@@ -22,18 +22,18 @@ Todas estas rutas requieren `requireRole('administrador')`:
 | `PATCH /api/users/:id`               | Cambia nombre, rol, vencimiento o notas       |
 | `POST /api/users/:id/deactivate`     | Desactiva y revoca todas las sesiones         |
 | `POST /api/users/:id/reactivate`     | Reactiva sin renovar vencimientos ni sesiones |
-| `POST /api/users/:id/reset-password` | Genera otra contraseña temporal local         |
+| `POST /api/users/:id/reset-password` | Genera otra contraseña temporal               |
 | `POST /api/users/:id/unlock`         | Limpia intentos fallidos y bloqueo            |
 
 ### Listar y consultar
 
 ```http
-GET /api/users?page=1&pageSize=20&role=agente&active=true&provider=local&temporary=false&expired=false&q=Ana
+GET /api/users?page=1&pageSize=20&role=agente&active=true&temporary=false&expired=false&q=Ana
 ```
 
 `page` empieza en 1 (máximo 1000000). `pageSize` vale 20 por defecto y admite
 de 1 a 100. Los filtros son opcionales: `role` usa uno de los cuatro códigos;
-`provider`, `local` o `directory`; los booleanos son exactamente `true` o
+los booleanos son exactamente `true` o
 `false`. `temporary` filtra cuentas con/sin `expires_at`; `expired=true`
 selecciona las vencidas y `false` incluye las que no vencen. `q` busca por nombre
 o correo sin distinguir mayúsculas (hasta 100 caracteres). `%` y `_` son texto
@@ -47,7 +47,6 @@ literal, no comodines.
       "fullName": "Ana Ejemplo",
       "email": "ana@helpdesk.local",
       "roleCode": "agente",
-      "authProvider": "local",
       "isActive": true,
       "mustChangePassword": true,
       "expiresAt": null,
@@ -84,7 +83,6 @@ POST /api/users
   "fullName": "Empleado de ejemplo",
   "email": "empleado@helpdesk.local",
   "roleCode": "solicitante",
-  "authProvider": "local",
   "notes": "Incorporación al equipo"
 }
 ```
@@ -94,8 +92,8 @@ POST /api/users
 distinguir mayúsculas. `roleCode` es obligatorio: `solicitante`, `agente`,
 `supervisor` o `administrador`; el rol debe existir en el catálogo.
 
-El proveedor predeterminado es `local`. La respuesta 201 devuelve la cuenta y,
-solo para local, añade este campo:
+HelpDesk utiliza autenticación local mediante correo y contraseña.
+La respuesta 201 siempre devuelve la cuenta y añade este campo:
 
 ```json
 { "temporaryPassword": "<mostrada una sola vez en la respuesta real>" }
@@ -106,10 +104,7 @@ aleatorios, seleccionados con `crypto.randomInt` sin caracteres ambiguos.
 Solo se guarda el hash Argon2id y se exige cambio al ingresar. `createdBy`
 identifica al administrador que hizo el alta.
 
-Con `"authProvider": "directory"`, la cuenta no recibe hash ni
-`temporaryPassword`. Por ahora no puede iniciar sesión: recibe el mismo 401
-genérico que otras credenciales inválidas. El acceso corporativo llegará
-después. PATCH no permite cambiar el correo ni el proveedor.
+PATCH no permite cambiar el correo.
 
 ### Cuentas temporales
 
@@ -137,7 +132,6 @@ quedar con `expiresAt: null`. Una cuenta normal puede recibir un vencimiento
 opcional y volver después a `null`, respetando el máximo al fijar una fecha.
 Toda cuenta con fecha se considera temporal en el filtro y devuelve
 `temporary: true`; `expirationRequired` distingue las que deben conservarla.
-Las cuentas con vencimiento deben ser locales.
 
 No hay un quinto rol: crea una cuenta de auditoría por cada rol necesario.
 Pueden coexistir varias auditorías o empleados con el mismo rol; no se impone
@@ -170,8 +164,7 @@ PATCH y los comandos responden 200 con la cuenta actualizada.
 
 Reset-password genera otra contraseña temporal, reinicia contador y bloqueo,
 exige cambio y revoca todas las sesiones. Esa respuesta añade
-`temporaryPassword` una sola vez. Para directorio responde 409
-`DIRECTORY_ACCOUNT`, porque la contraseña se gestiona en el directorio.
+`temporaryPassword` una sola vez.
 Unlock conserva contraseña y sesiones; solo limpia fallos y bloqueo.
 
 El administrador entrega la contraseña por otro medio. No se envía por correo,
@@ -186,15 +179,14 @@ cuerpos HTTP ni copies la respuesta de alta/reset en tickets o reportes.
 - El administrador no puede desactivarse, cambiar su propio rol ni restablecer
   su propia contraseña. Para esto último existe change-password.
 - Al retirar o dar vencimiento a un administrador se exige otro administrador
-  activo, local, con contraseña y sin vencimiento. Un sustituto que también
-  vencerá no garantiza que quede alguien; directory todavía no permite entrar.
+  activo, con contraseña y sin vencimiento. Un sustituto que también
+  vencerá no garantiza que quede alguien.
 - Un advisory lock transaccional serializa cambios entre procesos. Dos
   peticiones simultáneas no pueden retirar al último sustituto.
 
 Errores específicos: 409 `EMAIL_EXISTS`, `SELF_DEACTIVATION`,
-`SELF_ROLE_CHANGE`, `SELF_PASSWORD_RESET`, `LAST_ADMINISTRATOR` o
-`DIRECTORY_ACCOUNT`; 400 `INVALID_INPUT`, `INVALID_ROLE`,
-`INVALID_EXPIRATION`, `TEMP_LOCAL_REQUIRED` o `TEMP_EXPIRY_REQUIRED`;
+`SELF_ROLE_CHANGE`, `SELF_PASSWORD_RESET` o `LAST_ADMINISTRATOR`; 400 `INVALID_INPUT`, `INVALID_ROLE`,
+`INVALID_EXPIRATION` o `TEMP_EXPIRY_REQUIRED`;
 404 `USER_NOT_FOUND`. Un PATCH vacío o con campos inmutables es inválido.
 
 ## Categorías
@@ -240,7 +232,7 @@ administrador responde 403.
 
 El evento y la modificación se confirman o revierten juntos. `recordAudit`
 inserta actor, acción, objetivo, momento e IP. La lista permitida de metadatos
-valida roles, proveedor, fechas, activación y nombres de campos modificados;
+valida roles, fechas, activación y nombres de campos modificados;
 rechaza campos desconocidos y texto libre. No guarda contraseñas, hashes,
 tokens, nombres, correos ni el contenido de notas.
 
@@ -273,7 +265,7 @@ npm run check
 La integración crea un esquema temporal con las migraciones en la base indicada
 por `DATABASE_URL` y lo elimina al terminar. Cada caso crea y limpia sus datos,
 sin cambiar datos de desarrollo. Necesita permiso para crear esquemas. Sin la
-URL exportada se omite con un mensaje claro. No necesita Telegram ni directorio.
+URL exportada se omite con un mensaje claro. No necesita Telegram.
 Para curl, usa [archivos privados y cookie jar](auth.md#probar-con-curl-sin-exponer-credenciales)
 y guarda la respuesta de alta/reset en un archivo privado, sin imprimirla.
 

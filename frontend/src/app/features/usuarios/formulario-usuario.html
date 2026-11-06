@@ -15,14 +15,10 @@
       [error]="campo('fullName')"
     />
     @if (cuenta(); as actual) {
-      <div class="grid gap-4 sm:grid-cols-2">
+      <div>
         <div>
           <p class="font-semibold text-texto-suave">Correo (solo lectura)</p>
           <p class="mt-2 break-all">{{ actual.email }}</p>
-        </div>
-        <div>
-          <p class="font-semibold text-texto-suave">Tipo de acceso (solo lectura)</p>
-          <p class="mt-2">{{ actual.authProvider === 'local' ? 'Local' : 'Directorio' }}</p>
         </div>
       </div>
     } @else {
@@ -44,25 +40,13 @@
       [ayuda]="propio() ? 'No puedes cambiar tu propio rol.' : ''"
     />
     @if (!cuenta()) {
-      <app-selector
-        identificador="usuario-acceso"
-        etiqueta="Tipo de acceso"
-        [opciones]="opcionesAcceso()"
-        formControlName="authProvider"
-        [error]="campo('authProvider')"
-        [ayuda]="
-          formulario.controls.temporary.value
-            ? 'Las cuentas temporales siempre usan acceso local.'
-            : 'El inicio de sesión con directorio estará disponible más adelante.'
-        "
-      />
       <app-interruptor
         identificador="usuario-temporal"
         etiqueta="Cuenta temporal (por ejemplo, de auditoría)"
         formControlName="temporary"
       />
     }
-    @if ((cuenta() && cuenta()?.authProvider === 'local') || formulario.controls.temporary.value) {
+    @if (cuenta() || formulario.controls.temporary.value) {
       <app-campo-fecha
         identificador="usuario-vencimiento"
         etiqueta="Fecha de vencimiento"

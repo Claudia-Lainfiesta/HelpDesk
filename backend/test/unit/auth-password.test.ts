@@ -1,3 +1,4 @@
+import { developmentSeedHash } from '../../src/auth/seed.js';
 import { randomBytes } from 'node:crypto';
 import { parseOptions } from '@node-rs/argon2';
 import { expect, it } from 'vitest';
@@ -29,4 +30,16 @@ it('la política admite 10 a 128 caracteres sin composición y rechaza el correo
   expect(() => validatePasswordPolicy('a'.repeat(10), email)).not.toThrow();
   expect(() => validatePasswordPolicy(' '.repeat(128), email)).not.toThrow();
   expect(() => validatePasswordPolicy('🔐'.repeat(128), email)).not.toThrow();
+});
+
+it('el seed aplica la política a todas sus cuentas sin restablecer contraseñas', async () => {
+  for (const email of [
+    'ana.solicitante@helpdesk.local',
+    'bruno.agente@helpdesk.local',
+    'carla.supervisora@helpdesk.local',
+    'diego.administrador@helpdesk.local',
+    'auditoria.temporal@helpdesk.local',
+  ]) {
+    await expect(developmentSeedHash(email)).rejects.toThrow();
+  }
 });

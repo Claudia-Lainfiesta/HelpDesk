@@ -11,7 +11,7 @@ import { isUniqueViolation } from '../http/validation.js';
 import type { UserConfig } from './config.js';
 import type { CreateUserInput, UpdateUserInput } from './validation.js';
 
-const columns = `u.id::text, u.full_name, u.email, r.code AS role, u.auth_provider,
+const columns = `u.id::text, u.full_name, u.email, r.code AS role,
   u.is_active, u.must_change_password, u.expires_at, u.created_by::text, u.notes,
   u.is_temporary, u.created_at, u.updated_at, u.failed_login_attempts, u.locked_until,
   u.last_login_at, u.password_changed_at`;
@@ -20,7 +20,6 @@ interface ManagedUser {
   full_name: string;
   email: string;
   role: RoleCode;
-  auth_provider: 'local' | 'directory';
   is_active: boolean;
   must_change_password: boolean;
   expires_at: Date | null;
@@ -41,7 +40,6 @@ function view(user: ManagedUser) {
     fullName: user.full_name,
     email: user.email,
     roleCode: user.role,
-    authProvider: user.auth_provider,
     isActive: user.is_active,
     mustChangePassword: user.must_change_password,
     expiresAt: user.expires_at?.toISOString() ?? null,
@@ -104,7 +102,7 @@ async function administrativeTransaction<T>(
 
 function expiration(
   value: string | null,
-  user: { created_at: Date; auth_provider: string; is_temporary: boolean },
+  user: { created_at: Date; is_temporary: boolean },
   now: Date,
   config: UserConfig,
 ): Date | null {
@@ -117,12 +115,6 @@ function expiration(
       );
     return null;
   }
-  if (user.auth_provider !== 'local')
-    throw new ApiError(
-      400,
-      'TEMP_LOCAL_REQUIRED',
-      'Las cuentas con vencimiento deben ser locales.',
-    );
   const date = new Date(value);
   if (
     date <= now ||
@@ -149,7 +141,7 @@ async function protectAdministrator(
   const others = await client.query(
     `SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
     WHERE u.id <> $1 AND r.code = 'administrador' AND u.is_active AND u.expires_at IS NULL
-      AND u.auth_provider = 'local' AND u.password_hash IS NOT NULL LIMIT 1`,
+      AND u.password_hash IS NOT NULL LIMIT 1`,
     [before.id],
   );
   if (!others.rowCount)
@@ -165,7 +157,6 @@ export interface UserFilters {
   pageSize: number;
   role?: RoleCode;
   active?: boolean;
-  provider?: 'local' | 'directory';
   temporary?: boolean;
   expired?: boolean;
   q?: string;
@@ -179,7 +170,6 @@ export async function listUsers(filters: UserFilters) {
   };
   if (filters.role !== undefined) add('r.code = ?', filters.role);
   if (filters.active !== undefined) add('u.is_active = ?', filters.active);
-  if (filters.provider !== undefined) add('u.auth_provider = ?', filters.provider);
   if (filters.temporary !== undefined)
     conditions.push(`u.expires_at IS ${filters.temporary ? 'NOT ' : ''}NULL`);
   if (filters.expired !== undefined)
@@ -230,22 +220,21 @@ export async function createUser(input: CreateUserInput, actor: AuditActor, conf
           : null);
       const expiresAt = expiration(
         expiresValue,
-        { created_at: now, auth_provider: input.authProvider, is_temporary: input.temporary },
+        { created_at: now, is_temporary: input.temporary },
         now,
         config,
       );
-      const password = input.authProvider === 'local' ? generateTemporaryPassword() : undefined;
-      if (password) validatePasswordPolicy(password, input.email);
-      const passwordHash = password ? await hashPassword(password) : null;
+      const password = generateTemporaryPassword();
+      validatePasswordPolicy(password, input.email);
+      const passwordHash = await hashPassword(password);
       const result = await client.query<{ id: string }>(
         `INSERT INTO users
-        (full_name, email, role_id, auth_provider, password_hash, must_change_password, expires_at, notes, created_by, is_temporary, created_at)
-        VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9, $10) RETURNING id::text`,
+        (full_name, email, role_id, password_hash, must_change_password, expires_at, notes, created_by, is_temporary, created_at)
+        VALUES ($1, $2, $3, $4, true, $5, $6, $7, $8, $9) RETURNING id::text`,
         [
           input.fullName,
           input.email,
           await roleId(client, input.roleCode),
-          input.authProvider,
           passwordHash,
           expiresAt,
           input.notes ?? null,
@@ -262,7 +251,6 @@ export async function createUser(input: CreateUserInput, actor: AuditActor, conf
         targetId: id,
         metadata: {
           role: input.roleCode,
-          authProvider: input.authProvider,
           expiresAt: expiresAt?.toISOString() ?? null,
         },
       });
@@ -355,12 +343,6 @@ export async function userAction(id: string, action: UserAction, actor: AuditAct
       );
     let password: string | undefined;
     if (action === 'reset-password') {
-      if (user.auth_provider === 'directory')
-        throw new ApiError(
-          409,
-          'DIRECTORY_ACCOUNT',
-          'La contraseña se gestiona en el directorio corporativo.',
-        );
       password = generateTemporaryPassword();
       validatePasswordPolicy(password, user.email);
       await client.query(

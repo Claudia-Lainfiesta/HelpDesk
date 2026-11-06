@@ -90,7 +90,6 @@ describe.skipIf(!databaseUrl)(databaseUrl ? 'autenticación contra PostgreSQL re
       active?: boolean;
       expired?: boolean;
       temporary?: boolean;
-      passwordUnset?: boolean;
     } = {},
   ) {
     const email = `auth-${randomUUID()}@example.invalid`;
@@ -103,13 +102,7 @@ describe.skipIf(!databaseUrl)(databaseUrl ? 'autenticación contra PostgreSQL re
       VALUES ('Prueba de autenticación', $1, (SELECT id FROM roles WHERE code = 'agente'), $2, $3,
         CASE WHEN $4::boolean THEN clock_timestamp() - interval '1 second' ELSE NULL END, $5)
       RETURNING id::text`,
-      [
-        email,
-        options.passwordUnset ? null : hash,
-        options.active ?? true,
-        options.expired ?? false,
-        options.temporary ?? false,
-      ],
+      [email, hash, options.active ?? true, options.expired ?? false, options.temporary ?? false],
     );
     ids.push(rows[0]!.id);
     return { id: rows[0]!.id, email, password };
@@ -179,11 +172,10 @@ describe.skipIf(!databaseUrl)(databaseUrl ? 'autenticación contra PostgreSQL re
     expect(header.includes('Domain=')).toBe(false);
   });
 
-  it('correo inexistente, clave errónea, inactivo, vencido, bloqueado y sin hash responden igual', async () => {
+  it('correo inexistente, clave errónea, inactivo, vencido, bloqueado responden igual', async () => {
     const active = await user();
     const inactive = await user({ active: false });
     const expired = await user({ expired: true });
-    const unset = await user({ passwordUnset: true });
     const locked = await user();
     await pool.query(
       "UPDATE users SET locked_until = clock_timestamp() + interval '15 minutes' WHERE id = $1",
@@ -197,7 +189,6 @@ describe.skipIf(!databaseUrl)(databaseUrl ? 'autenticación contra PostgreSQL re
       inactive,
       expired,
       locked,
-      unset,
     ];
     for (const account of cases) {
       const response = await post('/api/auth/login').send({

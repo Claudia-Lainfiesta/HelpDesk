@@ -4,7 +4,7 @@ import { env } from '../config/env.js';
 import { requireRole } from '../auth/middlewares.js';
 import { idSchema, input, queryBoolean } from '../http/validation.js';
 import type { UserConfig } from './config.js';
-import { createUserSchema, updateUserSchema, roleSchema, providerSchema } from './validation.js';
+import { createUserSchema, updateUserSchema, roleSchema } from './validation.js';
 import { createUser, getUser, listUsers, updateUser, userAction } from './service.js';
 
 const filtersSchema = z
@@ -13,7 +13,6 @@ const filtersSchema = z
     pageSize: z.coerce.number().int().min(1).max(100).default(20),
     role: roleSchema.optional(),
     active: queryBoolean.optional(),
-    provider: providerSchema.optional(),
     temporary: queryBoolean.optional(),
     expired: queryBoolean.optional(),
     q: z.string().trim().max(100).optional(),

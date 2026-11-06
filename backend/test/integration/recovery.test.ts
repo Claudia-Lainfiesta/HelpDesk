@@ -70,7 +70,6 @@ describe.skipIf(!databaseUrl)('recuperación asistida con PostgreSQL real y corr
   });
   async function fixture(
     options: {
-      provider?: 'local' | 'directory';
       active?: boolean;
       expired?: boolean;
       locked?: boolean;
@@ -79,16 +78,15 @@ describe.skipIf(!databaseUrl)('recuperación asistida con PostgreSQL real y corr
     const email = `recovery-${randomUUID()}@example.invalid`;
     const name = `Empleado ${randomUUID()}`;
     const password = randomBytes(24).toString('base64url');
-    const hash = options.provider === 'directory' ? null : await hashPassword(password);
+    const hash = await hashPassword(password);
     sensitive.push(email, name, password);
     if (hash) sensitive.push(hash);
     const result = await pool.query<{ id: string }>(
-      `INSERT INTO users (full_name,email,role_id,auth_provider,password_hash,is_active,must_change_password,failed_login_attempts,locked_until,expires_at)
-  VALUES ($1,$2,(SELECT id FROM roles WHERE code='agente'),$3,$4,$5,true,5,CASE WHEN $6 THEN clock_timestamp()+interval '15 minutes' ELSE NULL END,CASE WHEN $7 THEN clock_timestamp()-interval '1 day' ELSE NULL END) RETURNING id::text`,
+      `INSERT INTO users (full_name,email,role_id,password_hash,is_active,must_change_password,failed_login_attempts,locked_until,expires_at)
+  VALUES ($1,$2,(SELECT id FROM roles WHERE code='agente'),$3,$4,true,5,CASE WHEN $5 THEN clock_timestamp()+interval '15 minutes' ELSE NULL END,CASE WHEN $6 THEN clock_timestamp()-interval '1 day' ELSE NULL END) RETURNING id::text`,
       [
         name,
         email,
-        options.provider ?? 'local',
         hash,
         options.active ?? true,
         options.locked ?? false,
@@ -120,7 +118,7 @@ describe.skipIf(!databaseUrl)('recuperación asistida con PostgreSQL real y corr
     return req.send({ email });
   }
   it.each([false, true])(
-    'cuenta local elegible bloqueada=%s: un aviso, auditoría anónima y ningún cambio de cuenta o sesión',
+    'cuenta elegible bloqueada=%s: un aviso, auditoría anónima y ningún cambio de cuenta o sesión',
     async (locked) => {
       const account = await fixture({ locked });
       const before = await snapshot();
@@ -150,14 +148,13 @@ describe.skipIf(!databaseUrl)('recuperación asistida con PostgreSQL real y corr
       for (const value of sensitive) expect(JSON.stringify(rows)).not.toContain(value);
     },
   );
-  it.each(['missing', 'directory', 'inactive', 'expired'] as const)(
+  it.each(['missing', 'inactive', 'expired'] as const)(
     '%s: mismo resultado público y sin aviso ni auditoría',
     async (kind) => {
       const account =
         kind === 'missing'
           ? null
           : await fixture({
-              provider: kind === 'directory' ? 'directory' : 'local',
               active: kind !== 'inactive',
               expired: kind === 'expired',
             });

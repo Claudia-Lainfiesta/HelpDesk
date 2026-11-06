@@ -11,67 +11,100 @@
         marcador="Buscar por número o asunto"
         [formControl]="busqueda"
         class="w-[300px]"
-      />
-      <app-boton icono="mas" (accion)="aviso.set(true)">Nuevo ticket</app-boton>
+      /><app-boton icono="mas" (accion)="nuevoAbierto.set(true)">Nuevo ticket</app-boton>
     </div>
   </div>
-  @if (aviso()) {
-    <div class="mt-5">
-      <app-alerta variante="info">La creación de tickets estará disponible pronto.</app-alerta>
-    </div>
-  }
   <div class="mt-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar tickets por estado">
-    <app-filtro [activo]="filtro() === 'todos'" (seleccionado)="filtro.set('todos')"
+    <app-filtro [activo]="!filtros().status" (seleccionado)="filtrar({ status: undefined })"
       >Todos</app-filtro
     >
-    @for (estado of filtros; track estado.codigo) {
+    @for (estado of estados; track estado.codigo) {
       <app-filtro
-        [activo]="filtro() === estado.codigo"
-        (seleccionado)="filtro.set(estado.codigo)"
+        [activo]="filtros().status === estado.codigo"
+        (seleccionado)="filtrar({ status: estado.codigo })"
         >{{ estado.etiqueta }}</app-filtro
       >
     }
   </div>
-  <p class="mt-4 text-xs text-texto-suave">Datos de ejemplo</p>
-  <div
-    class="mt-4 overflow-x-auto rounded-boton"
-    tabindex="0"
-    role="region"
-    aria-label="Lista de tickets con desplazamiento horizontal"
-  >
-    <div class="min-w-[928px] xl:min-w-[1116px]" role="table" aria-label="Tickets de ejemplo">
-      <div
-        role="row"
-        class="grid grid-cols-[90px_minmax(220px,1fr)_150px_120px_112px_84px] xl:grid-cols-[110px_minmax(280px,1fr)_170px_140px_140px_96px] gap-3 px-5 py-4 text-xs font-semibold tracking-wide text-texto-suave uppercase"
-      >
-        @for (
-          columna of ['Ticket', 'Asunto', 'Categoría', 'Estado', 'Agente', 'Fecha'];
-          track columna
-        ) {
-          <span role="columnheader">{{ columna }}</span>
-        }
-      </div>
-      <div class="space-y-2.5" role="rowgroup">
-        @for (ticket of visibles(); track ticket.referencia) {
-          <app-tarjeta role="row"
-            ><div
-              class="grid min-h-[60px] grid-cols-[90px_minmax(220px,1fr)_150px_120px_112px_84px] xl:grid-cols-[110px_minmax(280px,1fr)_170px_140px_140px_96px] items-center gap-3 px-5 py-4"
-            >
-              <span role="cell" class="font-semibold">{{ ticket.referencia }}</span>
-              <span role="cell" class="font-medium">{{ ticket.asunto }}</span>
-              <span role="cell" class="text-texto-suave">{{ ticket.categoria }}</span>
-              <span role="cell"><app-insignia-estado [codigo]="ticket.estado" /></span>
-              <span role="cell" class="text-texto-suave">{{ ticket.agente }}</span>
-              <span role="cell" class="text-texto-suave">{{ ticket.fecha }}</span>
-            </div></app-tarjeta
-          >
-        }
-      </div>
-    </div>
+  <div class="my-5 max-w-sm">
+    <app-selector
+      identificador="categoria-tickets"
+      etiqueta="Categoría"
+      [opciones]="opcionesCategorias()"
+      [formControl]="categoria"
+    />
   </div>
-  @if (visibles().length === 0) {
-    <p class="py-10 text-center text-texto-suave" role="status">
-      No hay tickets de ejemplo que coincidan con tu búsqueda.
-    </p>
+  @if (errorCategorias()) {
+    <div class="mb-4">
+      <app-alerta variante="aviso">{{ errorCategorias() }}</app-alerta
+      ><app-boton variante="fantasma" (accion)="cargarCategorias()"
+        >Reintentar categorías</app-boton
+      >
+    </div>
+  }
+  @if (!cargando() && !error() && !tickets().length) {
+    <app-tarjeta
+      ><div class="p-10 text-center" role="status">
+        <p class="mb-4 font-semibold">
+          {{
+            tieneFiltros()
+              ? 'No hay tickets que coincidan con los filtros.'
+              : 'Todavía no hay tickets.'
+          }}
+        </p>
+        @if (tieneFiltros()) {
+          <app-boton variante="secundario" (accion)="limpiar()">Limpiar filtros</app-boton>
+        } @else {
+          <app-boton (accion)="nuevoAbierto.set(true)">Crear mi primer ticket</app-boton>
+        }
+      </div></app-tarjeta
+    >
+  } @else {
+    <app-tabla-paginada
+      nombre="tickets"
+      [columnas]="columnas"
+      [rejilla]="rejilla"
+      [anchoMinimo]="1100"
+      [cargando]="cargando()"
+      [error]="error()"
+      (reintentar)="recargar.next()"
+    >
+      @for (ticket of tickets(); track ticket.id) {
+        <app-tarjeta
+          role="row"
+          class="grid items-center gap-4 px-5 py-4"
+          [style.grid-template-columns]="rejilla"
+          ><a
+            role="cell"
+            [routerLink]="['/tickets', ticket.id]"
+            class="rounded-boton font-semibold text-primario underline underline-offset-4"
+            >{{ ticket.number }}</a
+          ><span role="cell" class="font-medium">{{ ticket.subject }}</span
+          ><span role="cell" class="text-texto-suave">{{ ticket.category.name }}</span
+          ><span role="cell"><app-insignia-estado [codigo]="ticket.status" /></span
+          ><span role="cell" class="text-texto-suave">{{
+            ticket.assignedAgent?.fullName || 'Sin asignar'
+          }}</span
+          ><span role="cell" class="text-xs text-texto-suave">{{
+            ticket.createdAt | fechaLocal
+          }}</span></app-tarjeta
+        >
+      }
+    </app-tabla-paginada>
+  }
+  @if (!error()) {
+    <app-paginador
+      [pagina]="filtros().page"
+      [tamano]="filtros().pageSize"
+      [total]="total()"
+      [cargando]="cargando()"
+      [opcionesTamanos]="[10, 20, 50]"
+      (cambiarPagina)="pagina($event)"
+      (seleccionarTamano)="filtrar({ pageSize: $event })"
+    />
   }
 </section>
+@if (nuevoAbierto()) {
+  <app-formulario-ticket (cerrar)="nuevoAbierto.set(false)" (creado)="creado($event)" />
+}
+<app-aviso-flotante />

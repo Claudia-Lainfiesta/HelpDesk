@@ -61,7 +61,7 @@ describe('Recuperación asistida', () => {
     expect(fixture.nativeElement.textContent).toContain('no confirmamos si la cuenta existe');
     expect(fixture.nativeElement.querySelector('button[type="submit"]').disabled).toBe(false);
   });
-  it.each(['local', 'inexistente', 'directory', 'inactiva', 'vencida'])(
+  it.each(['habilitada', 'inexistente', 'inactiva', 'vencida'])(
     'mantiene la misma respuesta visual para %s sin conservar el correo',
     async (caso) => {
       const email = `${caso}@example.invalid`;
@@ -74,7 +74,7 @@ describe('Recuperación asistida', () => {
         .flush({ message: 'Respuesta genérica del servidor' });
       await fixture.whenStable();
       expect(fixture.nativeElement.textContent).toContain(
-        'Solicitud recibida. Si el correo corresponde a una cuenta local habilitada, administración recibirá un aviso. Por seguridad no confirmamos si la cuenta existe.',
+        'Solicitud recibida. Si el correo corresponde a una cuenta habilitada, administración recibirá un aviso. Por seguridad no confirmamos si la cuenta existe.',
       );
       expect(fixture.nativeElement.textContent).not.toContain(email);
       expect(localStorage.length).toBe(0);

@@ -80,15 +80,16 @@ migración falla después del reset, la base queda con las anteriores aplicadas.
 La operación afecta a toda la base configurada: úsala solo en la base local
 dedicada a HelpDesk. No borra el volumen ni otras bases del contenedor.
 
-El seed es una transacción: inserta cuatro empleados `@helpdesk.local`, cinco
+El seed es una transacción: inserta cuatro empleados y una cuenta temporal `@helpdesk.local`, cinco
 categorías y seis tickets, uno por estado. Usa `ON CONFLICT DO NOTHING`; para tickets
 también comprueba asunto y solicitante antes de insertar, sin introducir una
 restricción artificial sobre los asuntos de tickets reales. Los ejemplos
 existentes no se sobrescriben. Las secuencias pueden tener saltos al repetir
 inserciones con conflicto; las referencias no pretenden ser consecutivas.
 
-Después del SQL, el seed asigna hashes Argon2id a los cuatro empleados que
-todavía no tienen contraseña, con `must_change_password = false`. Usa
+Antes del SQL, el seed calcula un hash Argon2id y lo pasa como parámetro
+a un ajuste limitado a esa transacción. Las cuentas se insertan con hash
+obligatorio y `must_change_password = false`. Usa
 `SEED_DEV_PASSWORD` o, si está vacía, genera una contraseña aleatoria local en
 `.seed-dev-password` (permisos 600, excluido de Git). No imprime ese valor ni
 restablece contraseñas existentes. Consulta [la guía de autenticación](../docs/auth.md).
@@ -101,14 +102,16 @@ restablece contraseñas existentes. Consulta [la guía de autenticación](../doc
   Los correos y nombres de categorías son únicos con índices
   sobre `lower(...)`, sin extensiones.
 - `0007_auth_sessions.sql` añade el hash de contraseña y los campos de acceso
-  a `users`. Un `password_hash` nulo impide iniciar sesión; `expires_at` nulo
+  a `users`. `0010` exige un `password_hash` no nulo; `expires_at` nulo
   indica una cuenta sin vencimiento. Las sesiones guardan únicamente el SHA-256
   del token opaco, con límite absoluto, última actividad y revocación. La cuenta
   activa y su vencimiento se comprueban en cada petición autenticada.
-- `0008_user_management.sql` agrega proveedor `local`/`directory`, creador,
-  notas e `is_temporary`. Directory no admite hash; las cuentas creadas con
-  `temporary: true` deben conservar proveedor local y vencimiento. Los usuarios
-  anteriores quedan como locales y sin marca temporal obligatoria.
+- `0008_user_management.sql` agrega creador, notas e `is_temporary`.
+  `0010_local_accounts_only.sql` exige hash Argon2id para todas las cuentas y
+  conserva el vencimiento obligatorio de las cuentas temporales. Una instalación
+  vacía permite crear su primer administrador mediante seed o la CLI.
+- `0011_ticket_core.sql` evoluciona tickets con número HD-, límites de asunto y
+  descripción, fecha de cancelación e índices de listado; no crea otra tabla.
 - `0009_audit_events.sql` incorpora eventos administrativos. La aplicación solo
   inserta registros y valida una lista de metadatos permitidos sin credenciales
   ni texto libre. El evento y el cambio comparten transacción. Consulta las
@@ -118,8 +121,8 @@ restablece contraseñas existentes. Consulta [la guía de autenticación](../doc
   migración nueva, con ID generado por identity y `sort_order = 6`.
   Identifica los estados por `code`; el valor predeterminado de
   `tickets.status_id` sigue siendo 1 (creado).
-- `reference` es una columna generada almacenada y única: `TK-000001`,
-  `TK-999999`, `TK-1000000`. Los números largos se conservan completos.
+- `reference` es una columna generada almacenada y única: `HD-000001`,
+  `HD-999999`, `HD-1000000`. Los números largos se conservan completos.
 - `category_id`, `requester_id` y `status_id` son obligatorios;
   `assigned_agent_id`, `resolved_at` y `closed_at` admiten NULL.
 - Las relaciones usan `ON DELETE RESTRICT`, sin cascadas. La aplicación usará
@@ -151,7 +154,7 @@ la base de datos.
 
 El ejemplo cancelado conserva un agente asignado, pero `resolved_at` y
 `closed_at` quedan en NULL: cancelar no representa una resolución exitosa ni
-un cierre confirmado. No se agregan columnas ni triggers de negocio.
+un cierre confirmado. `canceled_at` registra la cancelación del ejemplo; no hay triggers de negocio.
 
 ## Diagrama ER
 
@@ -178,11 +181,10 @@ erDiagram
         text email "UNIQUE lower(email)"
         smallint role_id FK
         boolean is_active
-        text auth_provider "local o directory"
         bigint created_by FK "Nullable"
         text notes "Nullable"
-        boolean is_temporary "Exige vencimiento y proveedor local"
-        text password_hash "Nullable; Argon2id"
+        boolean is_temporary "Exige vencimiento"
+        text password_hash "NOT NULL; Argon2id"
         boolean must_change_password
         int failed_login_attempts
         timestamptz locked_until "Nullable"
@@ -241,6 +243,7 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
         timestamptz resolved_at "Nullable"
+        timestamptz canceled_at "Nullable"
         timestamptz closed_at "Nullable"
     }
     schema_migrations {

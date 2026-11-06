@@ -1,5 +1,5 @@
-INSERT INTO users (full_name, email, role_id)
-SELECT sample.full_name, sample.email, roles.id
+INSERT INTO users (full_name, email, role_id, password_hash, must_change_password, password_changed_at)
+SELECT sample.full_name, sample.email, roles.id, current_setting('helpdesk.seed_password_hash'), false, now()
 FROM (VALUES
   ('Ana Solicitante', 'ana.solicitante@helpdesk.local', 'solicitante'),
   ('Bruno Agente', 'bruno.agente@helpdesk.local', 'agente'),
@@ -19,12 +19,13 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO tickets (
   subject, description, category_id, status_id, requester_id, assigned_agent_id,
-  resolved_at, closed_at
+  resolved_at, closed_at, canceled_at
 )
 SELECT sample.subject, sample.description, categories.id, ticket_statuses.id, requester.id,
   CASE WHEN sample.status_code = 'creado' THEN NULL ELSE agent.id END,
   CASE WHEN sample.status_code IN ('resuelto', 'cerrado') THEN now() ELSE NULL END,
-  CASE WHEN sample.status_code = 'cerrado' THEN now() ELSE NULL END
+  CASE WHEN sample.status_code = 'cerrado' THEN now() ELSE NULL END,
+  CASE WHEN sample.status_code = 'cancelado' THEN now() ELSE NULL END
 FROM (VALUES
   ('Ejemplo: teclado sin respuesta', 'El teclado de la estación de trabajo no responde.', 'Hardware', 'creado'),
   ('Ejemplo: aplicación no abre', 'La herramienta de trabajo se cierra al iniciar.', 'Software', 'en_proceso'),
@@ -35,7 +36,7 @@ FROM (VALUES
 ) AS sample(subject, description, category_name, status_code)
 JOIN categories ON lower(categories.name) = lower(sample.category_name)
 JOIN ticket_statuses ON ticket_statuses.code = sample.status_code
-JOIN users requester ON lower(requester.email) = 'ana.solicitante@helpdesk.local'
+JOIN users requester ON lower(requester.email) = CASE WHEN sample.status_code IN ('creado', 'en_espera', 'cerrado') THEN 'ana.solicitante@helpdesk.local' ELSE 'carla.supervisora@helpdesk.local' END
 JOIN users agent ON lower(agent.email) = 'bruno.agente@helpdesk.local'
 -- No se agrega una clave de negocio artificial solo para identificar ejemplos del seed.
 WHERE NOT EXISTS (
@@ -43,4 +44,10 @@ WHERE NOT EXISTS (
   WHERE tickets.subject = sample.subject AND tickets.requester_id = requester.id
 )
 ORDER BY ticket_statuses.sort_order
+ON CONFLICT DO NOTHING;
+
+INSERT INTO users (full_name,email,role_id,password_hash,must_change_password,is_temporary,expires_at,notes)
+SELECT 'Auditoría temporal','auditoria.temporal@helpdesk.local',id,
+  current_setting('helpdesk.seed_password_hash'),false,true,now()+interval '7 days','Cuenta temporal de desarrollo.'
+FROM roles WHERE code='solicitante'
 ON CONFLICT DO NOTHING;
