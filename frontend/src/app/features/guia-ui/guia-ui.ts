@@ -16,6 +16,8 @@ import { Icono, NombreIcono } from '../../shared/ui/icono';
 import { Alerta } from '../../shared/ui/alerta';
 import { Tarjeta } from '../../shared/ui/tarjeta';
 import { Filtro } from '../../shared/ui/filtro';
+import { InsigniaPrioridad } from '../../shared/ui/insignia-prioridad';
+import { prioridadesTicket } from '../../core/tickets/prioridad';
 import { InsigniaEstado, EstadoTicket } from '../../shared/ui/insignia-estado';
 
 import { Selector } from '../../shared/ui/selector';
@@ -56,6 +58,7 @@ import { AvisoFlotante, Avisos } from '../../shared/ui/aviso-flotante';
     Tarjeta,
     Filtro,
     InsigniaEstado,
+    InsigniaPrioridad,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<main class="mx-auto max-w-[1180px] space-y-8 px-6 py-10">
@@ -127,7 +130,12 @@ import { AvisoFlotante, Avisos } from '../../shared/ui/aviso-flotante';
     ></app-tarjeta>
     <app-tarjeta
       ><section class="space-y-5 p-6">
-        <h2 class="text-xl font-bold text-primario">Estados y filtros</h2>
+        <h2 class="text-xl font-bold text-primario">Estados, prioridades y filtros</h2>
+        <div class="flex flex-wrap gap-3">
+          @for (prioridad of prioridades; track prioridad) {
+            <app-insignia-prioridad [prioridad]="prioridad" />
+          }
+        </div>
         <div class="flex flex-wrap gap-3">
           @for (estado of estados; track estado) {
             <app-insignia-estado [codigo]="estado" />
@@ -322,6 +330,7 @@ export class GuiaUi {
   );
   protected readonly variantesBoton = ['primario', 'secundario', 'peligro', 'fantasma'] as const;
   protected readonly variantesAlerta = ['exito', 'aviso', 'peligro', 'info'] as const;
+  protected readonly prioridades = prioridadesTicket;
   protected readonly estados: EstadoTicket[] = [
     'creado',
     'en_proceso',

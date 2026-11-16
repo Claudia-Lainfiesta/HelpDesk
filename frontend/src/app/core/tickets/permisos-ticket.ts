@@ -18,7 +18,12 @@ export const accionesTicket: Record<
   cancel: { etiqueta: 'Cancelar ticket', exito: 'Ticket cancelado.', confirmar: true },
 };
 export function permisosTicket(t: Ticket, u: Usuario | null) {
-  if (!u) return { asignacion: 'ninguna' as const, acciones: [] as AccionTicket[] };
+  if (!u)
+    return {
+      asignacion: 'ninguna' as const,
+      acciones: [] as AccionTicket[],
+      prioridadEditable: false,
+    };
   const gestiona = u.role === 'supervisor' || u.role === 'administrador';
   const propietario = t.requester.id === u.id;
   const asignado = u.role === 'agente' && t.assignedAgent?.id === u.id;
@@ -40,5 +45,9 @@ export function permisosTicket(t: Ticket, u: Usuario | null) {
         ? 'propia'
         : 'ninguna'
     : 'ninguna';
-  return { asignacion, acciones };
+  return {
+    asignacion,
+    acciones,
+    prioridadEditable: !['cerrado', 'cancelado'].includes(t.status) && (gestiona || asignado),
+  };
 }

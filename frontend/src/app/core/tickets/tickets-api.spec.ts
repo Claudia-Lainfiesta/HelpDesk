@@ -15,7 +15,14 @@ describe('TicketsApi', () => {
   afterEach(() => http.verify());
   it('envía paginación, búsqueda y filtros al servidor', () => {
     api
-      .listar({ page: 2, pageSize: 10, search: 'TK-000123', status: 'en_espera', categoryId: '4' })
+      .listar({
+        page: 2,
+        pageSize: 10,
+        search: 'TK-000123',
+        status: 'en_espera',
+        categoryId: '4',
+        priority: 'alta',
+      })
       .subscribe();
     const r = http.expectOne((r) => r.url === '/api/tickets');
     expect(
@@ -25,6 +32,7 @@ describe('TicketsApi', () => {
       pageSize: '10',
       search: 'TK-000123',
       status: 'en_espera',
+      priority: 'alta',
       categoryId: '4',
     });
     r.flush({ data: [], page: 2, pageSize: 10, total: 0 });
@@ -63,6 +71,14 @@ describe('TicketsApi', () => {
     const r = http.expectOne('/api/tickets/123/transitions');
     expect(r.request.method).toBe('POST');
     expect(r.request.body).toEqual({ action: 'resolve' });
+    r.flush({});
+  });
+
+  it('cambia prioridad enviando exclusivamente el nuevo valor', () => {
+    api.cambiarPrioridad('123', 'urgente').subscribe();
+    const r = http.expectOne('/api/tickets/123/priority');
+    expect(r.request.method).toBe('PATCH');
+    expect(r.request.body).toEqual({ priority: 'urgente' });
     r.flush({});
   });
 });

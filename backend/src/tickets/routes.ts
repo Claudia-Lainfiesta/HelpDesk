@@ -3,13 +3,19 @@ import { requireAuth, requireRole } from '../auth/middlewares.js';
 import { input, idSchema } from '../http/validation.js';
 import {
   createTicketSchema,
+  changePrioritySchema,
   ticketFiltersSchema,
   assignmentSchema,
   transitionSchema,
   eventFiltersSchema,
 } from './validation.js';
 import { createTicket, getTicket, listTickets } from './service.js';
-import { assignableAgents, changeAssignment, transitionTicket } from './operations.js';
+import {
+  assignableAgents,
+  changeAssignment,
+  transitionTicket,
+  changePriority,
+} from './operations.js';
 import { ticketEvents } from './activity.js';
 export function ticketsRouter(): Router {
   const router = Router();
@@ -40,6 +46,16 @@ export function ticketsRouter(): Router {
         req.auth!.user,
         filters.page,
         filters.pageSize,
+      ),
+    );
+  });
+  router.patch('/:id/priority', async (req, res) => {
+    res.json(
+      await changePriority(
+        input(idSchema, req.params.id),
+        input(changePrioritySchema, req.body).priority,
+        req.auth!.user,
+        req.ip,
       ),
     );
   });

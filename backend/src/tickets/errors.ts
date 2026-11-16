@@ -2,6 +2,11 @@ import { ApiError } from '../auth/errors.js';
 const definitions = {
   TICKET_NOT_FOUND: [404, 'No se encontró el ticket.'],
   TICKET_ACTION_FORBIDDEN: [403, 'No tienes permiso para realizar esta acción.'],
+  TICKET_PRIORITY_UNCHANGED: [409, 'El ticket ya tiene esa prioridad.'],
+  TICKET_PRIORITY_NOT_EDITABLE: [
+    409,
+    'La prioridad de un ticket cerrado o cancelado no puede modificarse.',
+  ],
   TICKET_ASSIGNMENT_UNCHANGED: [409, 'El ticket ya tiene esa asignación.'],
   TICKET_ALREADY_ASSIGNED: [409, 'Este ticket ya fue asignado a otro agente.'],
   AGENT_NOT_ASSIGNABLE: [409, 'Selecciona un agente activo y no vencido.'],

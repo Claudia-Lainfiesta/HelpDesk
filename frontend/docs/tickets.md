@@ -11,7 +11,7 @@ temporal. Las guardas conservan la sesión y el backend verifica cada petición.
 
 La búsqueda espera 300 ms y consulta número o asunto en el backend. Admite
 `TK-000123`, `000123`, `123` y texto del asunto, por coincidencia parcial. `search`, `status`,
-`categoryId`, `page` y `pageSize` se conservan en la URL; cambiar un filtro vuelve
+`categoryId`, `priority`, `page` y `pageSize` se conservan en la URL; cambiar un filtro vuelve
 a página 1. Se ofrecen tamaños 10, 20 y 50. El número enlaza al detalle mediante
 un enlace nativo accesible. Fechas UTC se presentan en español y zona del navegador.
 
@@ -36,7 +36,7 @@ conservando asunto y descripción. El reintento de categorías también es visib
 
 ## Detalle y seguridad
 
-El detalle muestra número, asunto, estado, categoría, solicitante, agente,
+El detalle muestra número, asunto, estado, categoría, solicitante, agente, prioridad,
 creación y descripción. Agente nulo muestra «Sin asignar». La descripción usa
 interpolación de texto y `whitespace-pre-wrap`, sin interpretación HTML.
 Un 404 muestra «No se encontró el ticket.»; otros errores permiten reintentar.
@@ -78,7 +78,7 @@ El backend sigue siendo la autoridad: el cliente solo envía agentId o action.
 
 Se muestra más reciente primero, con fecha en zona del navegador y nombres,
 sin correo del actor. Paginación inicial 50, opciones 20/50/100. El texto se genera
-a partir de created, assigned, reassigned, unassigned y status_changed; no se guarda
+a partir de created, assigned, reassigned, unassigned, status_changed y priority_changed; no se guarda
 en SQL ni se interpreta HTML. Distingue autoasignación, reasignación, resolución,
 reapertura, cierre y cancelación. Conserva las referencias TK y la descripción.
 
@@ -87,5 +87,37 @@ Hay pruebas sin red para derechos combinados, controles, confirmaciones, todos l
 tipos de evento, paginación, error 409 y recarga. La matriz exacta y los nueve arcos
 permitidos están en [la documentación de API](../../backend/docs/tickets.md).
 
-No incorpora prioridad, comentarios, notas, adjuntos, correo/Telegram de tickets,
+No incorpora comentarios, notas, adjuntos, correo/Telegram de tickets,
 SLA, tiempos de respuesta ni actualizaciones en tiempo real.
+
+## Prioridad
+
+El listado incluye una columna Prioridad con app-insignia-prioridad para todos los
+roles, y un selector Todas/Baja/Media/Alta/Urgente. Conserva priority en la URL junto
+con los demás filtros; cambiarlo vuelve a página 1. Se mantiene el orden de creación
+e ID descendentes; prioridad no participa en la búsqueda ni cambia el orden.
+
+El detalle muestra la insignia cerca del estado. El agente actualmente asignado,
+supervisor o administrador ve Nueva prioridad y Cambiar prioridad en Creado,
+En proceso, En espera y Resuelto. Un solicitante u otro agente solo ve el valor;
+ser propietario no añade permiso, incluso si tiene rol agente. Cerrado/Cancelado
+conservan la insignia y ocultan edición.
+
+El cambio no requiere confirmación. Impide doble envío, deshabilita controles
+mientras espera y anuncia «Prioridad actualizada a Alta.» con el valor devuelto.
+Actualiza ticket y actividad; los conflictos recargan ambos. Un error conserva
+el valor confirmado y muestra el mensaje de la API.
+
+TicketsApi.cambiarPrioridad envía únicamente `{ priority }` como JSON. Los tipos
+TicketPriority y los modelos solo admiten baja/media/alta/urgente. El modal Nuevo
+ticket conserva sus tres campos: no ofrece selector ni envía prioridad; nace Media.
+
+El evento estructurado priority_changed se presenta como «Juan Pérez cambió la
+prioridad de Media a Alta.». La frase se genera en la interfaz, sin almacenarla.
+No modifica estado, asignación o fechas de resolución/cierre/cancelación. No hay
+prioridad automática, SLA, escalamiento, notificaciones ni orden por urgencia.
+
+Tokens existentes: Baja usa info/info-suave; Media usa superficie-suave,
+texto-suave y linea; Alta usa aviso/aviso-suave; Urgente usa peligro/peligro-suave.
+Todas llevan etiqueta visible y rounded-insignia, sin colores nuevos. La galería
+/guia-ui incluye las cuatro insignias únicamente durante desarrollo.

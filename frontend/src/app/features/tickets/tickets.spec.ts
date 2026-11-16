@@ -19,6 +19,7 @@ const ticket: Ticket = {
   subject: 'Impresora',
   description: 'Primera línea\n<img src=x onerror=alert(1)>',
   status: 'creado',
+  priority: 'media',
   category: { id: '8', name: 'Hardware' },
   requester: { id: '5', fullName: 'Ana', email: 'ana@example.invalid' },
   assignedAgent: null,
@@ -61,6 +62,7 @@ describe('Tickets y detalle', () => {
     expect(e.querySelector('a[href="/tickets/123"]')?.textContent).toContain('TK-000123');
     expect(e.textContent).toContain('Sin asignar');
     expect(e.textContent).toContain('Creado');
+    expect(e.querySelector('app-insignia-prioridad')?.textContent).toContain('Media');
   });
   it('distingue vacío de sin coincidencias y permite limpiar filtros', async () => {
     await abrir();
@@ -156,6 +158,7 @@ describe('Tickets y detalle', () => {
       pageSize: 20,
       search: undefined,
       status: undefined,
+      priority: undefined,
       categoryId: undefined,
     }));
   it('detalle conserva saltos y representa descripción como texto, sin HTML', async () => {
@@ -200,6 +203,45 @@ describe('Tickets y detalle', () => {
     await pagina.fixture.whenStable();
     expect(pagina.routeNativeElement!.textContent).toContain(ticket.number);
   });
+
+  it('restaura prioridad desde URL, aplica las cuatro opciones y conserva los demás filtros al paginar', async () => {
+    await abrir(
+      '/tickets?priority=alta&status=creado&categoryId=8&search=impresora&page=2&pageSize=10',
+    );
+    let r = http.expectOne((req) => req.url === '/api/tickets');
+    expect(r.request.params.get('priority')).toBe('alta');
+    r.flush({ data: [{ ...ticket, priority: 'alta' }], total: 31, page: 2, pageSize: 10 });
+    pagina.detectChanges();
+    expect(c.prioridad.value).toBe('alta');
+    expect(
+      pagina.routeNativeElement!.querySelector('app-insignia-prioridad')?.textContent,
+    ).toContain('Alta');
+    for (const priority of ['baja', 'media', 'alta', 'urgente']) {
+      c.prioridad.setValue(priority);
+      await pagina.fixture.whenStable();
+      r = http.expectOne((req) => req.url === '/api/tickets');
+      expect(r.request.params.get('priority')).toBe(priority);
+      expect(r.request.params.get('page')).toBe('1');
+      expect(r.request.params.get('status')).toBe('creado');
+      r.flush({ data: [{ ...ticket, priority }], total: 31, page: 1, pageSize: 10 });
+      expect(TestBed.inject(Router).url).toContain('priority=' + priority);
+    }
+    c.pagina(2);
+    await pagina.fixture.whenStable();
+    r = http.expectOne((req) => req.url === '/api/tickets');
+    expect(r.request.params.get('priority')).toBe('urgente');
+    expect(r.request.params.get('page')).toBe('2');
+    r.flush({ data: [ticket], total: 31, page: 2, pageSize: 10 });
+    c.prioridad.setValue('');
+    await pagina.fixture.whenStable();
+    r = http.expectOne((req) => req.url === '/api/tickets');
+    expect(r.request.params.has('priority')).toBe(false);
+    r.flush({ data: [], total: 0, page: 1, pageSize: 10 });
+  });
+  it('normaliza una prioridad desconocida de URL', () =>
+    expect(
+      leerFiltrosTickets(convertToParamMap({ priority: 'critica' })).priority,
+    ).toBeUndefined());
 });
 describe('Nuevo ticket', () => {
   let http: HttpTestingController;

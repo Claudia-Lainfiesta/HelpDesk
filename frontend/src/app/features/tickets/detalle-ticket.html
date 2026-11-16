@@ -15,6 +15,10 @@
     <div class="mb-6 flex flex-wrap items-center gap-4">
       <h1>{{ t.number }}</h1>
       <app-insignia-estado [codigo]="t.status" />
+      <span class="inline-flex items-center gap-2"
+        ><span class="text-texto-suave">Prioridad:</span
+        ><app-insignia-prioridad [prioridad]="t.priority"
+      /></span>
     </div>
     <app-tarjeta
       ><div class="space-y-6 p-7">
@@ -86,6 +90,28 @@
         }
       </section></app-tarjeta
     >
+    @if (permisos().prioridadEditable) {
+      <app-tarjeta class="mt-6 block"
+        ><section class="space-y-4 p-7" aria-labelledby="prioridad-ticket">
+          <h2 id="prioridad-ticket" class="text-xl font-bold text-primario">Prioridad</h2>
+          <div class="flex flex-wrap items-end gap-3">
+            <app-selector
+              class="min-w-48"
+              identificador="prioridad-ticket-selector"
+              etiqueta="Nueva prioridad"
+              [formControl]="prioridad"
+              [opciones]="opcionesPrioridad"
+            />
+            <app-boton
+              [cargando]="ocupada()"
+              [deshabilitado]="prioridad.value === t.priority"
+              (accion)="guardarPrioridad()"
+              >Cambiar prioridad</app-boton
+            >
+          </div>
+        </section></app-tarjeta
+      >
+    }
     @if (errorAccion()) {
       <app-alerta class="mt-5 block" variante="peligro">{{ errorAccion() }}</app-alerta>
     }

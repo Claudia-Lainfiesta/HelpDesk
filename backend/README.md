@@ -7,7 +7,7 @@ Incluye autenticación con sesiones en el servidor. Consulta [la guía de autent
 Incluye [administración de usuarios, cuentas temporales y categorías](docs/users-and-categories.md),
 con auditoría administrativa y [tickets reales](docs/tickets.md): alta propia,
 listado, búsqueda, filtros, paginación y detalle. Incluye asignación, transiciones y actividad estructurada. No hay comentarios,
-adjuntos, prioridad, SLA ni reportes reales.
+adjuntos, SLA ni reportes reales.
 
 ## Desarrollo local en Fedora con Podman
 
@@ -327,3 +327,9 @@ Consulta los [hallazgos técnicos para EP-06](../Documentacion/Telegram-prueba-d
 Consulta [la API de tickets](docs/tickets.md): crear, listar con búsqueda/filtros y
 abrir detalle. Los números TK- son generados por PostgreSQL. El solicitante solo
 consulta sus tickets; los demás roles ven todos. Incluye asignación, transiciones y actividad; no incluye comentarios, adjuntos ni SLA.
+
+La prioridad operativa (Baja, Media, Alta, Urgente) se muestra en listado/detalle y
+se filtra con priority. Nace Media. La cambia el agente asignado, supervisor o
+administrador en tickets no terminales, incluido Resuelto. El propietario no gana
+ese permiso. No hay cálculo, escalamiento, SLA ni notificaciones de prioridad.
+Consulta la guía de tickets para el contrato y los controles disponibles.

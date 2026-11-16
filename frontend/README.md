@@ -150,3 +150,9 @@ navegación se colapsa y la lista se desplaza horizontalmente.
 Abre `frontend/` como carpeta de VS Code para usar `.vscode/`, o añade ambos
 proyectos a un espacio de trabajo. Consulta la [guía de contribución](../Documentacion/Guia-de-contribucion.md)
 para el flujo de ramas y revisiones del equipo.
+
+La prioridad operativa (Baja, Media, Alta, Urgente) se muestra en listado/detalle y
+se filtra con priority. Nace Media. La cambia el agente asignado, supervisor o
+administrador en tickets no terminales, incluido Resuelto. El propietario no gana
+ese permiso. No hay cálculo, escalamiento, SLA ni notificaciones de prioridad.
+Consulta la guía de tickets para el contrato y los controles disponibles.

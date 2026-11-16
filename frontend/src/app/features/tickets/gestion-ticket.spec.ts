@@ -8,6 +8,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { usuarioPrueba } from '../../pruebas/usuario';
 import { Ticket, EventoTicket } from '../../core/tickets/tickets-api';
 import { permisosTicket } from '../../core/tickets/permisos-ticket';
+import { Avisos } from '../../shared/ui/aviso-flotante';
 import { Usuario } from '../../core/auth/modelos';
 const agente = { id: '7', fullName: 'Juan', email: 'juan@example.invalid' };
 const ticket: Ticket = {
@@ -16,6 +17,7 @@ const ticket: Ticket = {
   subject: 'Equipo',
   description: 'Solicitud',
   status: 'creado',
+  priority: 'media',
   category: { id: '1', name: 'Hardware' },
   requester: { id: '1', fullName: 'Ana', email: 'ana@example.invalid' },
   assignedAgent: null,
@@ -31,6 +33,8 @@ const evento: EventoTicket = {
   actor: { id: '1', fullName: 'Ana', role: 'solicitante' },
   fromAgent: null,
   toAgent: null,
+  fromPriority: null,
+  toPriority: null,
   fromStatus: null,
   toStatus: null,
   createdAt: ticket.createdAt,
@@ -64,6 +68,9 @@ describe('derechos combinados de tickets', () => {
           ...((owner || admin) && propietario[i] ? propietario[i].split(',') : []),
         ];
         expect(actual.acciones).toEqual(expected);
+        expect(actual.prioridadEditable).toBe(
+          support && !['cerrado', 'cancelado'].includes(status),
+        );
         if (['resuelto', 'cerrado', 'cancelado'].includes(status))
           expect(actual.asignacion).toBe('ninguna');
       }),
@@ -306,5 +313,113 @@ describe('operaciones del detalle', () => {
     requests[0].flush({ data: [evento], page: 1, pageSize: 50, total: 1 });
     expect(c.actividad()).toEqual([reciente]);
     expect(c.totalEventos()).toBe(2);
+  });
+
+  it.each(['agente', 'supervisor', 'administrador'] as const)(
+    '%s cambia prioridad sin confirmación, impide doble envío y actualiza valor/actividad/aviso',
+    (role) => {
+      const u = { ...usuarioPrueba, id: role === 'agente' ? '7' : '9', role };
+      const f = abrir(u, { ...ticket, status: 'resuelto', assignedAgent: agente });
+      const c = f.componentInstance;
+      expect(f.nativeElement.querySelector('#prioridad-ticket-selector')).not.toBeNull();
+      c.prioridad.setValue('alta');
+      c.guardarPrioridad();
+      c.guardarPrioridad();
+      f.detectChanges();
+      expect(c.ocupada()).toBe(true);
+      expect(c.prioridad.disabled).toBe(true);
+      expect(f.nativeElement.querySelector('[role=dialog]')).toBeNull();
+      const r = http.expectOne('/api/tickets/123/priority');
+      expect(r.request.method).toBe('PATCH');
+      expect(r.request.body).toEqual({ priority: 'alta' });
+      r.flush({ ...ticket, status: 'resuelto', assignedAgent: agente, priority: 'alta' });
+      actividad([
+        {
+          ...evento,
+          type: 'priority_changed',
+          fromPriority: 'media',
+          toPriority: 'alta',
+          actor: { id: u.id, fullName: u.fullName, role },
+        },
+      ]);
+      f.detectChanges();
+      expect(c.ticket()?.priority).toBe('alta');
+      expect(c.ticket()?.status).toBe('resuelto');
+      expect(c.ocupada()).toBe(false);
+      expect(c.prioridad.enabled).toBe(true);
+      expect(TestBed.inject(Avisos).aviso()?.mensaje).toBe('Prioridad actualizada a Alta.');
+      expect(f.nativeElement.textContent).toContain('cambió la prioridad de Media a Alta.');
+    },
+  );
+  it.each([
+    ['solicitante propietario', usuarioPrueba, 'creado'],
+    ['agente propietario no asignado', { ...usuarioPrueba, role: 'agente' }, 'creado'],
+    ['otro agente', { ...usuarioPrueba, id: '8', role: 'agente' }, 'en_proceso'],
+    ['agente asignado cerrado', { ...usuarioPrueba, id: '7', role: 'agente' }, 'cerrado'],
+    ['administrador cancelado', { ...usuarioPrueba, id: '9', role: 'administrador' }, 'cancelado'],
+  ] as const)('%s ve insignia pero carece de edición', (_label, u, status) => {
+    const f = abrir(u, { ...ticket, status, assignedAgent: agente, priority: 'urgente' });
+    const c = f.componentInstance;
+    expect(f.nativeElement.querySelector('app-insignia-prioridad')?.textContent).toContain(
+      'Urgente',
+    );
+    expect(f.nativeElement.querySelector('#prioridad-ticket-selector')).toBeNull();
+    c.prioridad.setValue('baja');
+    c.guardarPrioridad();
+    http.expectNone('/api/tickets/123/priority');
+  });
+  it('agente propietario y asignado conserva el permiso de soporte; repetición o valor inválido no envían', () => {
+    const f = abrir(
+      { ...usuarioPrueba, id: '7', role: 'agente' },
+      { ...ticket, assignedAgent: agente, requester: { ...ticket.requester, id: '7' } },
+    );
+    const c = f.componentInstance;
+    expect(c.permisos().prioridadEditable).toBe(true);
+    c.guardarPrioridad();
+    c.prioridad.setValue('critica');
+    c.guardarPrioridad();
+    http.expectNone('/api/tickets/123/priority');
+  });
+  it('un error conserva la prioridad actual, muestra el mensaje y permite reintentar', () => {
+    const f = abrir(undefined, { ...ticket, assignedAgent: agente });
+    const c = f.componentInstance;
+    c.prioridad.setValue('alta');
+    c.guardarPrioridad();
+    http
+      .expectOne('/api/tickets/123/priority')
+      .flush(
+        { error: { code: 'UNAVAILABLE', message: 'No disponible ahora.' } },
+        { status: 503, statusText: 'Unavailable' },
+      );
+    f.detectChanges();
+    expect(c.ticket()?.priority).toBe('media');
+    expect(c.errorAccion()).toBe('No disponible ahora.');
+    expect(c.ocupada()).toBe(false);
+    expect(c.prioridad.value).toBe('alta');
+    c.guardarPrioridad();
+    http
+      .expectOne('/api/tickets/123/priority')
+      .flush({ ...ticket, assignedAgent: agente, priority: 'alta' });
+    actividad();
+  });
+  it('conflicto de prioridad recarga detalle y actividad, y retira edición si se cerró', () => {
+    const f = abrir(undefined, { ...ticket, assignedAgent: agente });
+    const c = f.componentInstance;
+    c.prioridad.setValue('alta');
+    c.guardarPrioridad();
+    http
+      .expectOne('/api/tickets/123/priority')
+      .flush(
+        { error: { code: 'TICKET_PRIORITY_NOT_EDITABLE', message: 'El ticket ya está cerrado.' } },
+        { status: 409, statusText: 'Conflict' },
+      );
+    http
+      .expectOne('/api/tickets/123')
+      .flush({ ...ticket, assignedAgent: agente, status: 'cerrado', priority: 'urgente' });
+    actividad();
+    f.detectChanges();
+    expect(c.ticket()?.priority).toBe('urgente');
+    expect(f.nativeElement.querySelector('#prioridad-ticket-selector')).toBeNull();
+    expect(f.nativeElement.textContent).toContain('El ticket ya está cerrado.');
   });
 });

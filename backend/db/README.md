@@ -181,7 +181,9 @@ erDiagram
     ticket_events {
         bigint id PK
         bigint ticket_id FK
-        text event_type "created, assigned, reassigned, unassigned, status_changed"
+        text event_type "Incluye priority_changed"
+        text from_priority "Nullable; solo cambio de prioridad"
+        text to_priority "Nullable; solo cambio de prioridad"
         bigint actor_user_id FK
         text from_status FK "Nullable"
         text to_status FK "Nullable"
@@ -255,6 +257,7 @@ erDiagram
     tickets {
         bigint id PK
         text reference UK "Generada desde id"
+        text priority "NOT NULL; baja/media/alta/urgente, default media"
         text subject
         text description
         bigint category_id FK
@@ -307,3 +310,13 @@ no reconstruye transiciones desconocidas. Las operaciones nuevas guardan cambio,
 actividad y auditoría en una transacción. Consulta [tickets](../docs/tickets.md).
 El seed nuevo incluye siete escenarios y eventos válidos; ejemplos ya existentes
 conservan su historia. Repetir el seed no duplica tickets o eventos.
+
+## Prioridad
+
+0014_ticket_priority.sql añade priority TEXT NOT NULL DEFAULT media con CHECK de
+cuatro valores. Todos los existentes quedan Media sin inferencia ni eventos nuevos.
+Amplía ticket_events con priority_changed y from_priority/to_priority; el CHECK de
+forma exige ambos diferentes para ese tipo y null para los demás. La API modifica
+prioridad, actividad y auditoría en una transacción, solo con permiso de soporte y
+fuera de Cerrado/Cancelado. El seed varía prioridades iniciales únicamente de los
+ejemplos insertados; no restablece los existentes. Consulta [tickets](../docs/tickets.md).

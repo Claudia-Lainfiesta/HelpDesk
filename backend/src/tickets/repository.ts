@@ -1,9 +1,9 @@
 import { ticketError } from './errors.js';
 import type { PoolClient } from 'pg';
 import type { UserProfile } from '../auth/types.js';
-import type { TicketFilters } from './validation.js';
+import type { TicketFilters, TicketPriority } from './validation.js';
 
-const select = `SELECT t.id::text, t.reference AS number, t.subject, t.description,
+const select = `SELECT t.id::text, t.reference AS number, t.subject, t.description, t.priority,
  s.code AS status, c.id::text AS category_id, c.name AS category_name,
  u.id::text AS requester_id, u.full_name AS requester_name, u.email AS requester_email,
  a.id::text AS agent_id, a.full_name AS agent_name, a.email AS agent_email,
@@ -16,6 +16,7 @@ interface TicketRow {
   number: string;
   subject: string;
   description: string;
+  priority: TicketPriority;
   status: TicketFilters['status'];
   category_id: string;
   category_name: string;
@@ -37,6 +38,7 @@ function view(row: TicketRow) {
     number: row.number,
     subject: row.subject,
     description: row.description,
+    priority: row.priority,
     status: row.status!,
     category: { id: row.category_id, name: row.category_name },
     requester: { id: row.requester_id, fullName: row.requester_name, email: row.requester_email },
@@ -67,6 +69,7 @@ export async function queryTickets(client: PoolClient, filters: TicketFilters, u
   };
   if (user.role === 'solicitante') add('t.requester_id=?', user.id);
   if (filters.status) add('s.code=?', filters.status);
+  if (filters.priority) add('t.priority=?', filters.priority);
   if (filters.categoryId) add('t.category_id=?', filters.categoryId);
   if (filters.search)
     add(

@@ -7,14 +7,22 @@ import type { UserProfile } from '../auth/types.js';
 import { recordAudit } from '../audit/audit.js';
 import { findTicket } from './repository.js';
 import { recordActivity } from './activity.js';
-import { assertVisible, checkAssignment, checkTransition, type CurrentTicket } from './policy.js';
-import type { TransitionAction } from './validation.js';
+import {
+  assertVisible,
+  checkAssignment,
+  checkTransition,
+  checkPriority,
+  type CurrentTicket,
+} from './policy.js';
+import type { TransitionAction, TicketPriority } from './validation.js';
 
 async function lockedTicket(client: PoolClient, id: string, user: UserProfile) {
   // Bloquea solo la fila base: un JOIN al estado puede perder la fila al
   // reevaluarse después de esperar una actualización concurrente.
-  const result = await client.query<Omit<CurrentTicket, 'status'> & { statusId: number }>(
-    `SELECT id::text,status_id AS "statusId",requester_id::text AS "requesterId",assigned_agent_id::text AS "agentId"
+  const result = await client.query<
+    Omit<CurrentTicket, 'status'> & { statusId: number; priority: TicketPriority }
+  >(
+    `SELECT id::text,priority,status_id AS "statusId",requester_id::text AS "requesterId",assigned_agent_id::text AS "agentId"
     FROM tickets WHERE id=$1 FOR UPDATE`,
     [id],
   );
@@ -31,7 +39,7 @@ async function lockedTicket(client: PoolClient, id: string, user: UserProfile) {
     status: status.rows[0]!.code,
   };
   assertVisible(ticket, user);
-  return ticket;
+  return { ...ticket, priority: row.priority };
 }
 async function currentActor(client: PoolClient, user: UserProfile): Promise<UserProfile> {
   // Mantiene estable la autorización durante la operación frente a una baja/cambio de rol.
@@ -127,6 +135,36 @@ export function transitionTicket(
       targetType: 'ticket',
       targetId: id,
       metadata: { fromStatus: ticket.status, toStatus: target },
+    });
+    return findTicket(client, id, actor);
+  });
+}
+
+export function changePriority(
+  id: string,
+  priority: TicketPriority,
+  user: UserProfile,
+  ip?: string,
+) {
+  return transaction(async (client) => {
+    const actor = await currentActor(client, user);
+    const ticket = await lockedTicket(client, id, actor);
+    checkPriority(ticket, actor);
+    if (ticket.priority === priority) throw ticketError('TICKET_PRIORITY_UNCHANGED');
+    await client.query('UPDATE tickets SET priority=$2 WHERE id=$1', [id, priority]);
+    await recordActivity(client, {
+      ticketId: id,
+      type: 'priority_changed',
+      actorId: actor.id,
+      fromPriority: ticket.priority,
+      toPriority: priority,
+    });
+    await recordAudit(client, {
+      actor: { userId: actor.id, ...(ip ? { ip } : {}) },
+      action: 'ticket.priority_changed',
+      targetType: 'ticket',
+      targetId: id,
+      metadata: { fromPriority: ticket.priority, toPriority: priority },
     });
     return findTicket(client, id, actor);
   });

@@ -16,6 +16,13 @@ import { Tarjeta } from '../../shared/ui/tarjeta';
 import { Alerta } from '../../shared/ui/alerta';
 import { Boton } from '../../shared/ui/boton';
 import { InsigniaEstado } from '../../shared/ui/insignia-estado';
+import { InsigniaPrioridad } from '../../shared/ui/insignia-prioridad';
+import {
+  esPrioridad,
+  opcionesPrioridad,
+  etiquetasPrioridad,
+  TicketPriority,
+} from '../../core/tickets/prioridad';
 import { AuthService } from '../../core/auth/auth.service';
 import { AccionTicket, accionesTicket, permisosTicket } from '../../core/tickets/permisos-ticket';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -34,6 +41,7 @@ import { Avisos, AvisoFlotante } from '../../shared/ui/aviso-flotante';
     Alerta,
     Boton,
     InsigniaEstado,
+    InsigniaPrioridad,
     AvisoFlotante,
     ReactiveFormsModule,
     Selector,
@@ -53,11 +61,13 @@ export class DetalleTicket {
   readonly permisos = computed(() =>
     this.ticket()
       ? permisosTicket(this.ticket()!, this.auth.usuario())
-      : { asignacion: 'ninguna', acciones: [] as AccionTicket[] },
+      : { asignacion: 'ninguna', acciones: [] as AccionTicket[], prioridadEditable: false },
   );
   readonly agentes = signal<PersonaTicket[]>([]);
   readonly errorAgentes = signal('');
   readonly cargandoAgentes = signal(false);
+  readonly prioridad = new FormControl('media', { nonNullable: true });
+  readonly opcionesPrioridad = opcionesPrioridad;
   readonly agente = new FormControl('', { nonNullable: true });
   readonly opcionesAgentes = computed(() => {
     const list = [
@@ -117,6 +127,7 @@ export class DetalleTicket {
       .subscribe((t) => {
         this.ticket.set(t);
         this.agente.setValue(t.assignedAgent?.id ?? '');
+        this.prioridad.setValue(t.priority);
         this.cargarActividad(1);
         if (
           this.auth.usuario()?.role === 'supervisor' ||
@@ -190,6 +201,8 @@ export class DetalleTicket {
         return `${nombre} reasignó el ticket de ${e.fromAgent?.fullName} a ${e.toAgent?.fullName}.`;
       case 'unassigned':
         return `${nombre} dejó el ticket sin asignar.`;
+      case 'priority_changed':
+        return `${nombre} cambió la prioridad de ${e.fromPriority ? etiquetasPrioridad[e.fromPriority] : ''} a ${e.toPriority ? etiquetasPrioridad[e.toPriority] : ''}.`;
       case 'status_changed':
         if (e.fromStatus === 'resuelto' && e.toStatus === 'en_proceso')
           return `${nombre} reabrió el ticket.`;
@@ -238,6 +251,17 @@ export class DetalleTicket {
     if (t.assignedAgent) this.pendiente.set(p);
     else this.ejecutar(p);
   }
+  guardarPrioridad() {
+    const priority = this.prioridad.value;
+    if (
+      this.ocupada() ||
+      !this.permisos().prioridadEditable ||
+      !esPrioridad(priority) ||
+      priority === this.ticket()?.priority
+    )
+      return;
+    this.ejecutar({ titulo: 'Cambiar prioridad', mensaje: '', prioridad: priority });
+  }
   confirmar() {
     const p = this.pendiente();
     if (p) this.ejecutar(p);
@@ -247,6 +271,7 @@ export class DetalleTicket {
     mensaje: string;
     accion?: AccionTicket;
     agentId?: string | null;
+    prioridad?: TicketPriority;
   }) {
     if (this.ocupada()) return;
     const id = this.ticket()?.id;
@@ -254,15 +279,19 @@ export class DetalleTicket {
     this.ocupada.set(true);
     this.errorAccion.set('');
     this.agente.disable();
-    const peticion = p.accion
-      ? this.api.transicion(id, p.accion)
-      : this.api.asignar(id, p.agentId ?? null);
+    this.prioridad.disable();
+    const peticion = p.prioridad
+      ? this.api.cambiarPrioridad(id, p.prioridad)
+      : p.accion
+        ? this.api.transicion(id, p.accion)
+        : this.api.asignar(id, p.agentId ?? null);
     peticion
       .pipe(
         takeUntilDestroyed(this.destruir),
         finalize(() => {
           this.ocupada.set(false);
           this.agente.enable();
+          this.prioridad.enable();
         }),
       )
       .subscribe({
@@ -271,15 +300,18 @@ export class DetalleTicket {
           const anterior = this.ticket()!.assignedAgent;
           this.ticket.set(t);
           this.agente.setValue(t.assignedAgent?.id ?? '');
+          this.prioridad.setValue(t.priority);
           this.pendiente.set(null);
           this.cargarActividad(1);
-          const mensaje = p.accion
-            ? accionesTicket[p.accion].exito
-            : !t.assignedAgent
-              ? 'El ticket quedó sin agente asignado.'
-              : t.assignedAgent.id === this.auth.usuario()?.id
-                ? `Te asignaste el ticket ${t.number}.`
-                : `Ticket ${anterior ? 'reasignado' : 'asignado'} a ${t.assignedAgent.fullName}.`;
+          const mensaje = p.prioridad
+            ? `Prioridad actualizada a ${etiquetasPrioridad[t.priority]}.`
+            : p.accion
+              ? accionesTicket[p.accion].exito
+              : !t.assignedAgent
+                ? 'El ticket quedó sin agente asignado.'
+                : t.assignedAgent.id === this.auth.usuario()?.id
+                  ? `Te asignaste el ticket ${t.number}.`
+                  : `Ticket ${anterior ? 'reasignado' : 'asignado'} a ${t.assignedAgent.fullName}.`;
           this.avisos.mostrar(mensaje);
         },
         error: (e) => {

@@ -203,3 +203,13 @@ truncamiento), enviada por la API. El logo y la marca siguen siendo HelpDesk.
 El PDF de dos páginas sigue siendo válido como referencia de login, filas,
 colores y estados; sus datos son ilustrativos, no contratos ni permisos. No
 incluye todos los filtros, paginación, modales ni el detalle real implementados.
+
+## Insignias de prioridad
+
+`app-insignia-prioridad` recibe `prioridad` (TicketPriority: baja, media, alta,
+urgente) y muestra siempre su etiqueta en español. Reutiliza info/info-suave para
+Baja; superficie-suave, texto-suave y linea para Media; aviso/aviso-suave para Alta;
+peligro/peligro-suave para Urgente. No agrega colores ni tokens. Usa rounded-insignia.
+Está disponible en la guía de desarrollo, listado y detalle. El selector y botón
+de edición siguen rounded-boton; la disponibilidad depende del permiso de soporte
+y del estado del ticket, sin concederlo por propiedad.

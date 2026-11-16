@@ -169,6 +169,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
         categoryId: category,
       });
       expect(r.status).toBe(201);
+      expect(r.body.priority).toBe('media');
       expect((await list(user)).body.data[0].number).toBe(r.body.number);
       expect((await detail(r.body.id, user)).body.number).toBe(r.body.number);
       expect(r.headers.location).toBe(`/api/tickets/${r.body.id}`);
@@ -698,6 +699,10 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
         )
       ).rows;
       expect(tickets).toHaveLength(7);
+      const seeded = (
+        await client.query('SELECT DISTINCT priority FROM tickets ORDER BY priority')
+      ).rows.map((r) => r.priority);
+      expect(seeded.sort()).toEqual(['alta', 'baja', 'media', 'urgente']);
       for (const t of tickets) {
         const h = (
           await client.query(
@@ -732,5 +737,258 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
       await client.query('ROLLBACK');
       client.release();
     }
+  });
+
+  const priority = (id: string, value: string, actor: Account = admin) =>
+    request(app)
+      .patch(`/api/tickets/${id}/priority`)
+      .set('Cookie', actor.cookie)
+      .set('Origin', origin)
+      .send({ priority: value });
+  it.each(['baja', 'alta', 'urgente'])(
+    'crear no admite prioridad del cliente: %s',
+    async (value) => {
+      const r = await create(solicitante, {
+        subject: 'Intento',
+        description: 'Texto',
+        categoryId: category,
+        priority: value,
+      });
+      expect(r.status).toBe(400);
+      expect(r.body.error.code).toBe('INVALID_INPUT');
+      const t = (await create()).body;
+      expect(t.priority).toBe('media');
+      expect((await list()).body.data[0].priority).toBe('media');
+      expect((await detail(t.id)).body.priority).toBe('media');
+    },
+  );
+  it('prioridad exige sesión, contraseña definitiva y oculta el ticket ajeno', async () => {
+    const t = await state();
+    expect(
+      (
+        await request(app)
+          .patch(`/api/tickets/${t.id}/priority`)
+          .set('Origin', origin)
+          .send({ priority: 'alta' })
+      ).status,
+    ).toBe(401);
+    expect((await priority(t.id, 'alta', otro)).status).toBe(404);
+    expect((await priority('999999999', 'alta')).status).toBe(404);
+    await pool.query('UPDATE users SET must_change_password=true WHERE id=$1', [admin.id]);
+    expect((await priority(t.id, 'alta')).body.error.code).toBe('PASSWORD_CHANGE_REQUIRED');
+  });
+  it.each(['agente', 'supervisor', 'administrador'])(
+    '%s cambia prioridad con actividad y auditoría sin alterar otros atributos',
+    async (role) => {
+      const t = await state('resuelto');
+      const actor = { agente, supervisor, administrador: admin }[role]!;
+      const r = await priority(t.id, 'alta', actor);
+      expect(r.status).toBe(200);
+      const { priority: newPriority, updatedAt, ...rest } = r.body;
+      const { priority: previousPriority, updatedAt: previousUpdated, ...before } = t;
+      expect(previousPriority).toBe('media');
+      expect(newPriority).toBe('alta');
+      expect(rest).toEqual(before);
+      expect(new Date(updatedAt).getTime()).toBeGreaterThan(new Date(previousUpdated).getTime());
+      const e = (await events(t.id)).body.data[0];
+      expect(e).toMatchObject({
+        type: 'priority_changed',
+        actor: { id: actor.id, role },
+        fromPriority: 'media',
+        toPriority: 'alta',
+        fromStatus: null,
+        toStatus: null,
+        fromAgent: null,
+        toAgent: null,
+      });
+      expect(Number.isFinite(Date.parse(e.createdAt))).toBe(true);
+      const audit = (
+        await pool.query(
+          "SELECT metadata,actor_user_id::text FROM audit_events WHERE action='ticket.priority_changed'",
+        )
+      ).rows[0];
+      expect(audit).toEqual({
+        actor_user_id: actor.id,
+        metadata: { fromPriority: 'media', toPriority: 'alta' },
+      });
+    },
+  );
+  it('propietario solicitante y agente propietario no asignado carecen del permiso', async () => {
+    const t = await state();
+    expect((await priority(t.id, 'alta', solicitante)).status).toBe(403);
+    expect((await priority(t.id, 'alta', agente2)).status).toBe(403);
+    const own = await state('creado', agente.id, agente2);
+    expect((await priority(own.id, 'urgente', agente2)).status).toBe(403);
+    const ownAssigned = await state('creado', agente2.id, agente2);
+    expect((await priority(ownAssigned.id, 'urgente', agente2)).status).toBe(200);
+  });
+  it.each(['creado', 'en_proceso', 'en_espera', 'resuelto'])(
+    'edita prioridad en %s',
+    async (status) => {
+      const t = await state(status);
+      expect((await priority(t.id, 'baja', agente)).status).toBe(200);
+    },
+  );
+  it.each(['cerrado', 'cancelado'])('prioridad histórica queda protegida en %s', async (status) => {
+    const t = await state(status);
+    await pool.query("UPDATE tickets SET priority='urgente' WHERE id=$1", [t.id]);
+    for (const actor of [agente, supervisor, admin]) {
+      const r = await priority(t.id, 'baja', actor);
+      expect(r.status).toBe(409);
+      expect(r.body.error.code).toBe('TICKET_PRIORITY_NOT_EDITABLE');
+    }
+    expect((await detail(t.id)).body.priority).toBe('urgente');
+    expect((await events(t.id)).body.total).toBe(1);
+    expect(
+      (
+        await pool.query(
+          "SELECT count(*)::int AS n FROM audit_events WHERE action='ticket.priority_changed'",
+        )
+      ).rows[0].n,
+    ).toBe(0);
+  });
+  it('prioridad repetida no actualiza el ticket, la actividad ni la auditoría', async () => {
+    const t = await state();
+    const r = await priority(t.id, 'media', agente);
+    expect(r.status).toBe(409);
+    expect(r.body.error.code).toBe('TICKET_PRIORITY_UNCHANGED');
+    expect((await detail(t.id)).body).toEqual(t);
+    expect((await events(t.id)).body.total).toBe(1);
+    expect((await pool.query('SELECT count(*)::int AS n FROM audit_events')).rows[0].n).toBe(1);
+  });
+  it.each(['activity', 'audit'])(
+    'un fallo de %s revierte prioridad, updated_at y ambos registros',
+    async (kind) => {
+      const t = await state();
+      const table = kind === 'activity' ? 'ticket_events' : 'audit_events';
+      const column = kind === 'activity' ? 'event_type' : 'action';
+      const value = kind === 'activity' ? 'priority_changed' : 'ticket.priority_changed';
+      await pool.query(
+        `ALTER TABLE ${table} ADD CONSTRAINT reject_priority CHECK(${column}<>'${value}')`,
+      );
+      try {
+        expect((await priority(t.id, 'alta', agente)).status).toBe(500);
+        expect((await detail(t.id)).body).toEqual(t);
+        expect((await events(t.id)).body.total).toBe(1);
+        expect((await pool.query('SELECT count(*)::int AS n FROM audit_events')).rows[0].n).toBe(1);
+      } finally {
+        await pool.query(`ALTER TABLE ${table} DROP CONSTRAINT reject_priority`);
+      }
+    },
+  );
+  it('dos peticiones concurrentes iguales generan un cambio y un conflicto limpio', async () => {
+    const t = await state();
+    const r = await Promise.all([
+      priority(t.id, 'alta', agente),
+      priority(t.id, 'alta', supervisor),
+    ]);
+    expect(r.map((v) => v.status).sort()).toEqual([200, 409]);
+    expect((await events(t.id)).body.data[0]).toMatchObject({
+      fromPriority: 'media',
+      toPriority: 'alta',
+    });
+    expect((await events(t.id)).body.total).toBe(2);
+  });
+  it('dos prioridades concurrentes diferentes conservan una cadena anterior/nueva válida', async () => {
+    const t = await state();
+    const r = await Promise.all([
+      priority(t.id, 'alta', agente),
+      priority(t.id, 'urgente', supervisor),
+    ]);
+    expect(r.map((v) => v.status)).toEqual([200, 200]);
+    const history = (await events(t.id)).body.data
+      .filter((e: { type: string }) => e.type === 'priority_changed')
+      .reverse();
+    expect(history[0].fromPriority).toBe('media');
+    expect(history[1].fromPriority).toBe(history[0].toPriority);
+    expect((await detail(t.id)).body.priority).toBe(history[1].toPriority);
+  });
+  it('asignación y todas las transiciones conservan prioridad sin automatismos', async () => {
+    const t = (await create()).body;
+    await priority(t.id, 'urgente');
+    expect((await assign(t.id, agente.id)).body.priority).toBe('urgente');
+    for (const action of ['start', 'wait', 'resume', 'resolve', 'reopen', 'resolve', 'close'])
+      expect((await transition(t.id, action, admin)).body.priority).toBe('urgente');
+    const c = (await create()).body;
+    await priority(c.id, 'baja');
+    expect((await transition(c.id, 'cancel', solicitante)).body.priority).toBe('baja');
+  });
+  it.each(['baja', 'media', 'alta', 'urgente'])(
+    'filtra %s junto con estado, categoría, search y paginación, sin alterar orden',
+    async (value) => {
+      const ids: string[] = [];
+      for (let i = 0; i < 12; i++) {
+        const t = (await create()).body;
+        ids.push(t.id);
+        await pool.query('UPDATE tickets SET priority=$2 WHERE id=$1', [t.id, value]);
+      }
+      const other = (await create()).body;
+      await pool.query(
+        "UPDATE tickets SET priority=CASE WHEN $2='media' THEN 'baja' ELSE 'media' END WHERE id=$1",
+        [other.id, value],
+      );
+      await pool.query("UPDATE tickets SET created_at='2026-01-01T00:00:00Z'");
+      const query = `priority=${value}&status=creado&categoryId=${category}&search=Impresora&pageSize=10`;
+      const first = (await list(solicitante, query)).body;
+      const second = (await list(solicitante, query + '&page=2')).body;
+      expect(first.total).toBe(12);
+      expect(first.data).toHaveLength(10);
+      expect(second.data).toHaveLength(2);
+      expect(first.data.map((t: { id: string }) => t.id)).toEqual([...ids].reverse().slice(0, 10));
+      expect(first.data.every((t: { priority: string }) => t.priority === value)).toBe(true);
+      expect((await list(solicitante, 'search=' + value)).body.total).toBe(0);
+      expect((await list(otro, 'priority=' + value)).body.total).toBe(0);
+    },
+  );
+  it('valida prioridades, campos extra, CSRF y tipo de cuerpo', async () => {
+    const t = await state();
+    for (const body of [
+      { priority: 'critica' },
+      { priority: null },
+      { priority: 'ALTA' },
+      { priority: 'alta', actor: admin.id },
+      { priority: 'alta', role: 'administrador' },
+      { priority: 'alta', state: 'creado' },
+      { priority: 'alta', fromPriority: 'media' },
+      {},
+    ])
+      expect(
+        (
+          await request(app)
+            .patch(`/api/tickets/${t.id}/priority`)
+            .set('Cookie', admin.cookie)
+            .set('Origin', origin)
+            .send(body)
+        ).status,
+      ).toBe(400);
+    for (const q of [
+      'priority=critica',
+      'priority=',
+      'priority=ALTA',
+      'priority=alta&priority=urgente',
+    ]) {
+      const r = await list(admin, q);
+      expect(r.status).toBe(400);
+      expect(r.body.error.code).toBe('INVALID_INPUT');
+    }
+    expect(
+      (
+        await request(app)
+          .patch(`/api/tickets/${t.id}/priority`)
+          .set('Cookie', admin.cookie)
+          .set('Origin', 'http://otro.invalid')
+          .send({ priority: 'alta' })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .patch(`/api/tickets/${t.id}/priority`)
+          .set('Cookie', admin.cookie)
+          .set('Origin', origin)
+          .type('text')
+          .send('alta')
+      ).status,
+    ).toBe(415);
   });
 });

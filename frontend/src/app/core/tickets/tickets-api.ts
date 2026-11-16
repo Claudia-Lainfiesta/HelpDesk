@@ -2,6 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { EstadoTicket } from '../../shared/ui/insignia-estado';
+import { TicketPriority } from './prioridad';
+export type { TicketPriority } from './prioridad';
 import { AccionTicket } from './permisos-ticket';
 import { Rol } from '../auth/modelos';
 import { Pagina } from '../administracion/modelos';
@@ -16,6 +18,7 @@ export interface Ticket {
   subject: string;
   description: string;
   status: EstadoTicket;
+  priority: TicketPriority;
   category: { id: string; name: string };
   requester: PersonaTicket;
   assignedAgent: PersonaTicket | null;
@@ -35,12 +38,16 @@ export interface FiltrosTickets {
   pageSize: number;
   search?: string;
   status?: EstadoTicket;
+  priority?: TicketPriority;
   categoryId?: string;
 }
 export interface EventoTicket {
   id: string;
-  type: 'created' | 'assigned' | 'reassigned' | 'unassigned' | 'status_changed';
+  type:
+    'created' | 'assigned' | 'reassigned' | 'unassigned' | 'status_changed' | 'priority_changed';
   actor: { id: string; fullName: string; role: Rol };
+  fromPriority: TicketPriority | null;
+  toPriority: TicketPriority | null;
   fromStatus: EstadoTicket | null;
   toStatus: EstadoTicket | null;
   fromAgent: { id: string; fullName: string } | null;
@@ -67,6 +74,9 @@ export class TicketsApi {
     return this.http.patch<Ticket>(`${this.base}/${encodeURIComponent(id)}/assignment`, {
       agentId,
     });
+  }
+  cambiarPrioridad(id: string, priority: TicketPriority) {
+    return this.http.patch<Ticket>(`${this.base}/${encodeURIComponent(id)}/priority`, { priority });
   }
   transicion(id: string, action: AccionTicket) {
     return this.http.post<Ticket>(`${this.base}/${encodeURIComponent(id)}/transitions`, { action });

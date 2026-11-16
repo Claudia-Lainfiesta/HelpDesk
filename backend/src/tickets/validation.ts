@@ -9,6 +9,10 @@ export const ticketStatuses = [
   'cancelado',
 ] as const;
 export const statusSchema = z.enum(ticketStatuses);
+export const ticketPriorities = ['baja', 'media', 'alta', 'urgente'] as const;
+export type TicketPriority = (typeof ticketPriorities)[number];
+export const prioritySchema = z.enum(ticketPriorities);
+export const changePrioritySchema = z.object({ priority: prioritySchema }).strict();
 export const createTicketSchema = z
   .object({
     subject: z.string().trim().min(1).max(160),
@@ -25,6 +29,7 @@ export const ticketFiltersSchema = z
       .default(20),
     search: z.string().trim().max(160).optional(),
     status: statusSchema.optional(),
+    priority: prioritySchema.optional(),
     categoryId: idSchema.optional(),
   })
   .strict();

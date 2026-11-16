@@ -30,6 +30,7 @@ La respuesta es 201 con `Location: /api/tickets/:id` y el ticket completo:
   "subject": "No puedo imprimir",
   "description": "La impresora muestra un error.",
   "status": "creado",
+  "priority": "media",
   "category": { "id": "4", "name": "Hardware" },
   "requester": { "id": "18", "fullName": "Ana Pérez", "email": "ana@example.invalid" },
   "assignedAgent": null,
@@ -56,7 +57,7 @@ cuerpos HTTP. Se conservan cookie HttpOnly, CSRF, JSON y cambio obligatorio.
 ## Listar y abrir
 
 ```http
-GET /api/tickets?page=1&pageSize=20&search=impresora&status=creado&categoryId=4
+GET /api/tickets?page=1&pageSize=20&search=impresora&status=creado&priority=alta&categoryId=4
 GET /api/tickets/123
 ```
 
@@ -66,6 +67,9 @@ contrato anterior. `page` comienza en 1, por defecto 1; `pageSize` admite 10, 20
 sin distinguir mayúsculas, incluyendo `TK-000123`, `000123` o `123`. Es búsqueda de subcadenas,
 no una coincidencia numérica exacta. `%` y `_` se
 interpretan literalmente. SQL parametrizado, sin orden configurable.
+
+`priority` admite una de `baja`, `media`, `alta`, `urgente`; es opcional y se combina
+con los demás filtros. No participa en `search`.
 
 `status` admite `creado`, `en_proceso`, `en_espera`, `resuelto`, `cerrado` y
 `cancelado`. `categoryId` es un ID bigint positivo; también admite categorías
@@ -104,7 +108,7 @@ Repetirlo no duplica registros ni restablece contraseñas.
 
 `npm run check` incluye pruebas con PostgreSQL en esquemas privados si se exporta
 `DATABASE_URL`; de lo contrario las integraciones se omiten con mensaje. No
-implementa prioridad, comentarios, adjuntos, SLA ni Telegram de tickets.
+implementa comentarios, adjuntos, SLA ni Telegram de tickets.
 
 ## Referencia canónica y auditoría
 
@@ -190,15 +194,16 @@ reabrir o cancelar su ticket en los estados permitidos, aunque otro agente lo
 atienda. No obtiene por eso permiso para iniciar/esperar/resolver; necesita ser
 el agente asignado o tener rol supervisor/administrador.
 
-| Acción                                  | Propietario sin otro permiso | Agente asignado ajeno          | Otro agente            | Supervisor/administrador |
-| --------------------------------------- | ---------------------------- | ------------------------------ | ---------------------- | ------------------------ |
-| Ver detalle/actividad                   | Sí                           | Sí                             | Sí                     | Sí                       |
-| Asignarse si está libre y activo        | Solo si tiene rol agente     | Solo si está libre             | Sí                     | No; asigna a un agente   |
-| Asignar otro / reasignar / desasignar   | No                           | No                             | No                     | Sí, en estados activos   |
-| Iniciar / esperar / reanudar / resolver | No                           | Sí, según transición           | No                     | Sí, con agente asignado  |
-| Cancelar creado o en_espera             | Sí                           | Solo si también es propietario | Solo si es propietario | Sí                       |
-| Cancelar en_proceso                     | No                           | No                             | No                     | No                       |
-| Reabrir o cerrar resuelto               | Sí                           | Solo si también es propietario | Solo si es propietario | Sí                       |
+| Acción                                            | Propietario sin otro permiso | Agente asignado ajeno          | Otro agente            | Supervisor/administrador |
+| ------------------------------------------------- | ---------------------------- | ------------------------------ | ---------------------- | ------------------------ |
+| Ver detalle/actividad                             | Sí                           | Sí                             | Sí                     | Sí                       |
+| Asignarse si está libre y activo                  | Solo si tiene rol agente     | Solo si está libre             | Sí                     | No; asigna a un agente   |
+| Asignar otro / reasignar / desasignar             | No                           | No                             | No                     | Sí, en estados activos   |
+| Iniciar / esperar / reanudar / resolver           | No                           | Sí, según transición           | No                     | Sí, con agente asignado  |
+| Cancelar creado o en_espera                       | Sí                           | Solo si también es propietario | Solo si es propietario | Sí                       |
+| Cancelar en_proceso                               | No                           | No                             | No                     | No                       |
+| Reabrir o cerrar resuelto                         | Sí                           | Solo si también es propietario | Solo si es propietario | Sí                       |
+| Cambiar prioridad (no terminal, incluye Resuelto) | No por ser propietario       | Sí                             | No                     | Sí                       |
 
 `createdAt` nunca cambia. El trigger actualiza `updatedAt` al mutar. Resolver fija
 `resolvedAt`; reabrir la limpia y conserva agente e historial. Cerrar conserva
@@ -232,7 +237,7 @@ Orden: fecha descendente e ID descendente. Total y datos usan una misma instant�
 }
 ```
 
-Tipos: created, assigned, reassigned, unassigned y status_changed. Las asignaciones
+Tipos: created, assigned, reassigned, unassigned, status_changed y priority_changed. Las asignaciones
 incluyen `fromAgent`/`toAgent` con ID y nombre o null; estados null. Los cambios de
 estado contienen códigos anterior/nuevo; agentes null. Created no inventa cambios.
 El rol y nombre del actor son los actuales, no una copia histórica; IDs y códigos
@@ -246,7 +251,7 @@ seed no inventa eventos para ejemplos existentes ni modifica su historial.
 
 La actividad es funcional y visible según permisos. La auditoría global registra
 además ticket.created, ticket.assigned, ticket.reassigned, ticket.unassigned y
-ticket.status_changed. Solo IDs, número/categoría o códigos estructurados; sin
+ticket.status_changed y ticket.priority_changed. Solo IDs, número/categoría o códigos estructurados; sin
 asuntos, descripciones, mensajes, contraseñas ni tokens. No hay API de edición o
 borrado de actividad ni auditoría.
 
@@ -267,3 +272,70 @@ La implementación valida el estado vigente y permite una acción si sigue siend
 válida. No usa versión del cliente ni detecta todos los casos de volver al mismo
 estado entre dos lecturas. Ante conflicto, el frontend anuncia y recarga detalle
 más actividad. No hay WebSockets ni control optimista por versión.
+
+## Prioridad operativa
+
+`TicketPriority` solo admite `baja`, `media`, `alta` y `urgente`. Todos los tickets
+nuevos nacen `media` mediante default NOT NULL en PostgreSQL; las cuatro prioridades
+son visibles en creación, listado, detalle y respuestas de mutación. El body de
+creación sigue limitado a subject/description/categoryId: incluir priority devuelve
+400 INVALID_INPUT. El solicitante no elige ni cambia prioridad.
+
+```http
+PATCH /api/tickets/123/priority
+Origin: http://localhost:4200
+Content-Type: application/json
+```
+
+```json
+{ "priority": "alta" }
+```
+
+Devuelve 200 con el ticket completo. Solo puede modificar el agente actualmente
+asignado, supervisor o administrador. Ser propietario, aunque tenga rol agente,
+no concede este permiso. Solicitante sobre ticket ajeno recibe 404; quien puede
+verlo pero carece del permiso recibe 403 TICKET_ACTION_FORBIDDEN.
+
+Se permite en Creado, En proceso, En espera y Resuelto. Cerrado/Cancelado conservan
+su último valor y responden 409 TICKET_PRIORITY_NOT_EDITABLE. Repetir el valor
+responde 409 TICKET_PRIORITY_UNCHANGED, sin UPDATE, actividad o auditoría redundantes.
+Valores desconocidos, null y campos adicionales responden 400 INVALID_INPUT.
+
+La operación reutiliza FOR SHARE del actor y FOR UPDATE de la fila del ticket.
+Comprueba permisos, estado y prioridad vigentes después de adquirir el bloqueo;
+actualización, actividad y auditoría comparten transacción. Un fallo revierte todo.
+Dos solicitudes iguales concurrentes dan un cambio y un conflicto; dos valores
+diferentes dejan una secuencia anterior/nueva coherente.
+
+Solo cambia priority y updated_at. Estado, asignación, created_at, resolved_at,
+closed_at y canceled_at se conservan. Tampoco cambian prioridad las asignaciones,
+transiciones, categoría, antigüedad o reaperturas: no hay reglas automáticas, SLA,
+escalamiento, notificaciones ni cálculo de prioridad.
+
+La migración 0014 añade priority TEXT CHECK con default media y normaliza todos
+los tickets existentes a ese valor, sin inferir historia ni generar actividad.
+Amplía ticket_events con priority_changed y from_priority/to_priority, restringidas
+a las cuatro opciones, no nulas y diferentes solo en este tipo; en los demás son
+null. Conserva las restricciones de forma de los tipos anteriores. La auditoría
+usa ticket.priority_changed con solo fromPriority/toPriority.
+
+```json
+{
+  "id": "45",
+  "type": "priority_changed",
+  "actor": { "id": "7", "fullName": "Juan Ejemplo", "role": "agente" },
+  "fromPriority": "media",
+  "toPriority": "alta",
+  "fromStatus": null,
+  "toStatus": null,
+  "fromAgent": null,
+  "toAgent": null,
+  "createdAt": "2026-11-15T16:00:00.000Z"
+}
+```
+
+`GET /api/tickets?priority=alta` admite un valor; arrays o valores inválidos dan
+400 INVALID_INPUT. Mantiene el orden created_at DESC, id DESC, sin poner urgentes
+primero. El seed nuevo distribuye las cuatro prioridades como valores iniciales
+ficticios; no inserta priority_changed si no ocurrió un cambio. Repetir seed conserva
+los ejemplos y prioridades existentes, incluyendo los normalizados por migración.

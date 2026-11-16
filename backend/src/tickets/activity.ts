@@ -1,13 +1,16 @@
 import type { PoolClient } from 'pg';
-import type { TicketStatus } from './validation.js';
+import type { TicketStatus, TicketPriority } from './validation.js';
 import type { UserProfile, RoleCode } from '../auth/types.js';
 import { transaction } from '../db/transaction.js';
 import { findTicket } from './repository.js';
-export type EventType = 'created' | 'assigned' | 'reassigned' | 'unassigned' | 'status_changed';
+export type EventType =
+  'created' | 'assigned' | 'reassigned' | 'unassigned' | 'status_changed' | 'priority_changed';
 export interface ActivityInput {
   ticketId: string;
   type: EventType;
   actorId: string;
+  fromPriority?: TicketPriority;
+  toPriority?: TicketPriority;
   fromStatus?: TicketStatus;
   toStatus?: TicketStatus;
   fromAgentId?: string | null;
@@ -15,8 +18,8 @@ export interface ActivityInput {
 }
 export async function recordActivity(client: PoolClient, event: ActivityInput) {
   await client.query(
-    `INSERT INTO ticket_events(ticket_id,event_type,actor_user_id,from_status,to_status,from_agent_user_id,to_agent_user_id)
-    VALUES($1,$2,$3,$4,$5,$6,$7)`,
+    `INSERT INTO ticket_events(ticket_id,event_type,actor_user_id,from_status,to_status,from_agent_user_id,to_agent_user_id,from_priority,to_priority)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
     [
       event.ticketId,
       event.type,
@@ -25,12 +28,16 @@ export async function recordActivity(client: PoolClient, event: ActivityInput) {
       event.toStatus ?? null,
       event.fromAgentId ?? null,
       event.toAgentId ?? null,
+      event.fromPriority ?? null,
+      event.toPriority ?? null,
     ],
   );
 }
 interface EventRow {
   id: string;
   type: EventType;
+  from_priority: TicketPriority | null;
+  to_priority: TicketPriority | null;
   from_status: TicketStatus | null;
   to_status: TicketStatus | null;
   created_at: Date;
@@ -51,7 +58,7 @@ export function ticketEvents(id: string, user: UserProfile, page: number, pageSi
       [id],
     );
     const result = await client.query<EventRow>(
-      `SELECT e.id::text,e.event_type AS type,e.from_status,e.to_status,e.created_at,
+      `SELECT e.id::text,e.event_type AS type,e.from_status,e.to_status,e.from_priority,e.to_priority,e.created_at,
       u.id::text AS actor_id,u.full_name AS actor_name,r.code AS actor_role,
       f.id::text AS from_id,f.full_name AS from_name,t.id::text AS to_id,t.full_name AS to_name
       FROM ticket_events e JOIN users u ON u.id=e.actor_user_id JOIN roles r ON r.id=u.role_id
@@ -64,6 +71,8 @@ export function ticketEvents(id: string, user: UserProfile, page: number, pageSi
         id: row.id,
         type: row.type,
         actor: { id: row.actor_id, fullName: row.actor_name, role: row.actor_role },
+        fromPriority: row.from_priority,
+        toPriority: row.to_priority,
         fromStatus: row.from_status,
         toStatus: row.to_status,
         fromAgent: row.from_id ? { id: row.from_id, fullName: row.from_name } : null,

@@ -21,23 +21,23 @@ CREATE TEMP TABLE seed_ticket_ids ON COMMIT DROP AS
 WITH inserted AS (
 INSERT INTO tickets (
   subject, description, category_id, status_id, requester_id, assigned_agent_id,
-  resolved_at, closed_at, canceled_at, created_at, updated_at
+  resolved_at, closed_at, canceled_at, created_at, updated_at, priority
 )
 SELECT sample.subject, sample.description, categories.id, ticket_statuses.id, requester.id,
   CASE WHEN sample.status_code = 'creado' AND sample.subject <> 'Ejemplo: solicitud asignada sin iniciar' THEN NULL ELSE agent.id END,
   CASE WHEN sample.status_code IN ('resuelto', 'cerrado') THEN now()-interval '5 minutes' ELSE NULL END,
   CASE WHEN sample.status_code = 'cerrado' THEN now()-interval '4 minutes' ELSE NULL END,
   CASE WHEN sample.status_code = 'cancelado' THEN now()-interval '4 minutes' ELSE NULL END,
-  now()-interval '10 minutes', now()
+  now()-interval '10 minutes', now(), sample.priority
 FROM (VALUES
-  ('Ejemplo: teclado sin respuesta', 'El teclado de la estación de trabajo no responde.', 'Hardware', 'creado'),
-  ('Ejemplo: aplicación no abre', 'La herramienta de trabajo se cierra al iniciar.', 'Software', 'en_proceso'),
-  ('Ejemplo: conexión intermitente', 'La conexión se interrumpe; se espera una prueba del solicitante.', 'Redes e internet', 'en_espera'),
-  ('Ejemplo: acceso restablecido', 'Se restableció el acceso; se espera confirmación del solicitante.', 'Accesos y cuentas', 'resuelto'),
-  ('Ejemplo: consulta atendida', 'Se atendió la consulta y el solicitante confirmó el cierre.', 'Otros', 'cerrado'),
-  ('Ejemplo: solicitud asignada sin iniciar', 'El agente está asignado y aún no ha iniciado atención.', 'Hardware', 'creado'),
-  ('Ejemplo: solicitud registrada por error', 'Se decidió no continuar porque la solicitud se registró por error.', 'Otros', 'cancelado')
-) AS sample(subject, description, category_name, status_code)
+  ('Ejemplo: teclado sin respuesta', 'El teclado de la estación de trabajo no responde.', 'Hardware', 'creado', 'baja'),
+  ('Ejemplo: aplicación no abre', 'La herramienta de trabajo se cierra al iniciar.', 'Software', 'en_proceso', 'alta'),
+  ('Ejemplo: conexión intermitente', 'La conexión se interrumpe; se espera una prueba del solicitante.', 'Redes e internet', 'en_espera', 'urgente'),
+  ('Ejemplo: acceso restablecido', 'Se restableció el acceso; se espera confirmación del solicitante.', 'Accesos y cuentas', 'resuelto', 'media'),
+  ('Ejemplo: consulta atendida', 'Se atendió la consulta y el solicitante confirmó el cierre.', 'Otros', 'cerrado', 'alta'),
+  ('Ejemplo: solicitud asignada sin iniciar', 'El agente está asignado y aún no ha iniciado atención.', 'Hardware', 'creado', 'media'),
+  ('Ejemplo: solicitud registrada por error', 'Se decidió no continuar porque la solicitud se registró por error.', 'Otros', 'cancelado', 'baja')
+) AS sample(subject, description, category_name, status_code, priority)
 JOIN categories ON lower(categories.name) = lower(sample.category_name)
 JOIN ticket_statuses ON ticket_statuses.code = sample.status_code
 JOIN users requester ON lower(requester.email) = CASE WHEN sample.status_code IN ('creado', 'en_espera', 'cerrado') THEN 'ana.solicitante@helpdesk.local' ELSE 'carla.supervisora@helpdesk.local' END

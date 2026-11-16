@@ -29,7 +29,7 @@ las épicas, historias y calendarios describen también trabajo futuro.
 
 Hay asignación/reasignación y nueve transiciones con historial estructurado.
 No hay conversación integrada,
-comentarios, notas internas, adjuntos, prioridad, SLA, base de conocimiento ni
+comentarios, notas internas, adjuntos, SLA, base de conocimiento ni
 reportes reales. `/reportes` es un marcador. Los otros cinco estados aparecen
 en el catálogo, las insignias, filtros y datos del seed. Los cambios se ejecutan
 como acciones semánticas autorizadas; Cerrado y Cancelado son terminales.
@@ -95,3 +95,13 @@ exclusiva del supervisor y transición libre de los acuerdos iniciales.
 
 [Máquina exacta, permisos, eventos y API](../backend/docs/tickets.md).
 [Controles y actividad de la interfaz](../frontend/docs/tickets.md).
+
+
+## Prioridad operativa · 15-nov-2026
+
+Cuatro valores: Baja, Media, Alta y Urgente. Todos los tickets nuevos y los
+anteriores al incorporar la prioridad nacen/quedan Media; no se infieren valores
+históricos. El solicitante la ve pero no la decide. Solo agente asignado,
+supervisor o administrador la cambia en tickets no terminales, incluido Resuelto.
+Propiedad no concede este permiso. Listado, filtro URL, detalle, actividad y
+auditoría incluyen prioridad. No hay automatismos, SLA ni escalamiento.

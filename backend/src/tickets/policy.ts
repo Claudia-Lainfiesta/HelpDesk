@@ -51,3 +51,10 @@ export function checkTransition(
   if (!ownerAction && !ticket.agentId) throw ticketError('TICKET_AGENT_REQUIRED');
   return target;
 }
+
+export function checkPriority(ticket: CurrentTicket, user: UserProfile) {
+  assertVisible(ticket, user);
+  if (!manages(user) && !(user.role === 'agente' && ticket.agentId === user.id)) forbid();
+  if (ticket.status === 'cerrado' || ticket.status === 'cancelado')
+    throw ticketError('TICKET_PRIORITY_NOT_EDITABLE');
+}
