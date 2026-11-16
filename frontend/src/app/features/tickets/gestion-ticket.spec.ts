@@ -547,6 +547,10 @@ describe('operaciones del detalle', () => {
     const c = f.componentInstance;
     const anterior = c.ticket();
     expect(f.nativeElement.textContent).toContain('Hablar por Telegram');
+    expect(
+      f.nativeElement.querySelector('app-boton[icono="telegram"] app-icono svg'),
+    ).not.toBeNull();
+    expect(f.nativeElement.querySelector('#asignacion-ticket')).toBeNull();
     c.hablarPorTelegram();
     expect(abrirTelegram).toHaveBeenCalledWith(destino, '_blank', 'noopener,noreferrer');
     expect(c.ticket()).toEqual(anterior);

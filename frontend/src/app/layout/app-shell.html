@@ -4,14 +4,16 @@
   >Saltar al contenido</a
 >
 <header class="border-b border-linea bg-superficie">
-  <div class="relative flex min-h-[72px] flex-wrap items-center gap-5 px-6 py-3 lg:px-8">
+  <div
+    class="relative flex min-h-[72px] flex-wrap items-center gap-2 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8"
+  >
     <a routerLink="/tickets" aria-label="HelpDesk, ir a tickets" class="rounded-boton"
       ><app-marca
     /></a>
     <button
       #desplegarNavegacion
       type="button"
-      class="ml-auto rounded-boton p-2 text-primario lg:hidden"
+      class="ml-auto flex min-h-11 min-w-11 items-center justify-center rounded-boton p-2 text-primario lg:hidden"
       aria-label="Mostrar navegación"
       [attr.aria-expanded]="menuNavegacion()"
       aria-controls="navegacion"
@@ -70,7 +72,7 @@
           <button
             type="button"
             [disabled]="auth.cargando()"
-            (click)="salir()"
+            (click)="pedirSalida()"
             class="flex w-full items-center gap-3 rounded-boton px-3 py-2.5 text-texto hover:bg-fondo disabled:opacity-60"
           >
             <app-icono nombre="salir" />Cerrar sesión
@@ -80,11 +82,28 @@
     </div>
   </div>
 </header>
-<main id="contenido" tabindex="-1" class="mx-auto max-w-[1244px] px-6 py-8 lg:px-8">
-  @if (error()) {
+<main
+  id="contenido"
+  tabindex="-1"
+  class="mx-auto max-w-[1244px] min-w-0 px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
+>
+  @if (error() && !confirmandoSalida()) {
     <div class="mb-5">
       <app-alerta variante="peligro">{{ error() }}</app-alerta>
     </div>
   }
   <router-outlet /><ng-content />
 </main>
+
+@if (confirmandoSalida()) {
+  <app-confirmacion
+    titulo="Cerrar sesión"
+    mensaje="¿Seguro que quieres cerrar tu sesión?"
+    etiqueta="Cerrar sesión"
+    etiquetaCancelar="Volver"
+    [cargando]="auth.cargando()"
+    [error]="error()"
+    (cancelar)="confirmandoSalida.set(false); error.set('')"
+    (confirmar)="salir()"
+  />
+}

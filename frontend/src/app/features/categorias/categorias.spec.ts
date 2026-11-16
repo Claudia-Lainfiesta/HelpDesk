@@ -54,7 +54,13 @@ describe('Categorías', () => {
       http
         .expectOne('/api/categories?includeInactive=false')
         .flush({ data: [categoriaPrueba({ isActive })] });
-      f.componentInstance.elegir(categoriaPrueba({ isActive }), 'activar');
+      await f.whenStable();
+      expect(f.nativeElement.querySelector('app-menu-acciones')).toBeNull();
+      const accion = f.nativeElement.querySelector(
+        `button[aria-label="${isActive ? 'Desactivar' : 'Reactivar'} categoría Categoría de prueba"]`,
+      );
+      expect(accion.title).toBe(accion.getAttribute('aria-label'));
+      accion.click();
       await f.whenStable();
       expect(f.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
       if (isActive)

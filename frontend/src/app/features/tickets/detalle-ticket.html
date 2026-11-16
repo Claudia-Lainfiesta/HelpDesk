@@ -21,9 +21,9 @@
       /></span>
     </div>
     <app-tarjeta
-      ><div class="space-y-6 p-7">
-        <h2 class="text-xl font-bold text-primario">{{ t.subject }}</h2>
-        <dl class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      ><div class="space-y-6 p-5 sm:p-7">
+        <h2 class="break-words text-xl font-bold text-primario">{{ t.subject }}</h2>
+        <dl class="grid gap-5 break-words sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <dt class="font-semibold text-texto-suave">Categoría</dt>
             <dd>{{ t.category.name }}</dd>
@@ -56,7 +56,7 @@
     }
     @if (permisos().telegramVisible) {
       <app-tarjeta class="mt-6 block">
-        <section class="space-y-4 p-7" aria-labelledby="contacto-ticket">
+        <section class="space-y-4 p-5 sm:p-7" aria-labelledby="contacto-ticket">
           <h2 id="contacto-ticket" class="text-xl font-bold text-primario">
             Contacto con el agente
           </h2>
@@ -64,7 +64,7 @@
             La conversación ocurre directamente en Telegram. HelpDesk no recibe ni guarda esos
             mensajes.
           </p>
-          <app-boton [cargando]="cargandoContacto()" (accion)="hablarPorTelegram()"
+          <app-boton icono="telegram" [cargando]="cargandoContacto()" (accion)="hablarPorTelegram()"
             >Hablar por Telegram</app-boton
           >
           @if (avisoContacto()) {
@@ -78,52 +78,53 @@
         </section>
       </app-tarjeta>
     }
-    <app-tarjeta class="mt-6 block"
-      ><section class="space-y-4 p-7" aria-labelledby="asignacion-ticket">
-        <h2 id="asignacion-ticket" class="text-xl font-bold text-primario">Asignación</h2>
-        <p>Agente: {{ t.assignedAgent?.fullName || 'Sin asignar' }}</p>
-        @if (permisos().asignacion === 'propia') {
-          <app-boton [cargando]="ocupada()" (accion)="asignarme()">Asignarme</app-boton>
-        }
-        @if (permisos().asignacion === 'gestionar') {
-          @if (errorAgentes()) {
-            <app-alerta variante="peligro">{{ errorAgentes() }}</app-alerta
-            ><app-boton variante="secundario" (accion)="cargarAgentes()"
-              >Reintentar agentes</app-boton
-            >
+    @if (permisos().asignacion !== 'ninguna') {
+      <app-tarjeta class="mt-6 block"
+        ><section class="space-y-4 p-5 sm:p-7" aria-labelledby="asignacion-ticket">
+          <h2 id="asignacion-ticket" class="text-xl font-bold text-primario">Asignación</h2>
+          @if (permisos().asignacion === 'propia') {
+            <app-boton [cargando]="ocupada()" (accion)="asignarme()">Asignarme</app-boton>
           }
-          @if (cargandoAgentes()) {
-            <p role="status">Cargando agentes…</p>
+          @if (permisos().asignacion === 'gestionar') {
+            @if (errorAgentes()) {
+              <app-alerta variante="peligro">{{ errorAgentes() }}</app-alerta
+              ><app-boton variante="secundario" (accion)="cargarAgentes()"
+                >Reintentar agentes</app-boton
+              >
+            }
+            @if (cargandoAgentes()) {
+              <p role="status">Cargando agentes…</p>
+            }
+            <div class="flex flex-wrap items-end gap-3">
+              <app-selector
+                class="w-full min-w-0 sm:w-64"
+                identificador="agente-ticket"
+                etiqueta="Agente asignado"
+                [formControl]="agente"
+                [opciones]="opcionesAgentes()"
+              />
+              <app-boton
+                [cargando]="ocupada()"
+                [deshabilitado]="
+                  cargandoAgentes() ||
+                  !!errorAgentes() ||
+                  agente.value === (t.assignedAgent?.id || '')
+                "
+                (accion)="guardarAsignacion()"
+                >Guardar asignación</app-boton
+              >
+            </div>
           }
-          <div class="flex flex-wrap items-end gap-3">
-            <app-selector
-              class="min-w-64"
-              identificador="agente-ticket"
-              etiqueta="Agente asignado"
-              [formControl]="agente"
-              [opciones]="opcionesAgentes()"
-            />
-            <app-boton
-              [cargando]="ocupada()"
-              [deshabilitado]="
-                cargandoAgentes() ||
-                !!errorAgentes() ||
-                agente.value === (t.assignedAgent?.id || '')
-              "
-              (accion)="guardarAsignacion()"
-              >Guardar asignación</app-boton
-            >
-          </div>
-        }
-      </section></app-tarjeta
-    >
+        </section></app-tarjeta
+      >
+    }
     @if (permisos().prioridadEditable) {
       <app-tarjeta class="mt-6 block"
-        ><section class="space-y-4 p-7" aria-labelledby="prioridad-ticket">
+        ><section class="space-y-4 p-5 sm:p-7" aria-labelledby="prioridad-ticket">
           <h2 id="prioridad-ticket" class="text-xl font-bold text-primario">Prioridad</h2>
           <div class="flex flex-wrap items-end gap-3">
             <app-selector
-              class="min-w-48"
+              class="w-full min-w-0 sm:w-48"
               identificador="prioridad-ticket-selector"
               etiqueta="Nueva prioridad"
               [formControl]="prioridad"
@@ -144,7 +145,7 @@
     }
     @if (permisos().acciones.length) {
       <app-tarjeta class="mt-6 block"
-        ><section class="p-7" aria-labelledby="acciones-ticket">
+        ><section class="p-5 sm:p-7" aria-labelledby="acciones-ticket">
           <h2 id="acciones-ticket" class="mb-4 text-xl font-bold text-primario">Acciones</h2>
           <div class="flex flex-wrap gap-3">
             @for (accion of permisos().acciones; track accion) {
@@ -160,7 +161,7 @@
       >
     }
     <app-tarjeta class="mt-6 block"
-      ><section class="p-7" aria-labelledby="actividad-ticket">
+      ><section class="p-5 sm:p-7" aria-labelledby="actividad-ticket">
         <h2 id="actividad-ticket" class="mb-5 text-xl font-bold text-primario">Actividad</h2>
         @if (permisos().seguimientoEditable) {
           <form class="mb-7 space-y-4" [formGroup]="formularioNota" (ngSubmit)="agregarNota()">

@@ -117,9 +117,9 @@ prioridad de Media a Alta.». La frase se genera en la interfaz, sin almacenarla
 No modifica estado, asignación o fechas de resolución/cierre/cancelación. No hay
 prioridad automática, SLA, escalamiento ni orden por urgencia. Urgente sí genera avisos según la guía de notificaciones.
 
-Tokens existentes: Baja usa info/info-suave; Media usa superficie-suave,
-texto-suave y linea; Alta usa aviso/aviso-suave; Urgente usa peligro/peligro-suave.
-Todas llevan etiqueta visible y rounded-insignia, sin colores nuevos. La galería
+Tokens de texto: Baja usa info; Media texto-suave; Alta aviso; Urgente peligro.
+Estado y prioridad llevan texto semibold, sin fondo, borde, cápsula ni punto.
+No se agregan colores. La galería
 /guia-ui incluye las cuatro insignias únicamente durante desarrollo.
 
 ## Contacto directo por Telegram
@@ -204,3 +204,17 @@ por Telegram cuando tengas un agente asignado». No cambia estados, prioridad,
 actividad ni notas. El acceso a la imagen lo comprueba el backend como el detalle.
 
 Consulta también la [guía de notificaciones](notificaciones.md) para destinatarios por evento y avisos generales al grupo.
+
+## Pulido visual y móvil
+
+El listado tiene un solo conjunto de filas. Desde `xl` (1280 px) mantiene sus siete
+columnas; por debajo muestra tarjetas con número y estado arriba, asunto completo
+y metadata etiquetada: categoría, prioridad, agente y fecha. Filtros y paginación
+envuelven sin scroll horizontal. Los textos largos pueden partirse.
+
+El solicitante ve al agente en el resumen; la tarjeta Asignación solo aparece si
+ofrece controles reales. Telegram conserva su deep-link y añade un icono local.
+La imagen adjunta es el propio enlace a la vista grande, con foco y activación por
+teclado, sin «Ver imagen más grande» redundante. Los avisos usan el toast compartido
+compacto. Se conservan las confirmaciones de cancelar, cerrar y reabrir; no se
+agrega confirmación a operaciones ordinarias.

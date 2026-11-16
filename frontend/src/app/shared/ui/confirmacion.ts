@@ -13,8 +13,9 @@ import { Alerta } from './alerta';
       <app-alerta variante="peligro" class="mt-4 block">{{ error() }}</app-alerta>
     }
     <div class="mt-6 flex flex-wrap justify-end gap-3">
-      <app-boton variante="secundario" [deshabilitado]="cargando()" (accion)="cancelar.emit()"
-        >Cancelar</app-boton
+      <app-boton variante="secundario" [deshabilitado]="cargando()" (accion)="cancelar.emit()">{{
+        etiquetaCancelar()
+      }}</app-boton
       ><app-boton
         [variante]="peligro() ? 'peligro' : 'primario'"
         [cargando]="cargando()"
@@ -28,6 +29,7 @@ export class Confirmacion {
   readonly titulo = input.required<string>();
   readonly mensaje = input.required<string>();
   readonly etiqueta = input('Confirmar');
+  readonly etiquetaCancelar = input('Cancelar');
   readonly peligro = input(false);
   readonly cargando = input(false);
   readonly error = input('');

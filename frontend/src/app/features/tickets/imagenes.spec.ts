@@ -129,6 +129,9 @@ describe('imagen inicial del ticket', () => {
     expect(f.nativeElement.querySelector('img').alt).toBe('Imagen adjunta al ticket TK-000123');
     const link = f.nativeElement.querySelector('a');
     expect(link.getAttribute('href')).toBe('blob:fixture-1');
+    expect(link.querySelector('img')).not.toBeNull();
+    expect(link.getAttribute('aria-label')).toBe('Ver imagen adjunta en tamaño completo');
+    expect(f.nativeElement.textContent).not.toContain('Ver imagen más grande');
     expect(link.target).toBe('_blank');
     expect(link.rel).toBe('noopener noreferrer');
     f.destroy();

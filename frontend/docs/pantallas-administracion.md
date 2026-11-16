@@ -31,11 +31,13 @@ nació temporal; el máximo se cuenta desde la creación original. Las fechas si
 cambios no se reenvían, para poder editar otra información de cuentas vencidas.
 Los cambios de rol o vencimiento piden confirmación antes de enviar PATCH.
 
-El menú ofrece restablecer contraseña y desbloquear solo mientras
+Los iconos directos muestran Editar, Restablecer contraseña y Activar/Desactivar.
+Desbloquear solo se ofrece mientras
 `lockedUntil` siga en el futuro. Desactivar revoca sesiones; reactivar no
 renueva vencimientos. Todas estas acciones piden confirmación. El administrador
 no puede desactivarse, restablecerse la contraseña ni editar su propio rol;
-la interfaz explica los controles deshabilitados. La API protege además al
+la interfaz omite la desactivación y el restablecimiento propios, conserva el
+rol deshabilitado en edición y explica el motivo junto a «Tu cuenta». La API protege además al
 último administrador disponible.
 
 ## Contraseña temporal
@@ -101,8 +103,9 @@ asociación se hace cuando existe un código específico, sin adivinar campos.
 
 Los diálogos atrapan Tab, bloquean el desplazamiento de fondo y devuelven el
 foco al control de apertura cuando sigue disponible. Escape cierra salvo durante
-una petición o en el diálogo de clave. Los menús usan flechas, Home, End, Enter
-y Escape; omiten acciones deshabilitadas y muestran sus explicaciones.
+una petición o en el diálogo de clave. Las acciones directas tienen iconos,
+`aria-label`, `title` y áreas de pulsación de 44 × 44 px. Se recorren con Tab y
+se activan con Enter o Espacio.
 Los campos comparten etiquetas, ayuda y errores asociados; los avisos usan
 regiones vivas. Se respetan los tokens y la preferencia de movimiento reducido.
 
@@ -118,3 +121,12 @@ convencional (5–32 caracteres, comienza por letra; letras, números y guion ba
 no enlaces ni IDs numéricos. Se normaliza sin @ y en minúsculas; dejarlo vacío al
 editar lo elimina. No es una contraseña ni una vinculación por bot. Si es agente
 asignado, el propietario del ticket puede abrir su Telegram; consulta [tickets](tickets.md).
+
+## Presentación responsive
+
+Estados, roles y Temporal se muestran como texto semibold con color semántico,
+sin pastillas ni puntos. «Temporal · Vence …» fluye horizontalmente cuando cabe
+y envuelve en pantallas estrechas. Desde `xl` (1280 px) las listas usan columnas;
+por debajo muestran tarjetas con etiquetas y todos los datos, sin desplazamiento
+horizontal. Las acciones son iconos directos, sin menú de puntos. Los avisos son
+tarjetas compactas de superficie neutra con icono, título, mensaje y cierre X.

@@ -17,6 +17,7 @@ import { Icono, NombreIcono } from '../shared/ui/icono';
 import { Marca } from '../shared/ui/marca';
 import { Campana } from '../shared/notificaciones/campana';
 import { Alerta } from '../shared/ui/alerta';
+import { Confirmacion } from '../shared/ui/confirmacion';
 
 interface Enlace {
   ruta: string;
@@ -38,7 +39,16 @@ const enlaces: Enlace[] = [
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Icono, Marca, Alerta, Campana],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    Icono,
+    Marca,
+    Alerta,
+    Campana,
+    Confirmacion,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app-shell.html',
   host: { '(document:click)': 'cerrarFuera($event)', '(document:keydown.escape)': 'escapar()' },
@@ -52,6 +62,7 @@ export class AppShell {
   protected readonly menuUsuario = signal(false);
   protected readonly menuNavegacion = signal(false);
   protected readonly error = signal('');
+  protected readonly confirmandoSalida = signal(false);
   protected readonly enlaces = computed(() =>
     enlaces.filter(
       (enlace) => !enlace.roles || enlace.roles.includes(this.auth.usuario()?.role as Rol),
@@ -83,7 +94,13 @@ export class AppShell {
       this.desplegarNavegacion?.nativeElement.focus();
     }
   }
+  protected pedirSalida() {
+    this.cerrarMenu();
+    this.error.set('');
+    this.confirmandoSalida.set(true);
+  }
   protected salir() {
+    if (!this.confirmandoSalida() || this.auth.cargando()) return;
     this.error.set('');
     this.auth
       .cerrarSesion()

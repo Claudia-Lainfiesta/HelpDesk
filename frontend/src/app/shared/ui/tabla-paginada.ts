@@ -34,13 +34,13 @@ import { Alerta } from './alerta';
       <div
         role="region"
         [attr.aria-label]="'Lista de ' + nombre()"
-        tabindex="0"
-        class="relative overflow-x-auto pb-2"
+        class="relative pb-2"
+        [style.--columnas]="rejilla()"
       >
-        <div role="table" [attr.aria-label]="nombre()" [style.min-width.px]="anchoMinimo()">
+        <div role="table" [attr.aria-label]="nombre()">
           <div
             role="row"
-            class="mb-3 grid items-center gap-4 px-5 text-xs font-semibold text-texto-suave uppercase"
+            class="sr-only items-center gap-4 text-xs font-semibold text-texto-suave uppercase xl:not-sr-only xl:mb-3 xl:grid xl:px-5"
             [style.grid-template-columns]="rejilla()"
           >
             @for (columna of columnas(); track columna) {
@@ -56,7 +56,6 @@ export class TablaPaginada {
   readonly nombre = input.required<string>();
   readonly columnas = input.required<readonly string[]>();
   readonly rejilla = input.required<string>();
-  readonly anchoMinimo = input(1000);
   readonly cargando = input(false);
   readonly vacia = input(false);
   readonly error = input('');

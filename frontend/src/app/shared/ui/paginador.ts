@@ -19,20 +19,18 @@ let siguientePaginador = 0;
         [value]="tamano()"
         [disabled]="cargando()"
         (change)="cambiarTamano($event)"
-        class="h-9 rounded-boton border border-linea bg-superficie px-3 text-texto"
+        class="h-11 rounded-boton border border-linea bg-superficie px-3 text-texto"
       >
         @for (valor of tamanos(); track valor) {
           <option [value]="valor" [selected]="valor === tamano()">{{ valor }}</option>
         }</select
       ><app-boton
         variante="secundario"
-        tamano="sm"
         [deshabilitado]="pagina() <= 1 || cargando()"
         (accion)="cambiarPagina.emit(pagina() - 1)"
         >Anterior</app-boton
       ><app-boton
         variante="secundario"
-        tamano="sm"
         [deshabilitado]="fin() >= total() || cargando()"
         (accion)="cambiarPagina.emit(pagina() + 1)"
         >Siguiente</app-boton

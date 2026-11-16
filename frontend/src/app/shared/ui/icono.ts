@@ -21,6 +21,11 @@ const trazos = {
   copiar: ['M9 9h12v12H9Z', 'M15 9V3H3v12h6'],
   acciones: ['M5 12h.01M12 12h.01M19 12h.01'],
   editar: ['m16 3 5 5L9 20l-6 1 1-6Z', 'm14 5 5 5'],
+  telegram: ['m22 3-4 18-7-6-4 4 1-7L2 9Z', 'M8 12 22 3M11 15 22 3'],
+  encendido: ['M12 2v10', 'M6 5a9 9 0 1 0 12 0'],
+  desbloquear: ['M5 10h14v11H5Z', 'M8 10V7a4 4 0 0 1 8 0'],
+  correcto: ['m5 12 4 4L19 6'],
+  alerta: ['M12 3 2 21h20Z', 'M12 9v4m0 4h.01'],
   menu: ['M3 6h18M3 12h18M3 18h18'],
 } as const;
 export type NombreIcono = keyof typeof trazos;

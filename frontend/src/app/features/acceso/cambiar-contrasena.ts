@@ -17,6 +17,7 @@ import { Boton } from '../../shared/ui/boton';
 import { CampoTexto } from '../../shared/ui/campo-texto';
 import { Alerta } from '../../shared/ui/alerta';
 import { Marca } from '../../shared/ui/marca';
+import { Confirmacion } from '../../shared/ui/confirmacion';
 import { Tarjeta } from '../../shared/ui/tarjeta';
 import { confirmarContrasena, politicaContrasena } from './validadores';
 
@@ -32,6 +33,7 @@ import { confirmarContrasena, politicaContrasena } from './validadores';
     Alerta,
     Marca,
     Tarjeta,
+    Confirmacion,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cambiar-contrasena.html',
@@ -42,6 +44,8 @@ export class CambiarContrasena {
   private readonly destruir = inject(DestroyRef);
   protected readonly obligatorio = computed(() => this.auth.usuario()?.mustChangePassword ?? false);
   protected readonly error = signal('');
+  protected readonly confirmandoSalida = signal(false);
+  protected readonly errorSalida = signal('');
   protected readonly formulario = inject(FormBuilder).nonNullable.group(
     {
       actual: ['', Validators.required],
@@ -86,6 +90,8 @@ export class CambiarContrasena {
       });
   }
   protected salir() {
+    if (!this.confirmandoSalida() || this.auth.cargando()) return;
+    this.errorSalida.set('');
     this.auth
       .cerrarSesion()
       .pipe(takeUntilDestroyed(this.destruir))
@@ -94,7 +100,7 @@ export class CambiarContrasena {
           this.formulario.reset();
           void this.router.navigateByUrl('/iniciar-sesion');
         },
-        error: (error: unknown) => this.error.set(interpretarError(error).message),
+        error: (error: unknown) => this.errorSalida.set(interpretarError(error).message),
       });
   }
 }

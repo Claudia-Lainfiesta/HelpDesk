@@ -13,4 +13,5 @@ it.each(prioridadesTicket)('muestra prioridad %s con etiqueta y tokens semántic
     urgente: 'text-peligro',
   }[prioridad];
   expect(f.nativeElement.querySelector('span').classList.contains(esperado)).toBe(true);
+  expect(f.nativeElement.querySelector('span').className).not.toMatch(/bg-|border|rounded/);
 });

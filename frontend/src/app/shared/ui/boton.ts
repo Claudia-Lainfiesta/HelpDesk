@@ -11,6 +11,8 @@ import { Icono, NombreIcono } from './icono';
     [type]="tipo()"
     [disabled]="deshabilitado() || cargando()"
     [attr.aria-busy]="cargando()"
+    [attr.aria-label]="etiquetaAccesible() || null"
+    [attr.title]="ayuda() || etiquetaAccesible() || null"
     [class]="clases()"
     (click)="accion.emit()"
   >
@@ -34,6 +36,9 @@ export class Boton {
   readonly deshabilitado = input(false);
   readonly anchoCompleto = input(false);
   readonly icono = input<NombreIcono>();
+  readonly soloIcono = input(false);
+  readonly etiquetaAccesible = input('');
+  readonly ayuda = input('');
   readonly accion = output<void>();
   private readonly variantes = {
     primario: 'border-primario bg-primario text-sobre-primario hover:bg-primario-hover',
@@ -44,6 +49,6 @@ export class Boton {
   };
   protected readonly clases = computed(
     () =>
-      `inline-flex w-full items-center justify-center gap-2 rounded-boton border font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${this.tamano() === 'md' ? 'min-h-[46px] px-5 py-2.5' : 'min-h-9 px-3 py-1.5'} ${this.variantes[this.variante()]}`,
+      `inline-flex w-full items-center justify-center gap-2 rounded-boton border font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${this.soloIcono() ? 'min-h-11 min-w-11 p-2' : this.tamano() === 'md' ? 'min-h-[46px] px-5 py-2.5' : 'min-h-9 px-3 py-1.5'} ${this.variantes[this.variante()]}`,
   );
 }

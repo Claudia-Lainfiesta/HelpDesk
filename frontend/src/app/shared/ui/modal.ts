@@ -35,7 +35,7 @@ let siguienteModal = 0;
             (click)="pedirCerrar()"
             [disabled]="ocupado()"
             aria-label="Cerrar diálogo"
-            class="rounded-boton p-1 text-texto-suave hover:bg-fondo disabled:opacity-60"
+            class="flex min-h-11 min-w-11 items-center justify-center rounded-boton p-2 text-texto-suave hover:bg-fondo disabled:opacity-60"
           >
             <app-icono nombre="cerrar" />
           </button>

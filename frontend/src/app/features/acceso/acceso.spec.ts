@@ -127,6 +127,26 @@ describe('Cambio de contraseña', () => {
     expect(fixture.nativeElement.textContent).toContain('Tu contraseña es temporal');
     expect(fixture.nativeElement.textContent).toContain('Cerrar sesión');
   });
+  it('el cambio obligatorio también confirma o cancela la salida', async () => {
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    const pulsar = (texto: string, dentro: ParentNode = fixture.nativeElement) =>
+      Array.from(dentro.querySelectorAll('button'))
+        .find((b) => b.textContent?.trim() === texto)!
+        .click();
+    pulsar('Cerrar sesión');
+    await fixture.whenStable();
+    http.expectNone('/api/auth/logout');
+    pulsar('Volver');
+    await fixture.whenStable();
+    expect(TestBed.inject(AuthService).usuario()).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    pulsar('Cerrar sesión');
+    await fixture.whenStable();
+    pulsar('Cerrar sesión', fixture.nativeElement.querySelector('[role="dialog"]'));
+    http.expectOne('/api/auth/logout').flush(null, { status: 204, statusText: 'No Content' });
+    expect(TestBed.inject(AuthService).usuario()).toBeNull();
+    expect(navegar).toHaveBeenCalledWith('/iniciar-sesion');
+  });
   it('valida longitud, diferencia del correo y confirmación', () => {
     escribir(fixture, 'actual', 'entrada-prueba');
     escribir(fixture, 'nueva', 'corta');

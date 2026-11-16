@@ -129,10 +129,15 @@ describe('Pantalla de usuarios', () => {
     lista([propia]);
     const acciones = componente.acciones(propia);
     for (const codigo of ['desactivar', 'restablecer']) {
-      const accion = acciones.find((a) => a.codigo === codigo)!;
-      expect(accion.deshabilitada).toBe(true);
-      expect(accion.explicacion).toBeTruthy();
+      expect(acciones.find((a) => a.codigo === codigo)).toBeUndefined();
     }
+    expect(pagina.routeNativeElement!.textContent).toContain('No puedes desactivarte');
+    expect(pagina.routeNativeElement!.querySelector('app-menu-acciones')).toBeNull();
+    expect(
+      componente
+        .acciones({ ...propia, lockedUntil: new Date(Date.now() + 60000).toISOString() })
+        .map((a) => a.codigo),
+    ).toContain('desbloquear');
     componente.elegir(propia, 'desactivar');
     expect(componente.pendiente()).toBeNull();
     componente.elegir(propia, 'editar');
@@ -147,7 +152,10 @@ describe('Pantalla de usuarios', () => {
     'confirma %s y muestra el error del servidor',
     async (accion) => {
       await abrir();
-      const cuenta = cuentaPrueba({ isActive: accion !== 'reactivar' });
+      const cuenta = cuentaPrueba({
+        isActive: accion !== 'reactivar',
+        lockedUntil: accion === 'desbloquear' ? new Date(Date.now() + 60000).toISOString() : null,
+      });
       lista([cuenta]);
       componente.elegir(cuenta, accion);
       expect(componente.pendiente()).not.toBeNull();

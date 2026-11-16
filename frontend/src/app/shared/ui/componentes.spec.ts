@@ -8,6 +8,9 @@ import { Icono } from './icono';
 import { Alerta } from './alerta';
 import { Filtro } from './filtro';
 import { Tarjeta } from './tarjeta';
+import { InsigniaCuenta, TipoInsigniaCuenta } from './insignia-cuenta';
+import { Avisos, AvisoFlotante } from './aviso-flotante';
+import { AccionesFila } from './acciones-fila';
 
 @Component({
   standalone: true,
@@ -80,13 +83,16 @@ describe('Componentes de interfaz', () => {
     expect(campo.value).toBe('otro@empresa.com');
   });
   it.each(Object.entries(estados))(
-    'insignia %s comunica el estado con texto y punto',
+    'insignia %s comunica el estado con texto semántico sin pastilla ni punto',
     (codigo, estado) => {
       const fixture = TestBed.createComponent(InsigniaEstado);
       fixture.componentRef.setInput('codigo', codigo);
       fixture.detectChanges();
       expect(fixture.nativeElement.textContent).toContain(estado.etiqueta);
-      expect(fixture.nativeElement.querySelector('[aria-hidden="true"]')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('[aria-hidden="true"]')).toBeNull();
+      expect(fixture.nativeElement.querySelector('span').className).not.toMatch(
+        /bg-|border|rounded/,
+      );
       for (const clase of estado.clases.split(' '))
         expect(fixture.nativeElement.querySelector('span').classList.contains(clase)).toBe(true);
     },
@@ -129,4 +135,62 @@ describe('Componentes de interfaz', () => {
     expect(fixture.nativeElement.className).toContain('rounded-tarjeta');
     expect(fixture.nativeElement.className).toContain('shadow-tarjeta');
   });
+});
+
+describe('Pulido de componentes compartidos', () => {
+  it.each([
+    'Temporal',
+    'Vencida',
+    'Inactiva',
+    'Bloqueada',
+    'Activa',
+    'Rol',
+  ] as TipoInsigniaCuenta[])('la etiqueta %s conserva significado sin fondo ni cápsula', (tipo) => {
+    const f = TestBed.createComponent(InsigniaCuenta);
+    f.componentRef.setInput('tipo', tipo);
+    f.detectChanges();
+    const etiqueta = f.nativeElement.querySelector('span');
+    expect(etiqueta.className).toContain('font-semibold');
+    expect(etiqueta.className).toMatch(/text-(aviso|peligro|estado-cerrado|exito|texto-suave)/);
+    expect(etiqueta.className).not.toMatch(/bg-|border|rounded/);
+    if (tipo !== 'Rol') expect(etiqueta.textContent).toContain(tipo);
+  });
+  it('las acciones son botones directos con nombre, ayuda e icono decorativo', () => {
+    const f = TestBed.createComponent(AccionesFila);
+    f.componentRef.setInput('nombre', 'categoría Hardware');
+    f.componentRef.setInput('acciones', [
+      { codigo: 'editar', etiqueta: 'Editar', icono: 'editar' },
+    ]);
+    const elegir = vi.fn();
+    f.componentInstance.seleccionado.subscribe(elegir);
+    f.detectChanges();
+    const boton = f.nativeElement.querySelector('button');
+    expect(boton.getAttribute('aria-label')).toBe('Editar categoría Hardware');
+    expect(boton.title).toBe('Editar categoría Hardware');
+    expect(boton.querySelector('svg').getAttribute('aria-hidden')).toBe('true');
+    expect(f.nativeElement.querySelector('[aria-haspopup]')).toBeNull();
+    boton.click();
+    expect(elegir).toHaveBeenCalledWith('editar');
+  });
+  it.each([false, true])(
+    'toast error=%s anuncia mensaje y permite cierre iconográfico',
+    (error) => {
+      const f = TestBed.createComponent(AvisoFlotante);
+      TestBed.inject(Avisos).mostrar('Resultado de la operación.', error);
+      f.detectChanges();
+      expect(f.nativeElement.querySelector('[role="status"]').textContent).toContain(
+        'Resultado de la operación.',
+      );
+      expect(f.nativeElement.textContent).toContain(
+        error ? 'Acción no completada' : 'Operación completada',
+      );
+      const icono = f.nativeElement.querySelector('app-icono');
+      expect(icono.className).toContain(error ? 'text-peligro' : 'text-exito');
+      expect(f.nativeElement.textContent).not.toContain('Cerrar aviso');
+      f.nativeElement.querySelector('button[aria-label="Cerrar notificación"]').click();
+      f.detectChanges();
+      expect(f.nativeElement.querySelector('button')).toBeNull();
+      expect(TestBed.inject(Avisos).aviso()).toBeNull();
+    },
+  );
 });

@@ -28,7 +28,7 @@ import { Modal } from '../../shared/ui/modal';
 import { Confirmacion } from '../../shared/ui/confirmacion';
 import { Paginador } from '../../shared/ui/paginador';
 import { TablaPaginada } from '../../shared/ui/tabla-paginada';
-import { MenuAcciones } from '../../shared/ui/menu-acciones';
+import { AccionesFila } from '../../shared/ui/acciones-fila';
 import { ClaveTemporal } from '../../shared/ui/clave-temporal';
 import { InsigniaCuenta } from '../../shared/ui/insignia-cuenta';
 import { AvisoFlotante, Avisos } from '../../shared/ui/aviso-flotante';
@@ -45,7 +45,7 @@ import { AvisoFlotante, Avisos } from '../../shared/ui/aviso-flotante';
     Confirmacion,
     Paginador,
     TablaPaginada,
-    MenuAcciones,
+    AccionesFila,
     ClaveTemporal,
     InsigniaCuenta,
     AvisoFlotante,
@@ -203,11 +203,11 @@ import { AvisoFlotante, Avisos } from '../../shared/ui/aviso-flotante';
             variante="secundario"
             (accion)="avisos.mostrar('Cambios guardados en la demostración.')"
             >Mostrar aviso</app-boton
-          ><app-menu-acciones
+          ><app-acciones-fila
             nombre="Ejemplo"
             [acciones]="[
-              { codigo: 'editar', etiqueta: 'Editar' },
-              { codigo: 'desactivar', etiqueta: 'Desactivar', peligro: true },
+              { codigo: 'editar', etiqueta: 'Editar', icono: 'editar' },
+              { codigo: 'desactivar', etiqueta: 'Desactivar', icono: 'encendido', peligro: true },
             ]"
             (seleccionado)="avisos.mostrar('Acción de demostración: ' + $event)"
           />
@@ -215,12 +215,8 @@ import { AvisoFlotante, Avisos } from '../../shared/ui/aviso-flotante';
     ></app-tarjeta>
     <section class="space-y-5">
       <h2 class="text-xl font-bold text-primario">Tabla y paginación</h2>
-      <app-tabla-paginada
-        nombre="ejemplos"
-        [columnas]="['Nombre', 'Estado']"
-        rejilla="1fr 140px"
-        [anchoMinimo]="420"
-        ><app-tarjeta role="row" class="grid grid-cols-2 p-5"
+      <app-tabla-paginada nombre="ejemplos" [columnas]="['Nombre', 'Estado']" rejilla="1fr 140px"
+        ><app-tarjeta role="row" class="fila-responsive grid"
           ><span role="cell">Registro de demostración</span
           ><span role="cell">Activo</span></app-tarjeta
         ></app-tabla-paginada
@@ -351,6 +347,14 @@ export class GuiaUi {
     'salir',
     'llave',
     'desplegar',
+    'campana',
+    'telegram',
+    'encendido',
+    'desbloquear',
+    'correcto',
+    'alerta',
+    'editar',
+    'cerrar',
   ];
   protected readonly correo = new FormControl('', { nonNullable: true });
   protected readonly campoError = new FormControl('', { nonNullable: true });

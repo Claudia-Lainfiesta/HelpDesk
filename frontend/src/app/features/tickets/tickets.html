@@ -1,7 +1,7 @@
 <section aria-labelledby="titulo-tickets">
   <div class="flex flex-wrap items-center justify-between gap-5">
     <h1 id="titulo-tickets">Tickets</h1>
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
       <app-campo-texto
         identificador="buscar-tickets"
         etiqueta="Buscar tickets por número o asunto"
@@ -10,7 +10,7 @@
         icono="buscar"
         marcador="Buscar por número o asunto"
         [formControl]="busqueda"
-        class="w-[300px]"
+        class="w-full sm:w-[300px]"
       /><app-boton icono="mas" (accion)="nuevoAbierto.set(true)">Nuevo ticket</app-boton>
     </div>
   </div>
@@ -70,31 +70,31 @@
       nombre="tickets"
       [columnas]="columnas"
       [rejilla]="rejilla"
-      [anchoMinimo]="1180"
       [cargando]="cargando()"
       [error]="error()"
       (reintentar)="recargar.next()"
     >
       @for (ticket of tickets(); track ticket.id) {
-        <app-tarjeta
-          role="row"
-          class="grid items-center gap-4 px-5 py-4"
-          [style.grid-template-columns]="rejilla"
+        <app-tarjeta role="row" class="fila-responsive grid"
           ><a
             role="cell"
             [routerLink]="['/tickets', ticket.id]"
-            class="rounded-boton font-semibold text-primario underline underline-offset-4"
+            class="campo-numero rounded-boton font-semibold text-primario underline underline-offset-4"
             >{{ ticket.number }}</a
-          ><span role="cell" class="font-medium">{{ ticket.subject }}</span
-          ><span role="cell" class="text-texto-suave">{{ ticket.category.name }}</span
-          ><span role="cell"><app-insignia-estado [codigo]="ticket.status" /></span
-          ><span role="cell"><app-insignia-prioridad [prioridad]="ticket.priority" /></span
-          ><span role="cell" class="text-texto-suave">{{
-            ticket.assignedAgent?.fullName || 'Sin asignar'
-          }}</span
-          ><span role="cell" class="text-xs text-texto-suave">{{
-            ticket.createdAt | fechaLocal
-          }}</span></app-tarjeta
+          ><span role="cell" class="campo-principal font-medium">{{ ticket.subject }}</span
+          ><span role="cell" class="text-texto-suave"
+            ><span class="etiqueta-celda">Categoría</span>{{ ticket.category.name }}</span
+          ><span role="cell" class="campo-estado"
+            ><app-insignia-estado [codigo]="ticket.status" /></span
+          ><span role="cell"
+            ><span class="etiqueta-celda">Prioridad</span
+            ><app-insignia-prioridad [prioridad]="ticket.priority" /></span
+          ><span role="cell" class="text-texto-suave"
+            ><span class="etiqueta-celda">Agente</span
+            >{{ ticket.assignedAgent?.fullName || 'Sin asignar' }}</span
+          ><span role="cell" class="text-xs text-texto-suave"
+            ><span class="etiqueta-celda">Fecha</span>{{ ticket.createdAt | fechaLocal }}</span
+          ></app-tarjeta
         >
       }
     </app-tabla-paginada>

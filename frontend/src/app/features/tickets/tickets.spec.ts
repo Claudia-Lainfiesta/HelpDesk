@@ -68,6 +68,14 @@ describe('Tickets y detalle', () => {
     const e = pagina.routeNativeElement!;
     expect(e.querySelector('a[href="/tickets/123"]')?.textContent).toContain('TK-000123');
     expect(e.textContent).toContain('Sin asignar');
+    const filas = e.querySelectorAll('app-tarjeta[role="row"]');
+    expect(filas).toHaveLength(1);
+    expect(filas[0].querySelectorAll('[role="cell"]')).toHaveLength(7);
+    for (const etiqueta of ['Categoría', 'Prioridad', 'Agente', 'Fecha'])
+      expect(
+        Array.from(filas[0].querySelectorAll('.etiqueta-celda')).map((n) => n.textContent),
+      ).toContain(etiqueta);
+    expect(filas[0].getAttribute('style') ?? '').not.toContain('grid-template-columns');
     expect(e.textContent).toContain('Creado');
     expect(e.querySelector('app-insignia-prioridad')?.textContent).toContain('Media');
   });
@@ -179,6 +187,7 @@ describe('Tickets y detalle', () => {
     const e = pagina.routeNativeElement!;
     expect(e.textContent).toContain('TK-000123');
     expect(e.textContent).toContain('Sin asignar');
+
     expect(e.querySelector('.whitespace-pre-wrap')?.textContent).toBe(ticket.description);
     expect(e.querySelector('img')).toBeNull();
     expect(e.querySelector('textarea')).toBeNull();

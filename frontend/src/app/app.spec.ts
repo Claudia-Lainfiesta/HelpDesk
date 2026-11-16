@@ -65,6 +65,42 @@ describe('Aplicación y navegación', () => {
     expect(TestBed.inject(Router).url).toBe('/cambiar-contrasena');
     expect(pagina.routeNativeElement!.querySelector('nav')).toBeNull();
   });
+  it('cerrar sesión exige confirmar; Volver conserva sesión y foco', async () => {
+    restaurar('administrador');
+    const pagina = await RouterTestingHarness.create('/tickets');
+    http.expectOne((r) => r.url === '/api/categories').flush({ data: [] });
+    http
+      .expectOne((r) => r.url === '/api/tickets')
+      .flush({ data: [], total: 0, page: 1, pageSize: 20 });
+    await pagina.fixture.whenStable();
+    const e = pagina.routeNativeElement!;
+    const pulsar = (texto: string, dentro: ParentNode = e) =>
+      Array.from(dentro.querySelectorAll('button'))
+        .find((b) => b.textContent?.trim() === texto)!
+        .click();
+    const avatar = e.querySelector<HTMLButtonElement>('button[aria-label^="Menú de"]')!;
+    avatar.click();
+    pagina.detectChanges();
+    pulsar('Cerrar sesión');
+    await pagina.fixture.whenStable();
+    expect(e.querySelector('[role="dialog"]')?.textContent).toContain(
+      '¿Seguro que quieres cerrar tu sesión?',
+    );
+    http.expectNone('/api/auth/logout');
+    pulsar('Volver', e.querySelector('[role="dialog"]')!);
+    await pagina.fixture.whenStable();
+    expect(TestBed.inject(AuthService).usuario()).not.toBeNull();
+    expect(document.activeElement).toBe(avatar);
+    avatar.click();
+    pagina.detectChanges();
+    pulsar('Cerrar sesión');
+    await pagina.fixture.whenStable();
+    pulsar('Cerrar sesión', e.querySelector('[role="dialog"]')!);
+    http.expectOne('/api/auth/logout').flush(null, { status: 204, statusText: 'No Content' });
+    await pagina.fixture.whenStable();
+    expect(TestBed.inject(AuthService).usuario()).toBeNull();
+    expect(TestBed.inject(Router).url).toBe('/iniciar-sesion');
+  });
   it('sin sesión vuelve a iniciar sesión', async () => {
     await RouterTestingHarness.create('/tickets');
     expect(TestBed.inject(Router).url).toContain('/iniciar-sesion?returnUrl=');

@@ -180,3 +180,8 @@ Refresca solo el contador cada 30 segundos, al navegar y tras leer; se pausa con
 la pestaña oculta y se limpia al salir. Requiere aplicar la migración 0018 en backend.
 Los avisos operativos al grupo Telegram se configuran exclusivamente en la API;
 no sustituyen el deep-link personal ni envían notas o seguimiento.
+
+Las listas de Tickets, Usuarios y Categorías cambian de columnas a tarjetas bajo
+1280 px, sin ocultar datos. Estados y prioridades son texto semántico, las acciones
+de administración son iconos accesibles y el cierre de sesión pide confirmación.
+Consulta los patrones en [diseño](docs/diseno.md) y `/guia-ui` en desarrollo.

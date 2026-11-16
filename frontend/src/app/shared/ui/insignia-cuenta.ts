@@ -5,22 +5,18 @@ export type TipoInsigniaCuenta =
   selector: 'app-insignia-cuenta',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<span
-    [class]="
-      'inline-flex items-center rounded-insignia border px-2.5 py-1 text-xs font-semibold ' +
-      clases[tipo()]
-    "
+  template: `<span [class]="'inline-flex text-sm font-semibold ' + clases[tipo()]"
     ><ng-content />{{ tipo() === 'Rol' ? '' : tipo() }}</span
   >`,
 })
 export class InsigniaCuenta {
   readonly tipo = input.required<TipoInsigniaCuenta>();
   readonly clases: Record<TipoInsigniaCuenta, string> = {
-    Temporal: 'border-transparent bg-aviso-suave text-aviso',
-    Vencida: 'border-transparent bg-peligro-suave text-peligro',
-    Inactiva: 'border-transparent bg-estado-cerrado-suave text-estado-cerrado',
-    Bloqueada: 'border-transparent bg-peligro-suave text-peligro',
-    Activa: 'border-transparent bg-exito-suave text-exito',
-    Rol: 'border-linea bg-superficie-suave text-texto-suave',
+    Temporal: 'text-aviso',
+    Vencida: 'text-peligro',
+    Inactiva: 'text-estado-cerrado',
+    Bloqueada: 'text-peligro',
+    Activa: 'text-exito',
+    Rol: 'text-texto-suave',
   };
 }

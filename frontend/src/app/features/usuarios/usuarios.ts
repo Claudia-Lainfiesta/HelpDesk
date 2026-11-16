@@ -36,7 +36,7 @@ import { TablaPaginada } from '../../shared/ui/tabla-paginada';
 import { Paginador } from '../../shared/ui/paginador';
 import { Tarjeta } from '../../shared/ui/tarjeta';
 import { InsigniaCuenta } from '../../shared/ui/insignia-cuenta';
-import { AccionFila, MenuAcciones } from '../../shared/ui/menu-acciones';
+import { AccionIconografica, AccionesFila } from '../../shared/ui/acciones-fila';
 import { Confirmacion } from '../../shared/ui/confirmacion';
 import { ClaveTemporal } from '../../shared/ui/clave-temporal';
 import { Avisos, AvisoFlotante } from '../../shared/ui/aviso-flotante';
@@ -78,7 +78,7 @@ export function leerFiltros(parametros: {
     Paginador,
     Tarjeta,
     InsigniaCuenta,
-    MenuAcciones,
+    AccionesFila,
     Confirmacion,
     ClaveTemporal,
     AvisoFlotante,
@@ -114,7 +114,7 @@ export class Usuarios implements OnDestroy {
     { valor: 'false', etiqueta: 'Inactivos' },
   ];
   readonly columnas = ['Usuario', 'Rol', 'Estado', 'Último acceso', 'Acciones'];
-  readonly rejilla = 'minmax(250px, 1.7fr) 130px 160px 150px 64px';
+  readonly rejilla = 'minmax(320px, 1.7fr) 110px minmax(120px, 1fr) 140px 196px';
   readonly formularioAbierto = signal(false);
   readonly editarCuenta = signal<Cuenta | null>(null);
   readonly pendiente = signal<{
@@ -200,36 +200,35 @@ export class Usuarios implements OnDestroy {
   propio(cuenta: Cuenta) {
     return cuenta.id === this.auth.usuario()?.id;
   }
-  acciones(cuenta: Cuenta): AccionFila[] {
-    const propio = this.propio(cuenta);
-    return [
-      { codigo: 'editar', etiqueta: 'Editar' },
-      {
-        codigo: 'restablecer',
-        etiqueta: 'Restablecer contraseña',
-        deshabilitada: propio,
-        explicacion: propio
-          ? 'Para tu cuenta, usa Cambiar contraseña en el menú superior.'
-          : undefined,
-      },
-      ...(this.bloqueada(cuenta) ? [{ codigo: 'desbloquear', etiqueta: 'Desbloquear' }] : []),
-      cuenta.isActive
-        ? {
-            codigo: 'desactivar',
-            etiqueta: 'Desactivar',
-            peligro: true,
-            deshabilitada: propio,
-            explicacion: propio ? 'No puedes desactivar tu propia cuenta.' : undefined,
-          }
-        : { codigo: 'reactivar', etiqueta: 'Reactivar' },
+  acciones(cuenta: Cuenta): AccionIconografica[] {
+    const acciones: AccionIconografica[] = [
+      { codigo: 'editar', etiqueta: 'Editar', icono: 'editar' },
     ];
+    if (!this.propio(cuenta)) {
+      acciones.push({
+        codigo: 'restablecer',
+        etiqueta: 'Restablecer contraseña de',
+        icono: 'llave',
+      });
+    }
+    if (this.bloqueada(cuenta))
+      acciones.push({ codigo: 'desbloquear', etiqueta: 'Desbloquear', icono: 'desbloquear' });
+    if (!this.propio(cuenta)) {
+      acciones.push(
+        cuenta.isActive
+          ? { codigo: 'desactivar', etiqueta: 'Desactivar', icono: 'encendido', peligro: true }
+          : { codigo: 'reactivar', etiqueta: 'Reactivar', icono: 'encendido' },
+      );
+    }
+    return acciones;
   }
   nuevo() {
     this.editarCuenta.set(null);
     this.formularioAbierto.set(true);
   }
   elegir(cuenta: Cuenta, accion: string) {
-    if (this.acciones(cuenta).find((a) => a.codigo === accion)?.deshabilitada) return;
+    const permitida = this.acciones(cuenta).find((a) => a.codigo === accion);
+    if (!permitida || permitida.deshabilitada) return;
     if (accion === 'editar') {
       this.editarCuenta.set(cuenta);
       this.formularioAbierto.set(true);

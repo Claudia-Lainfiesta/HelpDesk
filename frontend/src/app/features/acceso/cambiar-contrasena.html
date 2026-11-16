@@ -64,7 +64,7 @@
             variante="fantasma"
             icono="salir"
             [deshabilitado]="auth.cargando()"
-            (accion)="salir()"
+            (accion)="errorSalida.set(''); confirmandoSalida.set(true)"
             >Cerrar sesión</app-boton
           >
         </div>
@@ -72,3 +72,16 @@
     </section></app-tarjeta
   >
 </ng-template>
+
+@if (confirmandoSalida()) {
+  <app-confirmacion
+    titulo="Cerrar sesión"
+    mensaje="¿Seguro que quieres cerrar tu sesión?"
+    etiqueta="Cerrar sesión"
+    etiquetaCancelar="Volver"
+    [cargando]="auth.cargando()"
+    [error]="errorSalida()"
+    (cancelar)="confirmandoSalida.set(false)"
+    (confirmar)="salir()"
+  />
+}

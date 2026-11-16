@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   selector: 'app-tarjeta',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block rounded-tarjeta border border-linea bg-superficie shadow-tarjeta' },
+  host: { class: 'block min-w-0 rounded-tarjeta border border-linea bg-superficie shadow-tarjeta' },
   template: `<ng-content />`,
 })
 export class Tarjeta {}
