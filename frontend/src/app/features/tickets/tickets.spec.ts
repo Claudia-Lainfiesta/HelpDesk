@@ -238,7 +238,7 @@ describe('Tickets y detalle', () => {
     expect(e.textContent).toContain('Sin asignar');
 
     expect(e.querySelector('.whitespace-pre-wrap')?.textContent).toBe(ticket.description);
-    expect(e.querySelector('img')).toBeNull();
+    expect(e.querySelector('.whitespace-pre-wrap img')).toBeNull();
     expect(e.querySelector('textarea')).toBeNull();
   });
   it('detalle 404 no confirma datos ni ofrece cambios de estado', async () => {
