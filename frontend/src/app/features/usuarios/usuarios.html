@@ -50,7 +50,7 @@
   (reintentar)="recargar.next()"
 >
   @for (cuenta of cuentas(); track cuenta.id) {
-    <app-tarjeta role="row" class="fila-responsive grid">
+    <div role="row" class="fila-responsive grid">
       <div role="cell" class="campo-principal min-w-0">
         <p class="font-semibold text-texto">{{ cuenta.fullName }}</p>
         <p class="mt-1 break-all text-xs text-texto-suave">{{ cuenta.email }}</p>
@@ -100,7 +100,7 @@
           (seleccionado)="elegir(cuenta, $event)"
         />
       </div>
-    </app-tarjeta>
+    </div>
   }
 </app-tabla-paginada>
 @if (!error()) {

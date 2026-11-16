@@ -127,7 +127,7 @@ asignado, el propietario del ticket puede abrir su Telegram; consulta [tickets](
 Estados, roles y Temporal se muestran como texto semibold con color semántico,
 sin pastillas ni puntos. «Temporal · Vence …» fluye horizontalmente cuando cabe
 y envuelve en pantallas estrechas. Desde `xl` (1280 px) las listas usan columnas;
-por debajo muestran tarjetas con etiquetas y todos los datos, sin desplazamiento
+por debajo apilan los registros con etiquetas y todos los datos, sin desplazamiento
 horizontal. Las acciones son iconos directos, sin menú de puntos. Los avisos son
 tarjetas compactas de superficie neutra con icono, título, mensaje y cierre X.
 
@@ -135,3 +135,9 @@ Desactivar usa un botón fantasma: solo el icono toma `text-peligro`, sin fondo
 rojo sólido. Se conservan nombre accesible, ayuda, foco y confirmación. La misma
 regla se aplica a acciones equivalentes de `app-acciones-fila`; el botón de
 confirmación del diálogo puede seguir usando la variante sólida de peligro.
+
+Usuarios y Categorías comparten una superficie tabular con encabezados y filas
+continuas. Los registros se separan por una línea de 1 px, sin tarjetas, radios,
+sombras ni margen entre filas. En escritorio una fila simple ronda 60 px; la
+metadata adicional puede ampliar su altura. En móvil se conserva el apilado y
+los mismos divisores. Las acciones, estados y confirmaciones no cambian.

@@ -28,6 +28,32 @@ describe('Categorías', () => {
     await f.whenStable();
     expect(f.nativeElement.textContent).toContain('Inactiva');
   });
+  it('presenta categorías como filas de la misma tabla, sin tarjetas por registro', async () => {
+    const f = TestBed.createComponent(Categorias);
+    f.detectChanges();
+    http.expectOne('/api/categories?includeInactive=false').flush({
+      data: [
+        categoriaPrueba(),
+        categoriaPrueba({ id: '9', name: 'Otra categoría', isActive: false }),
+      ],
+    });
+    await f.whenStable();
+    const tabla = f.nativeElement.querySelector('[role="table"]') as HTMLElement;
+    expect(
+      Array.from(tabla.querySelectorAll('[role="columnheader"]')).map((e) => e.textContent?.trim()),
+    ).toEqual(['Nombre', 'Descripción', 'Estado', 'Acciones']);
+    expect(tabla.querySelector('app-tarjeta')).toBeNull();
+    const grupo = tabla.querySelector('[role="rowgroup"]')!;
+    const filas = grupo.querySelectorAll('[role="row"]');
+    expect(filas).toHaveLength(2);
+    for (const fila of filas) {
+      expect(fila.parentElement).toBe(grupo);
+      expect(fila.querySelectorAll('[role="cell"]')).toHaveLength(4);
+      expect(fila.querySelector('button[aria-label^="Editar categoría"]')).not.toBeNull();
+    }
+    expect(filas[0].textContent).toContain('Activa');
+    expect(filas[1].textContent).toContain('Inactiva');
+  });
   it('muestra errores y permite reintentar', async () => {
     const f = TestBed.createComponent(Categorias);
     f.detectChanges();

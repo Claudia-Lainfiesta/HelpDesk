@@ -34,7 +34,6 @@ import { Selector } from '../../shared/ui/selector';
 import { Interruptor } from '../../shared/ui/interruptor';
 import { TablaPaginada } from '../../shared/ui/tabla-paginada';
 import { Paginador } from '../../shared/ui/paginador';
-import { Tarjeta } from '../../shared/ui/tarjeta';
 import { InsigniaCuenta } from '../../shared/ui/insignia-cuenta';
 import { AccionIconografica, AccionesFila } from '../../shared/ui/acciones-fila';
 import { Confirmacion } from '../../shared/ui/confirmacion';
@@ -76,7 +75,6 @@ export function leerFiltros(parametros: {
     Interruptor,
     TablaPaginada,
     Paginador,
-    Tarjeta,
     InsigniaCuenta,
     AccionesFila,
     Confirmacion,

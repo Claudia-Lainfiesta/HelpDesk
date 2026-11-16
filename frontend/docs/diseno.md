@@ -190,7 +190,7 @@ La barra superior adapta enlaces al rol y el avatar abre cambio de contraseña
 más cierre de sesión. A partir de 1024 px la navegación está visible; por debajo
 usa un botón. El contenido útil tiene aproximadamente 1180 px de ancho máximo.
 Las listas de Usuarios y Categorías se adaptan sin scroll horizontal:
-por debajo de `xl` (1280 px) cada fila es una tarjeta con dos columnas de metadata,
+por debajo de `xl` (1280 px) cada registro apila sus datos en dos columnas de metadata,
 etiquetas visibles y campos principales de ancho completo. Desde `xl` se muestra
 la rejilla tabular y sus encabezados. `fila-responsive`, `campo-principal` y
 `etiqueta-celda` comparten el patrón con un solo DOM; las filas usan
@@ -199,14 +199,14 @@ por `--columnas` desde `app-tabla-paginada`. Los valores largos pueden envolver.
 Filtros y paginación también envuelven; no se oculta información en móvil.
 
 Tickets, categorías y usuarios consumen sus APIs reales. Tickets incorpora
-paginación, filtros en la URL y modal de creación; mantiene filas en tarjetas,
+paginación, filtros en la URL y modal de creación; mantiene registros planos,
 etiquetas semánticas y descripción en texto plano. Reportes consume métricas
 reales; sus tablas apilan las métricas por fila en móvil, sin scroll lateral. Consulta [los flujos de tickets](tickets.md).
 
 Las diferencias intencionales respecto del PDF son los SVG propios, Figtree,
 los tamaños y radios semánticos pedidos, la paginación y las opciones
 funcionales de sesión. Se usa un botón sólido de marca, sin degradados ni
-sombras fuertes. El responsive prioriza filtros, tarjetas legibles y acciones accesibles.
+sombras fuertes. El responsive prioriza filtros, registros legibles y acciones accesibles.
 
 La referencia visible de tickets es `TK-XXXXXX` (mínimo seis dígitos, sin
 truncamiento), enviada por la API. El logo y la marca siguen siendo HelpDesk.
@@ -267,3 +267,23 @@ Las acciones iconográficas de peligro usan el botón fantasma: fondo transparen
 o neutro al pasar el puntero y solo `app-icono` con `text-peligro`. La variante
 sólida de peligro se conserva para confirmar operaciones destructivas en diálogos.
 `aria-label`, `title`, foco visible y áreas de 44 × 44 px permanecen vigentes.
+
+## Filas de datos continuas
+
+Las colecciones tabulares usan una superficie común con encabezados y divisores
+horizontales de 1 px (`linea`). Cada registro tiene padding, pero no fondo propio,
+sombra, borde completo ni radio. El contenedor puede conservar borde exterior y
+`rounded-boton`; la última fila no duplica el borde inferior.
+
+`app-tabla-paginada` agrupa las filas de Usuarios, Categorías y el ejemplo de la
+guía mediante `divide-y divide-linea`. Cada fila es un elemento con `role="row"`
+y celdas existentes; no usa `app-tarjeta`. `fila-responsive` mantiene dos columnas
+apiladas en móvil, sin separaciones exteriores. Desde `xl`, reduce el padding
+vertical a 8 px por lado; con acciones de 44 px, una fila simple mide unos 60 px.
+Las cuentas temporales o textos largos pueden necesitar más altura. El hover
+usa `superficie-suave`, sin sombra, y el foco permanece en cada control.
+
+Tickets conserva su vista dividida y la lista continua con selección lateral.
+Evolución y Actividad por agente ya usan filas planas; sus layouts apilados en
+móvil permanecen. KPIs, formularios, modales, paneles, notas y notificaciones
+conservan sus contenedores cuando representan unidades independientes.

@@ -34,20 +34,20 @@ import { Alerta } from './alerta';
       <div
         role="region"
         [attr.aria-label]="'Lista de ' + nombre()"
-        class="relative pb-2"
+        class="relative overflow-hidden rounded-boton border border-linea bg-superficie"
         [style.--columnas]="rejilla()"
       >
         <div role="table" [attr.aria-label]="nombre()">
           <div
             role="row"
-            class="sr-only items-center gap-4 text-xs font-semibold text-texto-suave uppercase xl:not-sr-only xl:mb-3 xl:grid xl:px-5"
+            class="sr-only items-center gap-4 text-xs font-semibold text-texto-suave uppercase xl:not-sr-only xl:grid xl:border-b xl:border-linea xl:px-5 xl:py-3"
             [style.grid-template-columns]="rejilla()"
           >
             @for (columna of columnas(); track columna) {
               <span role="columnheader">{{ columna }}</span>
             }
           </div>
-          <div role="rowgroup" class="space-y-3"><ng-content /></div>
+          <div role="rowgroup" class="divide-y divide-linea"><ng-content /></div>
         </div>
       </div>
     }`,

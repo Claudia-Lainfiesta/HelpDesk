@@ -183,8 +183,8 @@ Los avisos operativos al grupo Telegram se configuran exclusivamente en la API;
 no sustituyen el deep-link personal ni envían notas o seguimiento.
 
 Tickets usa lista y vista previa desde 1024 px; en móvil alterna entre ambas
-sin perder filtros ni paginación. Usuarios y Categorías cambian de columnas a
-tarjetas bajo 1280 px, sin ocultar datos. Reportes apila sus métricas y filas
+sin perder filtros ni paginación. Usuarios y Categorías usan filas continuas
+con divisores, apiladas bajo 1280 px sin ocultar datos ni crear tarjetas por registro. Reportes apila sus métricas y filas
 en móvil, sin desplazamiento lateral. Estados y prioridades son texto semántico, las acciones
 de administración son iconos accesibles y el cierre de sesión pide confirmación.
 Consulta los patrones en [diseño](docs/diseno.md) y `/guia-ui` en desarrollo.

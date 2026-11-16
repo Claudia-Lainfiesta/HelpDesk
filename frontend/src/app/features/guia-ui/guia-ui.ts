@@ -216,10 +216,9 @@ import { AvisoFlotante, Avisos } from '../../shared/ui/aviso-flotante';
     <section class="space-y-5">
       <h2 class="text-xl font-bold text-primario">Tabla y paginación</h2>
       <app-tabla-paginada nombre="ejemplos" [columnas]="['Nombre', 'Estado']" rejilla="1fr 140px"
-        ><app-tarjeta role="row" class="fila-responsive grid"
-          ><span role="cell">Registro de demostración</span
-          ><span role="cell">Activo</span></app-tarjeta
-        ></app-tabla-paginada
+        ><div role="row" class="fila-responsive grid">
+          <span role="cell">Registro de demostración</span><span role="cell">Activo</span>
+        </div></app-tabla-paginada
       ><app-paginador
         [pagina]="pagina()"
         [tamano]="tamano()"

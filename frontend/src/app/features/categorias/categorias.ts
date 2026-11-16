@@ -8,7 +8,6 @@ import { errorAdministracion } from '../../core/administracion/errores';
 import { Boton } from '../../shared/ui/boton';
 import { Interruptor } from '../../shared/ui/interruptor';
 import { TablaPaginada } from '../../shared/ui/tabla-paginada';
-import { Tarjeta } from '../../shared/ui/tarjeta';
 import { InsigniaCuenta } from '../../shared/ui/insignia-cuenta';
 import { AccionesFila } from '../../shared/ui/acciones-fila';
 import { Confirmacion } from '../../shared/ui/confirmacion';
@@ -23,7 +22,6 @@ import { FormularioCategoria } from './formulario-categoria';
     Boton,
     Interruptor,
     TablaPaginada,
-    Tarjeta,
     InsigniaCuenta,
     AccionesFila,
     Confirmacion,
@@ -55,8 +53,8 @@ import { FormularioCategoria } from './formulario-categoria';
       (reintentar)="recargar.next()"
     >
       @for (categoria of categorias(); track categoria.id) {
-        <app-tarjeta role="row" class="fila-responsive grid"
-          ><div role="cell" class="campo-principal font-semibold text-texto">
+        <div role="row" class="fila-responsive grid">
+          <div role="cell" class="campo-principal font-semibold text-texto">
             {{ categoria.name }}
           </div>
           <div role="cell" class="campo-principal break-words text-texto-suave">
@@ -80,8 +78,9 @@ import { FormularioCategoria } from './formulario-categoria';
                 },
               ]"
               (seleccionado)="elegir(categoria, $event)"
-            /></div
-        ></app-tarjeta>
+            />
+          </div>
+        </div>
       }
     </app-tabla-paginada>
     @if (formularioAbierto()) {

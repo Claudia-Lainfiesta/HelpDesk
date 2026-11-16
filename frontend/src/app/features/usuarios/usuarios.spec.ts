@@ -62,6 +62,37 @@ describe('Pantalla de usuarios', () => {
     expect(pagina.routeNativeElement!.textContent).toContain('No hay usuarios');
     expect(pagina.routeNativeElement!.textContent).toContain('otros filtros');
   });
+  it('agrupa usuarios en filas continuas, conservando columnas, temporalidad y acciones', async () => {
+    await abrir();
+    lista([
+      cuentaPrueba(),
+      cuentaPrueba({
+        id: '26',
+        fullName: 'Ana temporal',
+        temporary: true,
+        expiresAt: '2099-12-01T10:00:00Z',
+        isActive: false,
+      }),
+    ]);
+    await pagina.fixture.whenStable();
+    const tabla = pagina.routeNativeElement!.querySelector('[role="table"]')!;
+    expect(
+      Array.from(tabla.querySelectorAll('[role="columnheader"]')).map((e) => e.textContent?.trim()),
+    ).toEqual(['Usuario', 'Rol', 'Estado', 'Último acceso', 'Acciones']);
+    const grupo = tabla.querySelector('[role="rowgroup"]')!;
+    const filas = grupo.querySelectorAll('[role="row"]');
+    expect(filas).toHaveLength(2);
+    expect(tabla.querySelector('app-tarjeta')).toBeNull();
+    for (const fila of filas) {
+      expect(fila.parentElement).toBe(grupo);
+      expect(fila.querySelectorAll('[role="cell"]')).toHaveLength(5);
+      expect(fila.querySelector('button[aria-label^="Editar usuario"]')).not.toBeNull();
+      expect(fila.querySelector('button[aria-label^="Restablecer contraseña"]')).not.toBeNull();
+    }
+    expect(filas[1].textContent).toContain('Temporal');
+    expect(filas[1].textContent).toContain('Vence');
+    expect(filas[1].textContent).toContain('Inactiva');
+  });
   it('muestra el error real y reintenta', async () => {
     await abrir();
     http
