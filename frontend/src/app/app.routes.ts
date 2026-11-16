@@ -63,11 +63,8 @@ export const routes: Routes = [
         path: 'reportes',
         title: 'Reportes · HelpDesk',
         canActivate: [rolGuard('supervisor', 'administrador')],
-        data: { titulo: 'Reportes' },
         loadComponent: () =>
-          import('./features/informacion/pagina-informativa').then(
-            (modulo) => modulo.PaginaInformativa,
-          ),
+          import('./features/reportes/reportes').then((modulo) => modulo.Reportes),
       },
       {
         path: 'sin-permiso',

@@ -52,7 +52,7 @@ aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
 - `/tickets/:id`: detalle, asignación, prioridad, acciones de estado y actividad con notas internas autorizadas.
   El propietario puede abrir Telegram del agente asignado en tickets no terminales.
 - `/categorias` y `/usuarios`: administración real, disponible solo para el administrador.
-- `/reportes`: marcador para supervisor y administrador.
+- `/reportes`: [reportes operativos reales](docs/reportes.md) para supervisor y administrador, con rangos locales, KPIs, distribuciones, tendencia y carga por agente.
 - `/sin-permiso` y página 404: explican por qué no se puede acceder.
 
 Al arrancar se consulta `/api/auth/me` antes de resolver rutas. Así, refrescar

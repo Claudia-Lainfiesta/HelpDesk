@@ -4,7 +4,7 @@ HelpDesk es un sistema web interno de mesa de ayuda, desarrollado como proyecto
 personal/local. Cada cuenta tiene un único rol: solicitante, agente, supervisor
 o administrador. El producto usa autenticación local mediante correo y contraseña.
 
-## Estado funcional · 6-nov-2026
+## Estado funcional · 15-nov-2026
 
 Sprint 1 tiene implementados los núcleos de acceso y administración y Sprint 2
 ya tiene creación, listado, búsqueda, filtros, paginación y detalle de tickets
@@ -32,8 +32,9 @@ las épicas, historias y calendarios describen también trabajo futuro.
 
 Hay asignación/reasignación y nueve transiciones con historial estructurado.
 No hay conversación integrada,
-comentarios públicos, adjuntos posteriores, SLA, base de conocimiento ni
-reportes reales. `/reportes` es un marcador. Los otros cinco estados aparecen
+comentarios públicos, adjuntos posteriores, SLA ni base de conocimiento.
+`/reportes` ofrece métricas reales de solo lectura para supervisor y administrador.
+Los otros cinco estados aparecen
 en el catálogo, las insignias, filtros y datos del seed. Los cambios se ejecutan
 como acciones semánticas autorizadas; Cerrado y Cancelado son terminales.
 
@@ -49,11 +50,12 @@ mientras ese cambio sea obligatorio.
 | Ver tickets propios | Sí | Sí | Sí | Sí |
 | Ver tickets de otros | No; responde 404 en detalle | Sí | Sí | Sí |
 | Consultar categorías activas | Sí | Sí | Sí | Sí |
-| Consultar categorías inactivas | No | No | No | Sí |
+| Consultar categorías inactivas en administración | No | No | No | Sí |
 | Administrar usuarios | No | No | No | Sí |
 | Administrar categorías | No | No | No | Sí |
 | Ver/agregar notas internas | No | Solo asignado; agregar solo si no es terminal | Sí; agregar solo si no es terminal | Sí; agregar solo si no es terminal |
 | Hablar por Telegram con agente | Solo ticket propio no terminal | Solo ticket propio no terminal | Solo ticket propio no terminal | Solo ticket propio no terminal |
+| Consultar reportes y opciones históricas de categoría/agente | No | No | Sí | Sí |
 | Cambiar la propia contraseña | Sí | Sí | Sí | Sí |
 
 El contacto se oculta si el agente asignado es el propio usuario. Las notas
@@ -76,6 +78,7 @@ No hay README ni paquete npm en la raíz. Cada proyecto lleva sus instrucciones:
 - [Diseño y componentes existentes](../frontend/docs/diseno.md).
 - [Pantallas de administración](../frontend/docs/pantallas-administracion.md).
 - [Pantallas de tickets](../frontend/docs/tickets.md).
+- [Reportes: API y métricas](../backend/docs/reports.md) y [pantalla](../frontend/docs/reportes.md).
 - [Guía de contribución y CI](Guia-de-contribucion.md).
 - [Decisiones de producto y pendientes](Decisiones-de-producto.md).
 - [POC de Telegram y límites](Telegram-prueba-de-concepto.md).

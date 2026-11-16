@@ -1,0 +1,230 @@
+<section class="space-y-6">
+  <header>
+    <h1 class="text-[28px] font-bold text-primario">Reportes</h1>
+    <p class="mt-1 text-texto-suave">
+      Consulta el comportamiento de los tickets y la carga de soporte.
+    </p>
+  </header>
+  <app-tarjeta class="p-5">
+    <form
+      [formGroup]="formulario"
+      (ngSubmit)="aplicar()"
+      class="space-y-4"
+      aria-label="Filtros de reportes"
+    >
+      <div class="grid gap-4 md:grid-cols-3">
+        <app-selector
+          identificador="reportes-rango"
+          etiqueta="Rango"
+          formControlName="range"
+          [opciones]="rangos"
+        />
+        <app-campo-fecha
+          tipo="date"
+          identificador="reportes-desde"
+          etiqueta="Desde"
+          formControlName="from"
+        />
+        <app-campo-fecha
+          tipo="date"
+          identificador="reportes-hasta"
+          etiqueta="Hasta"
+          formControlName="to"
+        />
+      </div>
+      <div class="grid items-end gap-4 md:grid-cols-[1fr_1fr_auto]">
+        <app-selector
+          identificador="reportes-categoria"
+          etiqueta="Categoría"
+          formControlName="categoryId"
+          [opciones]="categorias()"
+        />
+        <app-selector
+          identificador="reportes-agente"
+          etiqueta="Agente"
+          formControlName="agentId"
+          [opciones]="agentes()"
+        />
+        <app-boton tipo="submit">Aplicar filtros</app-boton>
+      </div>
+      @if (errorFechas()) {
+        <app-alerta variante="peligro">{{ errorFechas() }}</app-alerta>
+      }
+      <p class="text-xs text-texto-suave">
+        Ambas fechas incluidas, en tu zona horaria local. Máximo 365 días. Agente corresponde a la
+        asignación actual del ticket.
+      </p>
+    </form>
+  </app-tarjeta>
+  @if (cargando()) {
+    <p role="status" class="py-12 text-center text-texto-suave">Cargando reportes...</p>
+  } @else if (error()) {
+    <app-alerta variante="peligro">{{ error() }}</app-alerta>
+    <app-boton variante="secundario" (accion)="recargar.next()">Reintentar</app-boton>
+  } @else if (datos(); as r) {
+    <section aria-label="Indicadores generales" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <app-tarjeta class="p-5"
+        ><h2 class="text-sm text-texto-suave">Tickets creados</h2>
+        <p class="mt-2 text-3xl font-bold text-primario">
+          {{ r.summary.kpis.created }}
+        </p></app-tarjeta
+      >
+      <app-tarjeta class="p-5"
+        ><h2 class="text-sm text-texto-suave">Tickets resueltos</h2>
+        <p class="mt-2 text-3xl font-bold text-primario">
+          {{ r.summary.kpis.resolved }}
+        </p></app-tarjeta
+      >
+      <app-tarjeta class="p-5"
+        ><h2 class="text-sm text-texto-suave">Tickets cerrados</h2>
+        <p class="mt-2 text-3xl font-bold text-primario">
+          {{ r.summary.kpis.closed }}
+        </p></app-tarjeta
+      >
+      <app-tarjeta class="p-5"
+        ><h2 class="text-sm text-texto-suave">Tickets cancelados</h2>
+        <p class="mt-2 text-3xl font-bold text-primario">
+          {{ r.summary.kpis.canceled }}
+        </p></app-tarjeta
+      >
+      <app-tarjeta class="p-5"
+        ><h2 class="text-sm text-texto-suave">Pendientes actuales</h2>
+        <p class="mt-2 text-3xl font-bold text-primario">{{ r.summary.kpis.pendingNow }}</p>
+        <p class="mt-2 text-xs text-texto-suave">
+          Fotografía actual, independiente del rango. Incluye Resuelto.
+        </p></app-tarjeta
+      >
+      <app-tarjeta class="p-5"
+        ><h2 class="text-sm text-texto-suave">Tiempo medio de resolución</h2>
+        <p class="mt-2 text-2xl font-bold text-primario">
+          {{ duracion(r.summary.kpis.averageResolutionMinutes) }}
+        </p>
+        <p class="mt-2 text-xs text-texto-suave">
+          Desde creación hasta resolución vigente en el período.
+        </p></app-tarjeta
+      >
+      <app-tarjeta class="p-5"
+        ><h2 class="text-sm text-texto-suave">Tiempo medio de cierre</h2>
+        <p class="mt-2 text-2xl font-bold text-primario">
+          {{ duracion(r.summary.kpis.averageCloseMinutes) }}
+        </p></app-tarjeta
+      >
+    </section>
+    @if (sinEventos()) {
+      <app-alerta variante="info"
+        >No hay datos para los filtros seleccionados en este período. Los pendientes y asignados
+        actuales se muestran por separado.</app-alerta
+      >
+    }
+    @if (!sinEventos()) {
+      <p class="text-sm text-texto-suave">
+        Las distribuciones muestran el estado, prioridad y categoría actuales de los tickets creados
+        en el rango.
+      </p>
+      <div class="grid items-start gap-5 lg:grid-cols-3">
+        <app-tarjeta class="p-5"
+          ><h2 class="mb-5 text-lg font-bold text-primario">Tickets por estado</h2>
+          <app-barras-reporte [items]="barrasEstado()"
+        /></app-tarjeta>
+        <app-tarjeta class="p-5"
+          ><h2 class="mb-5 text-lg font-bold text-primario">Tickets por prioridad</h2>
+          <app-barras-reporte [items]="barrasPrioridad()"
+        /></app-tarjeta>
+        <app-tarjeta class="p-5"
+          ><h2 class="mb-5 text-lg font-bold text-primario">Tickets por categoría</h2>
+          @if (barrasCategoria().length) {
+            <app-barras-reporte [items]="barrasCategoria()" />
+          } @else {
+            <p class="text-texto-suave">Sin tickets creados en este período.</p>
+          }
+        </app-tarjeta>
+      </div>
+      <app-tarjeta class="p-5">
+        <h2 class="text-lg font-bold text-primario">Evolución de tickets</h2>
+        <p class="mb-4 mt-1 text-sm text-texto-suave">
+          Por {{ granularidad() }}, en {{ r.trend.timeZone }}. Cada serie usa su fecha de evento;
+          los extremos pueden ser períodos parciales.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[650px] text-left">
+            <caption class="sr-only">
+              Eventos del período: cantidades y barras comparables. Los períodos sin eventos tienen
+              valor cero.
+            </caption>
+            <thead class="border-b border-linea text-xs uppercase text-texto-suave">
+              <tr>
+                <th scope="col" class="p-3">Inicio del período</th>
+                @for (serie of series; track serie.clave) {
+                  <th scope="col" class="p-3">{{ serie.etiqueta }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of r.trend.items; track item.bucket) {
+                <tr class="border-b border-linea">
+                  <th scope="row" class="p-3 font-medium">{{ fechaBucket(item.bucket) }}</th>
+                  @for (serie of series; track serie.clave) {
+                    <td class="p-3">
+                      <span>{{ item[serie.clave] }}</span>
+                      <div class="mt-1 h-2 rounded-boton bg-fondo" aria-hidden="true">
+                        <div
+                          [class]="'h-full rounded-boton ' + serie.clase"
+                          [style.width.%]="(item[serie.clave] / maximoTendencia()) * 100"
+                        ></div>
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </app-tarjeta>
+    }
+    <app-tarjeta class="p-5">
+      <h2 class="text-lg font-bold text-primario">Actividad por agente</h2>
+      <p class="mb-4 mt-1 text-sm text-texto-suave">
+        Asignación actual, también para resoluciones y cierres históricos. Ordenado por resueltos;
+        no mide la complejidad del trabajo. Telegram y notas no se cuentan.
+      </p>
+      @if (r.agents.items.length) {
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[700px] text-left">
+            <caption class="sr-only">
+              Carga actual y eventos en el rango por agente
+            </caption>
+            <thead class="border-b border-linea text-xs uppercase text-texto-suave">
+              <tr>
+                <th scope="col" class="p-3">Agente</th>
+                <th scope="col" class="p-3">Asignados actualmente</th>
+                <th scope="col" class="p-3">Resueltos</th>
+                <th scope="col" class="p-3">Cerrados</th>
+                <th scope="col" class="p-3">Tiempo medio de resolución</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of r.agents.items; track item.agent.id) {
+                <tr class="border-b border-linea">
+                  <th scope="row" class="p-3 font-medium">
+                    {{ item.agent.fullName }}
+                    @if (!item.agent.isActive) {
+                      <span class="text-xs text-texto-suave">(Inactivo)</span>
+                    }
+                  </th>
+                  <td class="p-3">{{ item.assignedNow }}</td>
+                  <td class="p-3">{{ item.resolvedInRange }}</td>
+                  <td class="p-3">{{ item.closedInRange }}</td>
+                  <td class="p-3">{{ duracion(item.averageResolutionMinutes) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="text-texto-suave">
+          No hay agentes con actividad en el período ni carga actual para estos filtros.
+        </p>
+      }
+    </app-tarjeta>
+  }
+</section>

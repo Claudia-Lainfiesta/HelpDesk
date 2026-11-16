@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, forwardRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, forwardRef, input } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ControlCampo } from './control-campo';
 
@@ -15,7 +15,7 @@ import { ControlCampo } from './control-campo';
       [class]="ocultarEtiqueta() ? 'sr-only' : 'mb-2 block font-semibold text-texto-suave'"
       >{{ etiqueta() }}</label
     ><input
-      type="datetime-local"
+      [type]="tipo()"
       [id]="identificador()"
       [value]="valor()"
       [disabled]="deshabilitado()"
@@ -34,4 +34,6 @@ import { ControlCampo } from './control-campo';
       </p>
     }`,
 })
-export class CampoFecha extends ControlCampo {}
+export class CampoFecha extends ControlCampo {
+  readonly tipo = input<'date' | 'datetime-local'>('datetime-local');
+}

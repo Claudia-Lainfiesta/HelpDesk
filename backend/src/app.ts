@@ -1,5 +1,6 @@
 import express from 'express';
 import { ticketsRouter } from './tickets/routes.js';
+import { reportsRouter } from './reports/routes.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import { env } from './config/env.js';
@@ -50,6 +51,7 @@ export function createApp(
   );
   app.use('/api/categories', categoriesRouter);
   app.use('/api/tickets', ticketsRouter());
+  app.use('/api/reports', reportsRouter);
   app.use(notFound);
   app.use(errorHandler);
   return app;

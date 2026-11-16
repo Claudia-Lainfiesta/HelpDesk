@@ -7,7 +7,7 @@ Incluye autenticación con sesiones en el servidor. Consulta [la guía de autent
 Incluye [administración de usuarios, cuentas temporales y categorías](docs/users-and-categories.md),
 con auditoría administrativa y [tickets reales](docs/tickets.md): alta propia,
 listado, búsqueda, filtros, paginación y detalle. Incluye asignación, prioridad, transiciones, actividad, notas internas y contacto directo con el agente por Telegram. No hay comentarios públicos,
-adjuntos posteriores, SLA ni reportes reales. Al crear admite una imagen JPEG/PNG/WebP de hasta 10 MiB, guardada en PostgreSQL.
+adjuntos posteriores ni SLA. Los [reportes operativos](docs/reports.md) son de solo lectura para supervisor y administrador: métricas por evento, distribuciones, tendencia y carga actual por agente. Al crear admite una imagen JPEG/PNG/WebP de hasta 10 MiB, guardada en PostgreSQL.
 
 ## Desarrollo local en Fedora con Podman
 
@@ -199,7 +199,8 @@ refleja el núcleo actual. Los errores comunes son 400 INVALID_INPUT/INVALID_JSO
 PASSWORD_CHANGE_REQUIRED y 415 JSON_REQUIRED. Los códigos específicos, límites,
 cuerpos y ejemplos están en [auth](docs/auth.md), [usuarios/categorías](docs/users-and-categories.md),
 [recuperación](docs/email-and-recovery.md) y [tickets](docs/tickets.md).
-No hay endpoints de comentarios públicos, archivos, SLA o reportes. El contacto directo
+Consulta también los [siete endpoints GET de reportes](docs/reports.md), exclusivos de supervisor y administrador.
+No hay endpoints de comentarios públicos, archivos genéricos ni SLA. El contacto directo
 por Telegram no requiere bot ni webhook. Su POC anterior se conserva aislada para experimentación.
 
 ## Comprobaciones
