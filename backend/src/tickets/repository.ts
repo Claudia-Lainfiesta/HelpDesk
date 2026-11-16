@@ -7,10 +7,11 @@ const select = `SELECT t.id::text, t.reference AS number, t.subject, t.descripti
  s.code AS status, c.id::text AS category_id, c.name AS category_name,
  u.id::text AS requester_id, u.full_name AS requester_name, u.email AS requester_email,
  a.id::text AS agent_id, a.full_name AS agent_name, a.email AS agent_email,
- t.created_at, t.updated_at, t.resolved_at, t.closed_at, t.canceled_at
+ t.created_at, t.updated_at, t.resolved_at, t.closed_at, t.canceled_at,
+ ta.id::text AS attachment_id,ta.original_filename AS attachment_name,ta.mime_type AS attachment_mime,ta.size_bytes AS attachment_size
  FROM tickets t JOIN ticket_statuses s ON s.id=t.status_id
  JOIN categories c ON c.id=t.category_id JOIN users u ON u.id=t.requester_id
- LEFT JOIN users a ON a.id=t.assigned_agent_id`;
+ LEFT JOIN users a ON a.id=t.assigned_agent_id LEFT JOIN ticket_attachments ta ON ta.ticket_id=t.id`;
 interface TicketRow {
   id: string;
   number: string;
@@ -31,6 +32,10 @@ interface TicketRow {
   resolved_at: Date | null;
   closed_at: Date | null;
   canceled_at: Date | null;
+  attachment_id: string | null;
+  attachment_name: string | null;
+  attachment_mime: string | null;
+  attachment_size: number | null;
 }
 function view(row: TicketRow) {
   return {
@@ -39,6 +44,14 @@ function view(row: TicketRow) {
     subject: row.subject,
     description: row.description,
     priority: row.priority,
+    attachment: row.attachment_id
+      ? {
+          id: row.attachment_id,
+          fileName: row.attachment_name!,
+          mimeType: row.attachment_mime!,
+          sizeBytes: row.attachment_size!,
+        }
+      : null,
     status: row.status!,
     category: { id: row.category_id, name: row.category_name },
     requester: { id: row.requester_id, fullName: row.requester_name, email: row.requester_email },

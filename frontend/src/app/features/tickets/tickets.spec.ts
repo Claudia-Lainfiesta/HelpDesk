@@ -20,6 +20,7 @@ const ticket: Ticket = {
   description: 'Primera línea\n<img src=x onerror=alert(1)>',
   status: 'creado',
   priority: 'media',
+  attachment: null,
   category: { id: '8', name: 'Hardware' },
   requester: { id: '5', fullName: 'Ana', email: 'ana@example.invalid' },
   assignedAgent: null,
@@ -285,7 +286,12 @@ describe('Nuevo ticket', () => {
     c.enviar();
     expect(c.enviando()).toBe(true);
     const r = http.expectOne('/api/tickets');
-    expect(r.request.body).toEqual({ subject: 'Impresora', description: 'Texto', categoryId: '8' });
+    expect(r.request.body instanceof FormData).toBe(true);
+    expect(Object.fromEntries((r.request.body as FormData).entries())).toEqual({
+      subject: 'Impresora',
+      description: 'Texto',
+      categoryId: '8',
+    });
     r.flush(ticket);
     expect(result).toEqual(ticket);
     expect(c.enviando()).toBe(false);

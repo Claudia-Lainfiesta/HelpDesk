@@ -20,6 +20,12 @@ import {
   telegramContact,
 } from './operations.js';
 import { ticketEvents } from './activity.js';
+import {
+  receiveTicketImage,
+  validateTicketImage,
+  getTicketImage,
+  imageDisposition,
+} from './attachments.js';
 export function ticketsRouter(): Router {
   const router = Router();
   router.use(requireAuth);
@@ -30,9 +36,25 @@ export function ticketsRouter(): Router {
   router.get('/', async (req, res) => {
     res.json(await listTickets(input(ticketFiltersSchema, req.query), req.auth!.user));
   });
-  router.post('/', async (req, res) => {
-    const ticket = await createTicket(input(createTicketSchema, req.body), req.auth!.user, req.ip);
+  router.post('/', receiveTicketImage, async (req, res) => {
+    const image = validateTicketImage(req.file);
+    const ticket = await createTicket(
+      input(createTicketSchema, req.body),
+      req.auth!.user,
+      req.ip,
+      image,
+    );
     res.location(`/api/tickets/${ticket.id}`).status(201).json(ticket);
+  });
+  router.get('/:id/attachment', async (req, res) => {
+    const image = await getTicketImage(input(idSchema, req.params.id), req.auth!.user);
+    res.set({
+      'Content-Type': image.mime_type,
+      'Content-Length': String(image.size_bytes),
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Disposition': imageDisposition(image.original_filename),
+    });
+    res.send(image.data);
   });
   router.get(
     '/assignable-agents',

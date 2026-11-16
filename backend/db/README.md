@@ -173,6 +173,7 @@ erDiagram
     ticket_statuses ||--o{ tickets : status_id
     tickets ||--o{ ticket_events : ticket_id
     tickets ||--o{ ticket_notes : ticket_id
+    tickets ||--o| ticket_attachments : ticket_id
     users ||--o{ ticket_notes : author_user_id
     ticket_notes o|--o{ ticket_events : note_id
     users ||--o{ ticket_events : actor_user_id
@@ -181,6 +182,15 @@ erDiagram
     ticket_statuses o|--o{ ticket_events : from_status
     ticket_statuses o|--o{ ticket_events : to_status
 
+    ticket_attachments {
+        bigint id PK
+        bigint ticket_id FK,UK
+        text original_filename
+        text mime_type "JPEG, PNG o WebP"
+        integer size_bytes "1 a 10485760"
+        bytea data
+        timestamptz created_at
+    }
     ticket_notes {
         bigint id PK
         bigint ticket_id FK
@@ -352,3 +362,14 @@ para un usuario convencional de Telegram (5–32 caracteres). Lo administra el
 administrador y permite construir https://t.me/usuario para el propietario del
 ticket. No guarda ID numérico, token, vínculos por bot ni conversaciones Telegram.
 Consulta [contratos y permisos](../docs/tickets.md).
+
+## Imagen inicial
+
+0017_ticket_attachments.sql añade una imagen opcional por ticket, solo al crearlo:
+ticket_attachments con UNIQUE(ticket_id), FK RESTRICT, metadata, BYTEA y fecha.
+Los CHECK limitan MIME a JPEG/PNG/WebP, tamaño a 1–10485760 bytes (10 MiB) y exigen
+que octet_length(data) coincida con size_bytes. No necesita otro índice además de
+PK y UNIQUE. No modifica tickets previos ni el seed normal; las imágenes de prueba
+son fixtures de 2×2 píxeles. Ticket, imagen, evento y auditoría se insertan en una
+transacción. La API solo expone metadata en JSON y ofrece una lectura binaria
+protegida; no hay mutaciones posteriores. Consulta [tickets](../docs/tickets.md).

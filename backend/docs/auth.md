@@ -48,7 +48,10 @@ Todos los POST, PUT, PATCH y DELETE requieren `Origin` igual a
 `FRONTEND_ORIGIN`. Solo cuando falta ese encabezado se acepta el origen de
 `Referer`; si falta también, se rechaza con 403 `CSRF_REJECTED`. El cuerpo debe
 ser `application/json` (415 `JSON_REQUIRED` en caso contrario), incluido logout
-con `{}`. La validación sucede antes de procesar las credenciales.
+con `{}`. La única excepción es multipart/form-data en POST /api/tickets para
+su imagen inicial: conserva la misma comprobación de origen, sesión y contraseña
+definitiva. Ninguna ruta de autenticación acepta multipart. La validación sucede
+antes de procesar las credenciales.
 CORS permite credenciales exclusivamente al origen configurado.
 
 Cinco fallos consecutivos bloquean la cuenta durante 15 minutos. Un acceso

@@ -49,7 +49,8 @@ describe('TicketsApi', () => {
     api.crear(body).subscribe();
     const r = http.expectOne('/api/tickets');
     expect(r.request.method).toBe('POST');
-    expect(r.request.body).toEqual(body);
+    expect(r.request.body instanceof FormData).toBe(true);
+    expect(Object.fromEntries((r.request.body as FormData).entries())).toEqual(body);
     r.flush({});
   });
 
@@ -95,5 +96,21 @@ describe('TicketsApi', () => {
       available: false,
       message: 'El agente asignado no tiene Telegram disponible.',
     });
+  });
+  it('crea con imagen en FormData sin agregar metadata autoritativa ni Content-Type', () => {
+    const image = new File(['fixture'], 'foto.png', { type: 'image/png' });
+    api
+      .crear({ subject: 'Asunto', description: 'Descripción', categoryId: '4' }, image)
+      .subscribe();
+    const r = http.expectOne('/api/tickets');
+    const body = r.request.body as FormData;
+    expect([...body.keys()]).toEqual(['subject', 'description', 'categoryId', 'image']);
+    expect(body.get('image')).toBe(image);
+    expect(r.request.headers.has('Content-Type')).toBe(false);
+    r.flush({});
+    api.imagen('123').subscribe();
+    const read = http.expectOne('/api/tickets/123/attachment');
+    expect(read.request.responseType).toBe('blob');
+    read.flush(new Blob(['fixture'], { type: 'image/png' }));
   });
 });

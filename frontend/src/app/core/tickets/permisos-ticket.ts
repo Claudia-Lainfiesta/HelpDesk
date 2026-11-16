@@ -55,6 +55,9 @@ export function permisosTicket(t: Ticket, u: Usuario | null) {
     notasVisibles: gestiona || asignado,
     seguimientoEditable: !['cerrado', 'cancelado'].includes(t.status) && (gestiona || asignado),
     telegramVisible:
-      propietario && !['cerrado', 'cancelado'].includes(t.status) && t.assignedAgent?.id !== u.id,
+      propietario &&
+      !!t.assignedAgent &&
+      !['cerrado', 'cancelado'].includes(t.status) &&
+      t.assignedAgent.id !== u.id,
   };
 }

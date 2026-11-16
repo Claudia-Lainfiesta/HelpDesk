@@ -19,6 +19,12 @@ export interface Ticket {
   description: string;
   status: EstadoTicket;
   priority: TicketPriority;
+  attachment: {
+    id: string;
+    fileName: string;
+    mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+    sizeBytes: number;
+  } | null;
   category: { id: string; name: string };
   requester: PersonaTicket;
   assignedAgent: PersonaTicket | null;
@@ -101,8 +107,18 @@ export class TicketsApi {
       params: { page, pageSize },
     });
   }
-  crear(datos: CrearTicket) {
-    return this.http.post<Ticket>(this.base, datos);
+  crear(datos: CrearTicket, imagen?: File) {
+    const body = new FormData();
+    body.set('subject', datos.subject);
+    body.set('description', datos.description);
+    body.set('categoryId', datos.categoryId);
+    if (imagen) body.set('image', imagen);
+    return this.http.post<Ticket>(this.base, body);
+  }
+  imagen(id: string) {
+    return this.http.get(`${this.base}/${encodeURIComponent(id)}/attachment`, {
+      responseType: 'blob',
+    });
   }
   agregarNota(id: string, body: string) {
     return this.http.post<NotaTicket>(`${this.base}/${encodeURIComponent(id)}/notes`, { body });

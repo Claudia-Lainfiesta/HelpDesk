@@ -40,9 +40,19 @@ export function telegramContact(id: string, user: UserProfile) {
     if (!row?.available || !row.telegram_username)
       return {
         available: false as const,
-        message: 'El agente asignado no tiene Telegram disponible.',
+        message: 'Este agente no tiene Telegram configurado.',
       };
-    return { available: true as const, url: `https://t.me/${row.telegram_username}` };
+    const stored = await client.query<{ reference: string; subject: string }>(
+      'SELECT reference,subject FROM tickets WHERE id=$1',
+      [id],
+    );
+    const current = stored.rows[0]!;
+    const url = new URL(`https://t.me/${row.telegram_username}`);
+    url.searchParams.set(
+      'text',
+      `Hola, te contacto por el ticket ${current.reference}: "${current.subject}".`,
+    );
+    return { available: true as const, url: url.toString() };
   });
 }
 

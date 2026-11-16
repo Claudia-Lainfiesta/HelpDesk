@@ -61,7 +61,8 @@ memoria mediante signals. No usa localStorage, sessionStorage ni cookies
 legibles desde JavaScript. La cookie HttpOnly pertenece al servidor.
 
 Las peticiones a la API incluyen credenciales. Las escrituras llevan JSON,
-incluso logout con `{}`. Ante una sesión rechazada se vuelve a login con una
+incluso logout con `{}`. La creación de tickets usa FormData para una imagen opcional;
+el navegador fija el Content-Type multipart y su boundary. Ante una sesión rechazada se vuelve a login con una
 ruta interna de retorno; una contraseña temporal obliga al cambio, sin menú.
 Un 401 `INVALID_CREDENTIALS` al cambiar contraseña se muestra en el formulario:
 indica contraseña actual incorrecta y no invalida una sesión todavía válida.
@@ -162,3 +163,11 @@ El administrador puede configurar el @usuario público de Telegram al crear o ed
 una cuenta en Usuarios. El contacto directo no utiliza el bot ni requiere su token.
 Las notas internas solo están disponibles para agente asignado, supervisor y
 administrador; no se editan ni eliminan. Consulta [tickets](docs/tickets.md).
+
+Nuevo ticket admite una imagen opcional JPEG/PNG/WebP, máximo **10 MiB
+(10485760 bytes)**, con preview y opción de quitarla antes de crear. Solo se
+almacena en PostgreSQL. En el detalle se carga con sesión y puede ampliarse;
+no existe subida, reemplazo o borrado posterior. Los ObjectURL se liberan y no
+se usa almacenamiento web. Consulta [tickets](docs/tickets.md).
+El enlace Telegram incluye un borrador con número y asunto generado por el backend;
+el usuario decide si pulsa Enviar. HelpDesk no almacena ni sincroniza esa conversación.

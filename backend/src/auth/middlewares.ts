@@ -61,7 +61,9 @@ export function csrfProtection(config: AuthConfig): RequestHandler {
       next(new ApiError(403, 'CSRF_REJECTED', 'El origen de la petición no está permitido.'));
       return;
     }
-    if (!req.is('application/json')) {
+    const ticketUpload =
+      req.method === 'POST' && req.path === '/api/tickets' && req.is('multipart/form-data');
+    if (!req.is('application/json') && !ticketUpload) {
       next(new ApiError(415, 'JSON_REQUIRED', 'El cuerpo debe ser application/json.'));
       return;
     }

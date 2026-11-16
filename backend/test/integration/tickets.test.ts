@@ -81,6 +81,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
       await pool.query('DELETE FROM audit_events');
       await pool.query('DELETE FROM ticket_events');
       await pool.query('DELETE FROM ticket_notes');
+      await pool.query('DELETE FROM ticket_attachments');
       await pool.query('DELETE FROM tickets');
       await pool.query('DELETE FROM sessions');
       await pool.query('DELETE FROM users');
@@ -1208,7 +1209,11 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
     expect(updated.body.telegramUsername).toBe('agente_prueba');
     const r = await contact(t.id);
     expect(r.status).toBe(200);
-    expect(r.body).toEqual({ available: true, url: 'https://t.me/agente_prueba' });
+    const target = new URL(r.body.url);
+    expect(target.origin + target.pathname).toBe('https://t.me/agente_prueba');
+    expect(target.searchParams.get('text')).toBe(
+      `Hola, te contacto por el ticket ${t.number}: "${t.subject}".`,
+    );
     expect(JSON.stringify(r.body)).not.toMatch(/token|chatId|userId/);
     expect((await detail(t.id)).body).toEqual(t);
     expect((await events(t.id, agente)).body.total).toBe(1);
@@ -1227,7 +1232,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
     ).toBe(200);
     expect((await contact(t.id)).body).toEqual({
       available: false,
-      message: 'El agente asignado no tiene Telegram disponible.',
+      message: 'Este agente no tiene Telegram configurado.',
     });
   });
   it('contacto requiere propietario, no rol de soporte; sin agente o Telegram devuelve mensaje no técnico', async () => {
@@ -1243,7 +1248,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
       expect((await contact(t.id, actor)).status).toBe(403);
     expect((await contact(t.id)).body).toEqual({
       available: false,
-      message: 'El agente asignado no tiene Telegram disponible.',
+      message: 'Este agente no tiene Telegram configurado.',
     });
     const own = await state('creado', agente.id, agente);
     expect((await contact(own.id, agente)).status).toBe(403);
@@ -1302,4 +1307,270 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
       ]),
     ).rejects.toMatchObject({ code: '23514' });
   });
+
+  const fixture = (name: string) =>
+    readFile(new URL(`../fixtures/images/${name}`, import.meta.url));
+  const multipart = (
+    actor: Account = solicitante,
+    fields: Record<string, string> = {
+      subject: 'Impresora',
+      description: 'Descripción segura',
+      categoryId: category,
+    },
+  ) => {
+    const r = request(app).post('/api/tickets').set('Origin', origin).set('Cookie', actor.cookie);
+    for (const [key, value] of Object.entries(fields)) r.field(key, value);
+    return r;
+  };
+  it('multipart sin imagen conserva creación, metadata null y prioridad Media', async () => {
+    const r = await multipart();
+    expect(r.status).toBe(201);
+    expect(r.body.attachment).toBeNull();
+    expect(r.body.priority).toBe('media');
+    expect(r.body.number).toMatch(/^TK-\d{6,}$/);
+  });
+  it.each([
+    ['valid.jpg', 'image/jpeg', 'foto.jpg'],
+    ['valid.jpg', 'image/jpeg', 'foto.jpeg'],
+    ['valid.png', 'image/png', 'foto.png'],
+    ['valid.webp', 'image/webp', 'foto.webp'],
+  ])('crea con %s, persiste BYTEA y protege bytes/headers', async (file, mime, name) => {
+    const data = await fixture(file);
+    const r = await multipart().attach('image', data, { filename: name, contentType: mime });
+    expect(r.status).toBe(201);
+    expect(r.body.attachment).toEqual({
+      id: expect.any(String),
+      fileName: name,
+      mimeType: mime,
+      sizeBytes: data.length,
+    });
+    expect(r.body.priority).toBe('media');
+    expect(r.body.number).toMatch(/^TK-\d{6,}$/);
+    expect((await detail(r.body.id)).body.attachment).toEqual(r.body.attachment);
+    expect((await list()).body.data[0].attachment).toEqual(r.body.attachment);
+    const stored = (
+      await pool.query(
+        'SELECT data,original_filename,mime_type FROM ticket_attachments WHERE ticket_id=$1',
+        [r.body.id],
+      )
+    ).rows[0];
+    expect(stored.data).toEqual(data);
+    expect(stored.mime_type).toBe(mime);
+    for (const actor of [solicitante, agente, supervisor, admin]) {
+      const image = await request(app)
+        .get(`/api/tickets/${r.body.id}/attachment`)
+        .set('Cookie', actor.cookie);
+      expect(image.status).toBe(200);
+      expect(image.body).toEqual(data);
+      expect(image.headers['content-type']).toBe(mime);
+      expect(image.headers['content-length']).toBe(String(data.length));
+      expect(image.headers['x-content-type-options']).toBe('nosniff');
+      expect(image.headers['content-disposition']).toContain(`inline; filename="${name}"`);
+      expect(image.headers['cache-control']).toBe('no-store');
+    }
+    expect(
+      (await request(app).get(`/api/tickets/${r.body.id}/attachment`).set('Cookie', otro.cookie))
+        .status,
+    ).toBe(404);
+    expect((await events(r.body.id)).body.total).toBe(1);
+    const audit = (await pool.query('SELECT action,metadata FROM audit_events')).rows;
+    expect(audit).toHaveLength(1);
+    expect(audit[0].action).toBe('ticket.created');
+    expect(audit[0].metadata).not.toHaveProperty('data');
+    expect(audit[0].metadata).not.toHaveProperty('fileName');
+    await expect(
+      pool.query(
+        'INSERT INTO ticket_attachments(ticket_id,original_filename,mime_type,size_bytes,data) VALUES($1,$2,$3,$4,$5)',
+        [r.body.id, name, mime, data.length, data],
+      ),
+    ).rejects.toMatchObject({ code: '23505' });
+  });
+  it('permite exactamente 10 MiB y rechaza el byte siguiente', async () => {
+    const small = await fixture('valid.png');
+    const max = Buffer.concat([small, Buffer.alloc(10 * 1024 * 1024 - small.length)]);
+    const ok = await multipart().attach('image', max, {
+      filename: 'limite.png',
+      contentType: 'image/png',
+    });
+    expect(ok.status).toBe(201);
+    expect(ok.body.attachment.sizeBytes).toBe(10 * 1024 * 1024);
+    const fail = await multipart().attach('image', Buffer.concat([max, Buffer.from([0])]), {
+      filename: 'exceso.png',
+      contentType: 'image/png',
+    });
+    expect(fail.status).toBe(413);
+    expect(fail.body.error.code).toBe('IMAGE_TOO_LARGE');
+    expect((await list()).body.total).toBe(1);
+  });
+  it.each([
+    ['invalid.gif', 'image/gif', 'imagen.gif'],
+    ['invalid.pdf', 'application/pdf', 'archivo.pdf'],
+    ['invalid.pdf', 'image/jpeg', 'renombrado.jpg'],
+    ['valid.png', 'image/jpeg', 'imagen.jpg'],
+    ['valid.png', 'image/png', 'imagen.exe'],
+    ['valid.jpg', 'image/png', 'imagen.jpg'],
+  ])('rechaza contenido/MIME/extensión incoherentes %s/%s/%s', async (file, mime, name) => {
+    const r = await multipart().attach('image', await fixture(file), {
+      filename: name,
+      contentType: mime,
+    });
+    expect(r.status).toBe(400);
+    expect(r.body.error.code).toBe('INVALID_IMAGE');
+    expect((await list()).body.total).toBe(0);
+  });
+  it.each([
+    Buffer.alloc(0),
+    Buffer.from('contenido falso'),
+    Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>'),
+  ])('rechaza archivo vacío/falso/SVG %#', async (data) => {
+    const r = await multipart().attach('image', data, {
+      filename: 'imagen.png',
+      contentType: 'image/png',
+    });
+    expect(r.status).toBe(400);
+    expect(r.body.error.code).toBe('INVALID_IMAGE');
+  });
+  it('rechaza dos archivos, campo de archivo inesperado y campos de autoridad', async () => {
+    const data = await fixture('valid.png');
+    const twice = await multipart()
+      .attach('image', data, { filename: 'uno.png', contentType: 'image/png' })
+      .attach('image', data, { filename: 'dos.png', contentType: 'image/png' });
+    expect(twice.status).toBe(400);
+    expect(
+      (await multipart().attach('otro', data, { filename: 'uno.png', contentType: 'image/png' }))
+        .status,
+    ).toBe(400);
+    for (const field of ['requesterId', 'status', 'priority', 'assignedAgentId', 'createdAt'])
+      expect(
+        (
+          await multipart(solicitante, {
+            subject: 'Asunto',
+            description: 'Texto',
+            categoryId: category,
+            [field]: '1',
+          })
+        ).status,
+      ).toBe(400);
+    for (const fields of [
+      { subject: '   ', description: 'Texto', categoryId: category },
+      { subject: 'x'.repeat(161), description: 'Texto', categoryId: category },
+      { subject: 'Asunto', description: 'x'.repeat(5001), categoryId: category },
+    ])
+      expect(
+        (
+          await multipart(solicitante, fields).attach('image', data, {
+            filename: 'uno.png',
+            contentType: 'image/png',
+          })
+        ).status,
+      ).toBe(400);
+    expect((await list()).body.total).toBe(0);
+  });
+  it('multipart conserva CSRF, autenticación y categoría activa; no se habilita en otras rutas', async () => {
+    const data = await fixture('valid.png');
+    expect(
+      (await request(app).post('/api/tickets').set('Origin', origin).field('subject', 'Sin sesión'))
+        .status,
+    ).toBe(401);
+    expect(
+      (
+        await request(app)
+          .post('/api/tickets')
+          .set('Origin', 'https://otro.invalid')
+          .set('Cookie', solicitante.cookie)
+          .field('subject', 'Origen ajeno')
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .post('/api/auth/login')
+          .set('Origin', origin)
+          .field('email', 'persona@example.invalid')
+      ).status,
+    ).toBe(415);
+    await pool.query('UPDATE categories SET is_active=false WHERE id=$1', [category]);
+    const r = await multipart().attach('image', data, {
+      filename: 'foto.png',
+      contentType: 'image/png',
+    });
+    expect(r.body.error.code).toBe('CATEGORY_INACTIVE');
+    expect((await pool.query('SELECT count(*)::int AS n FROM ticket_attachments')).rows[0].n).toBe(
+      0,
+    );
+  });
+  it.each(['ticket_attachments', 'ticket_events', 'audit_events'])(
+    'fallo en %s revierte ticket, imagen, actividad y auditoría',
+    async (table) => {
+      const condition = {
+        ticket_attachments: 'size_bytes<0',
+        ticket_events: "event_type<>'created'",
+        audit_events: "action<>'ticket.created'",
+      }[table]!;
+      await pool.query(`ALTER TABLE ${table} ADD CONSTRAINT reject_image CHECK(${condition})`);
+      try {
+        const r = await multipart().attach('image', await fixture('valid.png'), {
+          filename: 'foto.png',
+          contentType: 'image/png',
+        });
+        expect(r.status).toBe(500);
+        for (const target of ['tickets', 'ticket_attachments', 'ticket_events', 'audit_events'])
+          expect((await pool.query(`SELECT count(*)::int AS n FROM ${target}`)).rows[0].n).toBe(0);
+      } finally {
+        await pool.query(`ALTER TABLE ${table} DROP CONSTRAINT reject_image`);
+      }
+    },
+  );
+  it('imagen ausente/inexistente y falta de sesión tienen errores apropiados; no hay modificación posterior', async () => {
+    const t = (await create()).body;
+    expect(
+      (await request(app).get(`/api/tickets/${t.id}/attachment`).set('Cookie', solicitante.cookie))
+        .body.error.code,
+    ).toBe('TICKET_ATTACHMENT_NOT_FOUND');
+    expect(
+      (await request(app).get('/api/tickets/999999999/attachment').set('Cookie', agente.cookie))
+        .body.error.code,
+    ).toBe('TICKET_NOT_FOUND');
+    expect((await request(app).get(`/api/tickets/${t.id}/attachment`)).status).toBe(401);
+    for (const method of ['post', 'put', 'patch', 'delete'] as const)
+      expect(
+        (
+          await request(app)
+            [method](`/api/tickets/${t.id}/attachment`)
+            .set('Origin', origin)
+            .set('Cookie', admin.cookie)
+            .send({})
+        ).status,
+      ).toBe(404);
+  });
+  it.each(['Error al imprimir & escanear? #piso "A" conexión Wi-Fi', 'x'.repeat(160)])(
+    'deep-link codifica asunto real completo y no incorpora otros datos: %s',
+    async (subject) => {
+      const t = (
+        await create(solicitante, {
+          subject,
+          description: 'Descripción privada que no debe salir',
+          categoryId: category,
+        })
+      ).body;
+      await assign(t.id, agente.id);
+      await pool.query("UPDATE users SET telegram_username='agente_prueba' WHERE id=$1", [
+        agente.id,
+      ]);
+      const r = await request(app)
+        .get(`/api/tickets/${t.id}/telegram-contact?text=INVENTADO&username=malicioso`)
+        .set('Cookie', solicitante.cookie);
+      expect(r.status).toBe(200);
+      const parsed = new URL(r.body.url);
+      expect(parsed.origin).toBe('https://t.me');
+      expect(parsed.pathname).toBe('/agente_prueba');
+      expect(parsed.hash).toBe('');
+      expect([...parsed.searchParams.keys()]).toEqual(['text']);
+      expect(parsed.searchParams.get('text')).toBe(
+        `Hola, te contacto por el ticket ${t.number}: "${subject}".`,
+      );
+      expect(r.body.url).not.toContain('INVENTADO');
+      expect(r.body.url).not.toContain('privada');
+    },
+  );
 });

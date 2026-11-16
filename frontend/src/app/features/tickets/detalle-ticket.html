@@ -51,6 +51,9 @@
       </div></app-tarjeta
     >
 
+    @if (t.attachment) {
+      <app-imagen-adjunta [ticketId]="t.id" [numero]="t.number" />
+    }
     @if (permisos().telegramVisible) {
       <app-tarjeta class="mt-6 block">
         <section class="space-y-4 p-7" aria-labelledby="contacto-ticket">

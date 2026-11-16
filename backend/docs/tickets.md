@@ -31,6 +31,7 @@ La respuesta es 201 con `Location: /api/tickets/:id` y el ticket completo:
   "description": "La impresora muestra un error.",
   "status": "creado",
   "priority": "media",
+  "attachment": null,
   "category": { "id": "4", "name": "Hardware" },
   "requester": { "id": "18", "fullName": "Ana Pérez", "email": "ana@example.invalid" },
   "assignedAgent": null,
@@ -52,7 +53,7 @@ alta para impedir su desactivación simultánea.
 
 El ticket y `ticket.created` se guardan en la misma transacción. La auditoría
 solo incluye número y categoría, sin asunto ni descripción. No se registran
-cuerpos HTTP. Se conservan cookie HttpOnly, CSRF, JSON y cambio obligatorio.
+cuerpos HTTP. Se conservan cookie HttpOnly, CSRF y cambio obligatorio; la creación admite JSON o multipart.
 
 ## Listar y abrir
 
@@ -108,7 +109,7 @@ Repetirlo no duplica registros ni restablece contraseñas.
 
 `npm run check` incluye pruebas con PostgreSQL en esquemas privados si se exporta
 `DATABASE_URL`; de lo contrario las integraciones se omiten con mensaje. No
-implementa comentarios públicos, adjuntos ni SLA. Las notas internas y el contacto directo por Telegram se describen abajo.
+implementa comentarios públicos ni SLA. La única imagen adjunta se admite al crear, como se describe abajo. Las notas internas y el contacto directo por Telegram se describen abajo.
 
 ## Referencia canónica y auditoría
 
@@ -171,7 +172,7 @@ POST /api/tickets/123/transitions
 ```
 
 Devuelve 200 con el ticket completo. No admite `status`, `targetStatus`,
-`fromStatus` o `actorId`. Todas las escrituras conservan sesión, CSRF y JSON.
+`fromStatus` o `actorId`. Todas las escrituras conservan sesión y CSRF. Solo creación admite además multipart; las operaciones de asignación, estado, prioridad y notas siguen usando JSON.
 
 | Acción  | Origen     | Destino    | Permiso                                     | Requiere agente                         |
 | ------- | ---------- | ---------- | ------------------------------------------- | --------------------------------------- |
@@ -433,14 +434,22 @@ nombre del campo, sin copiar el contacto a auditoría.
 GET /api/tickets/123/telegram-contact
 ```
 
-Con sesión y permisos devuelve 200 `{ "available": true, "url": "https://t.me/agente_ejemplo" }`.
+Con sesión y permisos devuelve 200 `{ "available": true, "url": "https://t.me/agente_ejemplo?text=Hola%2C+te+contacto+por+el+ticket+TK-000123%3A+%22No+puedo+imprimir%22." }`.
 La URL se construye únicamente desde el usuario público guardado; el cliente no
 elige destino. Si falta agente: 200 `{ "available": false, "message": "Este ticket todavía no tiene un agente asignado." }`.
 Si falta usuario público, el agente está inactivo, vencido o ya no tiene rol agente:
-200 `{ "available": false, "message": "El agente asignado no tiene Telegram disponible." }`.
+200 `{ "available": false, "message": "Este agente no tiene Telegram configurado." }`.
 No devuelve chat IDs, token ni información adicional. Ticket terminal: 409
 TICKET_CONTACT_UNAVAILABLE; actor que no es propietario o se contactaría consigo
 mismo: 403 TICKET_ACTION_FORBIDDEN; solicitante ajeno: 404 como en el detalle.
+
+El backend añade exclusivamente `text` con `URL.searchParams`, usando referencia y
+asunto del ticket bloqueado: `Hola, te contacto por el ticket TK-000123: "No puedo imprimir".`
+No trunca los 160 caracteres de asunto; codifica comillas, &, ?, # y acentos.
+No acepta texto o username del cliente como autoridad. No incluye descripción,
+prioridad, categoría, datos personales ni notas. El texto queda como borrador:
+**el usuario decide si pulsa Enviar**, sin envío automático.
+[Formato oficial de Telegram](https://core.telegram.org/api/links#public-username-links).
 
 No llama a Telegram, no inicia el bot, no registra actividad ni crea notas. Abrir
 el enlace no garantiza que el agente responda o que Telegram esté disponible.
@@ -451,3 +460,82 @@ ID numérico no son un mecanismo general de contacto desde web:
 La antigua POC con grammY permanece aislada y opcional para experimentación; no
 participa en este contacto ni permite leer las notas del ticket. No se implementa
 vinculación por bot, chat interno, copia automática de conversaciones ni notificaciones.
+
+## Imagen inicial del ticket
+
+Durante POST /api/tickets se admite **0 o 1 imagen**, opcional y exclusivamente al
+crear: JPEG (.jpg/.jpeg), PNG o WebP, máximo exacto **10 MiB = 10 × 1024 × 1024 =
+10485760 bytes**. No acepta GIF, SVG, PDF ni otros formatos. Después no existen
+endpoints ni controles para agregar, cambiar o quitar imágenes; las adicionales
+se comparten por Telegram cuando haya agente asignado.
+
+La creación conserva JSON para clientes sin imagen y admite multipart/form-data
+con campos subject, description, categoryId e image opcional. Ejemplo con un
+archivo de cookies privado ya obtenido al iniciar sesión:
+
+```bash
+curl --cookie /tmp/helpdesk-cookies.txt \
+  -H 'Origin: http://localhost:4200' \
+  -F 'subject=No puedo imprimir' \
+  -F 'description=La impresora muestra un error.' \
+  -F 'categoryId=4' \
+  -F 'image=@captura.png;type=image/png' \
+  http://localhost:3000/api/tickets
+```
+
+No fijes Content-Type: el cliente genera boundary. La excepción multipart de CSRF
+se limita a POST /api/tickets: el origen sigue siendo obligatorio, así como sesión
+y contraseña definitiva. No se permite multipart en login, usuarios, categorías,
+estados, prioridad o notas. Campos de autoridad y validaciones de texto se siguen
+rechazando. Cualquier rol puede crear para sí mismo, incluida su imagen inicial.
+
+Multer 2.5 usa memoryStorage, un archivo image, tres campos de texto y buffers por
+petición sin disco ni buffers globales. La lectura permite un byte sobre el límite
+para distinguirlo del tamaño exacto; la validación rechaza cualquier imagen mayor
+a 10485760 bytes. Se comprueban los bytes: firma JPEG/terminador, firma PNG con
+cabecera IHDR y estructura RIFF/WEBP con tamaño y chunk válidos. Además deben
+coincidir MIME declarado y extensión. Es detección de formato, sin decodificar,
+transformar, escanear con antivirus o modificar píxeles.
+
+0017_ticket_attachments.sql crea ticket_attachments: id identity bigint, ticket_id
+NOT NULL UNIQUE y FK RESTRICT, original_filename (1–255), mime_type (solo los tres),
+size_bytes (1–10485760), data BYTEA con octet_length igual a size_bytes y created_at
+timestamptz. La unicidad proporciona el índice por ticket; no hay índices adicionales.
+No guarda rutas ni crea carpetas uploads. Los tickets existentes quedan sin imagen.
+El seed normal no añade binarios. Los fixtures propios de pruebas son diminutos.
+
+Categoría, ticket, imagen, evento created y auditoría ticket.created comparten una
+transacción. Un fallo revierte todo. No se añade evento de imagen ni metadata
+binaria a auditoría; se conserva su contrato anterior. La imagen no afecta número,
+prioridad Media, estado Creado ni asignación inicial nula.
+
+Creación, listado, detalle y mutaciones devuelven la misma metadata, nunca bytes:
+
+```json
+{
+  "attachment": {
+    "id": "15",
+    "fileName": "captura.png",
+    "mimeType": "image/png",
+    "sizeBytes": 483291
+  }
+}
+```
+
+Sin archivo, attachment es null. Las consultas de metadata nunca seleccionan data.
+
+GET /api/tickets/:id/attachment devuelve el Buffer original. Exige exactamente la
+visibilidad del detalle: propietario y roles de soporte; solicitante ajeno recibe
+404 TICKET_NOT_FOUND aunque exista imagen. Sin sesión: 401; ticket inexistente:
+404 TICKET_NOT_FOUND; ticket visible sin imagen: 404 TICKET_ATTACHMENT_NOT_FOUND.
+En terminales la imagen original sigue disponible para quienes pueden ver el ticket.
+
+Cabeceras: Content-Type validado, Content-Length exacto, X-Content-Type-Options:
+nosniff, Cache-Control: no-store y Content-Disposition: inline con filename ASCII
+saneado y filename* UTF-8. El nombre solo es metadata: se neutralizan controles,
+comillas y separadores; nunca se usa como ruta ni se ejecuta.
+
+Errores de alta: 413 IMAGE_TOO_LARGE, 400 INVALID_IMAGE (vacío, formato o coherencia
+inválidos), 400 INVALID_MULTIPART (más archivos/campos, archivo de nombre inesperado
+u otro multipart inválido). Se mantienen los errores de texto/categoría y CSRF.
+No hay POST/PUT/PATCH/DELETE /api/tickets/:id/attachment.

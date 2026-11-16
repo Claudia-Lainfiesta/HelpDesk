@@ -25,13 +25,14 @@ las épicas, historias y calendarios describen también trabajo futuro.
   de tickets y sus cambios de asignación/estado. El historial funcional del ticket
   está separado de la auditoría global; EP-10 completa sigue pendiente.
 - Notas internas inmutables, visibles solo para soporte autorizado.
-- Contacto directo del propietario con el Telegram público del agente asignado.
+- Contacto directo del propietario con el Telegram público del agente asignado, con borrador de número y asunto; el usuario decide si envía.
+- Una imagen opcional JPEG/PNG/WebP de hasta 10 MiB al crear el ticket, almacenada en PostgreSQL y visible con los permisos del detalle.
 - POC anterior del bot, independiente y opcional; no participa en el contacto actual.
   No está vinculada a usuarios o tickets reales ni envía notificaciones del caso.
 
 Hay asignación/reasignación y nueve transiciones con historial estructurado.
 No hay conversación integrada,
-comentarios públicos, adjuntos, SLA, base de conocimiento ni
+comentarios públicos, adjuntos posteriores, SLA, base de conocimiento ni
 reportes reales. `/reportes` es un marcador. Los otros cinco estados aparecen
 en el catálogo, las insignias, filtros y datos del seed. Los cambios se ejecutan
 como acciones semánticas autorizadas; Cerrado y Cancelado son terminales.

@@ -14,12 +14,14 @@ export const sesionInterceptor: HttpInterceptorFn = (peticion, siguiente) => {
   const router = inject(Router);
   const escritura = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(peticion.method);
   const cuerpo = peticion.body ?? {};
+  const multipart = cuerpo instanceof FormData;
   const segura = peticion.clone({
     withCredentials: true,
+    ...(multipart ? { headers: peticion.headers.delete('Content-Type') } : {}),
     ...(escritura
       ? {
           body: typeof cuerpo === 'string' ? JSON.stringify(cuerpo) : cuerpo,
-          setHeaders: { 'Content-Type': 'application/json' },
+          ...(multipart ? {} : { setHeaders: { 'Content-Type': 'application/json' } }),
         }
       : {}),
   });

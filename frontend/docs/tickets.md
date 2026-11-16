@@ -26,7 +26,7 @@ histórico sigue funcionando y presenta una opción de categoría histórica.
 «Nuevo ticket» abre `app-modal` con asunto, categoría y descripción. Valida
 obligatorios, contenido sin espacios vacíos y longitudes de 160/5000 caracteres.
 Solo ofrece categorías activas. No contiene campos de solicitante, estado,
-agente, prioridad o adjuntos. Bloquea doble envío y cierre durante la creación.
+agente ni prioridad. Admite una imagen opcional solo durante la creación. Bloquea doble envío y cierre durante la creación.
 
 Tras un 201 cierra el modal, anuncia «Ticket TK-000123 creado correctamente.»
 con el número devuelto por la API y recarga la
@@ -87,7 +87,7 @@ Hay pruebas sin red para derechos combinados, controles, confirmaciones, todos l
 tipos de evento, paginación, error 409 y recarga. La matriz exacta y los nueve arcos
 permitidos están en [la documentación de API](../../backend/docs/tickets.md).
 
-No incorpora comentarios públicos, adjuntos, correo de tickets,
+No incorpora comentarios públicos, adjuntos posteriores, correo de tickets,
 SLA, tiempos de respuesta ni actualizaciones en tiempo real.
 
 ## Prioridad
@@ -133,10 +133,14 @@ TicketsApi.contactoTelegram consulta GET /api/tickets/:id/telegram-contact al
 cargar el detalle autorizado, antes del clic; así se abre la pestaña directamente
 desde una acción del usuario, sin depender de una respuesta asíncrona. El botón
 usa app-boton y window.open con noopener,noreferrer. Solo admite URLs https://t.me
-con el formato esperado. No expone tokens ni inicia el proceso del bot.
+con el formato esperado y únicamente el parámetro text. El backend prepara
+`Hola, te contacto por el ticket TK-000123: "Asunto del ticket".` desde datos reales,
+correctamente codificados. Telegram lo deja en el cuadro de texto; el usuario decide
+si lo envía. La interfaz no construye el mensaje ni envía username o texto al endpoint.
+No expone tokens ni inicia el proceso del bot.
 
 Si no hay agente, avisa «Este ticket todavía no tiene un agente asignado.»; si
-no tiene contacto disponible, «El agente asignado no tiene Telegram disponible.».
+no tiene contacto disponible, «Este agente no tiene Telegram configurado.».
 Actualizar contacto permite reintentar. Se respetan permisos y errores del backend.
 No se genera actividad, nota, cambio de estado, prioridad o asignación al abrirlo.
 La conversación es externa; HelpDesk no puede saber si se entregó o respondió un mensaje.
@@ -161,10 +165,40 @@ anuncia «Nota interna agregada.». No modifica el ticket ni llama a transicione
 
 En Cerrado/Cancelado no hay formulario; soporte sigue viendo el historial y el
 aviso de solo lectura. No existen controles de edición o eliminación de notas.
-No hay GET de notas separado, mensajes públicos, chat interno, adjuntos ni envíos
+No hay GET de notas separado, mensajes públicos, chat interno, adjuntos posteriores ni envíos
 automáticos por correo o Telegram.
 
 Para comprobarlo: propietario abre contacto; soporte asignado agrega una nota;
 otro agente y solicitante recargan y no reciben esa nota; supervisor reasigna y
 solo el nuevo agente mantiene acceso. Un texto como `<script>alert(1)</script>`
 debe verse literalmente. Las pruebas usan HttpTestingController y no requieren Telegram.
+
+## Imagen opcional al crear
+
+El modal Nuevo ticket ofrece «Imagen (opcional)», un input sin multiple con
+accept=image/jpeg,image/png,image/webp. Ayuda: «JPG, JPEG, PNG o WebP. Máximo 10 MB.».
+El límite real es 10 MiB (10485760 bytes) y se comprueban MIME y tamaño en cliente;
+el backend es la autoridad y verifica también firma/extensión. No se carga en
+localStorage, sessionStorage, IndexedDB, URL de navegación ni consola.
+
+Se presenta un preview y «Quitar imagen» antes de crear. Se revoca ObjectURL al
+cambiar, quitar, completar el alta o destruir/cancelar el formulario. El archivo
+solo permanece en memoria. Errores conservan texto e imagen para reintentar;
+solo el éxito limpia ambos y emite el ticket. No hay editor, recorte ni procesamiento.
+
+TicketsApi.crear siempre envía FormData con subject, description, categoryId e image
+solo si existe. El interceptor mantiene withCredentials y elimina Content-Type
+manual para FormData: el navegador añade boundary. El resto de escrituras sigue
+usando JSON, incluido logout con {} y notas/prioridad/transiciones.
+
+Todas las representaciones Ticket tienen attachment (metadata) o null, sin Base64
+ni bytes. El detalle solo crea ImagenAdjunta cuando existe metadata, sin petición
+para tickets sin imagen. HttpClient obtiene Blob del endpoint protegido con cookie,
+crea un ObjectURL temporal y lo revoca al destruir o fallar. Muestra carga, error
+independiente con reintento y alt «Imagen adjunta al ticket TK-000123». La ampliación
+abre el Blob en otra pestaña mediante enlace noopener noreferrer.
+
+La imagen inicial no se puede agregar, reemplazar ni quitar después. Se informa:
+«Si necesitas compartir más imágenes después de crear el ticket, puedes hacerlo
+por Telegram cuando tengas un agente asignado». No cambia estados, prioridad,
+actividad ni notas. El acceso a la imagen lo comprueba el backend como el detalle.

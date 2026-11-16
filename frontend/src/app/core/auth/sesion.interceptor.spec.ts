@@ -90,4 +90,16 @@ describe('Interceptor de sesión', () => {
     expect(navegar).not.toHaveBeenCalled();
     expect(auth.sesionTerminada()).toBe(false);
   });
+  it('FormData conserva credenciales y deja el Content-Type al navegador, incluso si el llamador lo fijó', () => {
+    const body = new FormData();
+    body.set('subject', 'Asunto');
+    cliente
+      .post('/api/tickets', body, { headers: { 'Content-Type': 'application/json' } })
+      .subscribe();
+    const r = http.expectOne('/api/tickets');
+    expect(r.request.body).toBe(body);
+    expect(r.request.withCredentials).toBe(true);
+    expect(r.request.headers.has('Content-Type')).toBe(false);
+    r.flush({});
+  });
 });

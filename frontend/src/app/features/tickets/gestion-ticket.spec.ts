@@ -18,6 +18,7 @@ const ticket: Ticket = {
   description: 'Solicitud',
   status: 'creado',
   priority: 'media',
+  attachment: null,
   category: { id: '1', name: 'Hardware' },
   requester: { id: '1', fullName: 'Ana', email: 'ana@example.invalid' },
   assignedAgent: null,
@@ -108,7 +109,7 @@ describe('operaciones del detalle', () => {
     t: Ticket = ticket,
     contacto: ContactoTelegram = {
       available: false,
-      message: 'El agente asignado no tiene Telegram disponible.',
+      message: 'Este agente no tiene Telegram configurado.',
     },
   ) {
     TestBed.inject(AuthService).cargarSesion().subscribe();
@@ -128,7 +129,7 @@ describe('operaciones del detalle', () => {
     data: EventoTicket[] = [evento],
     contacto: ContactoTelegram = {
       available: false,
-      message: 'El agente asignado no tiene Telegram disponible.',
+      message: 'Este agente no tiene Telegram configurado.',
     },
   ) {
     http
@@ -535,7 +536,8 @@ describe('operaciones del detalle', () => {
   });
 
   it('solo propietario abre el @usuario configurado, sin bot ni estado ni actividad extra', () => {
-    const destino = 'https://t.me/agente_prueba';
+    const destino =
+      'https://t.me/agente_prueba?text=Hola%2C+te+contacto+por+el+ticket+TK-000123%3A+%22Equipo%22.';
     const abrirTelegram = vi.spyOn(window, 'open').mockReturnValue(null);
     const f = abrir(
       usuarioPrueba,
@@ -555,13 +557,11 @@ describe('operaciones del detalle', () => {
     const f = abrir(usuarioPrueba, { ...ticket, assignedAgent: agente });
     f.componentInstance.hablarPorTelegram();
     f.detectChanges();
-    expect(f.nativeElement.textContent).toContain(
-      'El agente asignado no tiene Telegram disponible.',
-    );
+    expect(f.nativeElement.textContent).toContain('Este agente no tiene Telegram configurado.');
     f.componentInstance.cargarContacto();
     http
       .expectOne('/api/tickets/123/telegram-contact')
-      .flush({ available: false, message: 'El agente asignado no tiene Telegram disponible.' });
+      .flush({ available: false, message: 'Este agente no tiene Telegram configurado.' });
   });
   it.each([
     ['agente asignado', { ...usuarioPrueba, id: '7', role: 'agente' }, 'creado'],
@@ -584,14 +584,11 @@ describe('operaciones del detalle', () => {
     expect(f.nativeElement.textContent).not.toContain('Hablar por Telegram');
     expect(f.componentInstance.permisos().notasVisibles).toBe(true);
   });
-  it('sin agente informa sin construir un destino; nunca abre una URL arbitraria', () => {
-    const abrirTelegram = vi.spyOn(window, 'open').mockReturnValue(null);
+  it('sin agente no ofrece ni consulta contacto', () => {
     const f = abrir(usuarioPrueba, ticket);
+    expect(f.nativeElement.textContent).not.toContain('Hablar por Telegram');
     f.componentInstance.hablarPorTelegram();
-    f.detectChanges();
-    expect(f.nativeElement.textContent).toContain('todavía no tiene un agente');
-    expect(abrirTelegram).not.toHaveBeenCalled();
-    abrirTelegram.mockRestore();
+    http.expectNone('/api/tickets/123/telegram-contact');
   });
   it('rechaza destino externo incluso ante respuesta inesperada', () => {
     const abrirTelegram = vi.spyOn(window, 'open').mockReturnValue(null);

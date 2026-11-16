@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  viewChild,
   inject,
   output,
   signal,
@@ -57,6 +59,47 @@ import { Alerta } from '../../shared/ui/alerta';
         [error]="campo('description')"
         ayuda="Describe tu solicitud, hasta 5000 caracteres. No incluyas contraseñas."
       />
+      <div class="space-y-3">
+        <label for="ticket-imagen" class="block font-semibold text-texto-suave"
+          >Imagen (opcional)</label
+        >
+        <input
+          #entradaImagen
+          id="ticket-imagen"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          [disabled]="enviando()"
+          (change)="seleccionarImagen($event)"
+          aria-describedby="ticket-imagen-ayuda ticket-imagen-seguimiento"
+          [attr.aria-invalid]="errorImagen() ? 'true' : null"
+          [attr.aria-errormessage]="errorImagen() ? 'ticket-imagen-error' : null"
+          class="block w-full rounded-boton border border-linea bg-superficie-suave p-3 text-texto file:mr-3 file:rounded-boton file:border-0 file:bg-primario file:px-3 file:py-2 file:text-sobre-primario"
+        />
+        <p id="ticket-imagen-ayuda" class="text-xs text-texto-suave">
+          JPG, JPEG, PNG o WebP. Máximo 10 MB.
+        </p>
+        <p id="ticket-imagen-seguimiento" class="text-xs text-texto-suave">
+          Si necesitas compartir más imágenes después de crear el ticket, puedes hacerlo por
+          Telegram cuando tengas un agente asignado.
+        </p>
+        @if (errorImagen()) {
+          <p id="ticket-imagen-error" role="alert" class="text-sm text-peligro">
+            {{ errorImagen() }}
+          </p>
+        }
+        @if (vistaPrevia(); as url) {
+          <img
+            [src]="url"
+            alt="Vista previa de la imagen seleccionada"
+            class="max-h-64 max-w-full rounded-tarjeta border border-linea object-contain"
+          />
+        }
+        @if (imagen() || errorImagen()) {
+          <app-boton variante="secundario" [deshabilitado]="enviando()" (accion)="quitarImagen()"
+            >Quitar imagen</app-boton
+          >
+        }
+      </div>
       <div class="flex justify-end gap-3">
         <app-boton variante="secundario" [deshabilitado]="enviando()" (accion)="cerrar.emit()"
           >Cancelar</app-boton
@@ -81,6 +124,10 @@ export class FormularioTicket {
   readonly errorCategorias = signal('');
   readonly cargandoCategorias = signal(true);
   readonly categorias = signal<Categoria[]>([]);
+  readonly imagen = signal<File | null>(null);
+  readonly vistaPrevia = signal('');
+  readonly errorImagen = signal('');
+  private readonly entradaImagen = viewChild<ElementRef<HTMLInputElement>>('entradaImagen');
   readonly formulario = inject(FormBuilder).nonNullable.group({
     subject: ['', [Validators.required, Validators.maxLength(160), Validators.pattern(/\S/)]],
     categoryId: ['', Validators.required],
@@ -88,6 +135,34 @@ export class FormularioTicket {
   });
   constructor() {
     this.cargarCategorias();
+    this.destruir.onDestroy(() => this.quitarImagen());
+  }
+  seleccionarImagen(event: Event) {
+    if (this.enviando()) return;
+    const archivo = (event.target as HTMLInputElement).files?.[0];
+    this.liberarVistaPrevia();
+    this.imagen.set(null);
+    this.errorImagen.set('');
+    if (!archivo) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type))
+      this.errorImagen.set('Solo puedes adjuntar imágenes JPG, JPEG, PNG o WebP.');
+    else if (archivo.size > 10 * 1024 * 1024)
+      this.errorImagen.set('La imagen no puede superar los 10 MB.');
+    else {
+      this.imagen.set(archivo);
+      this.vistaPrevia.set(URL.createObjectURL(archivo));
+    }
+  }
+  private liberarVistaPrevia() {
+    if (this.vistaPrevia()) URL.revokeObjectURL(this.vistaPrevia());
+    this.vistaPrevia.set('');
+  }
+  quitarImagen() {
+    this.liberarVistaPrevia();
+    this.imagen.set(null);
+    this.errorImagen.set('');
+    const entrada = this.entradaImagen()?.nativeElement;
+    if (entrada) entrada.value = '';
   }
   opciones() {
     return [
@@ -125,20 +200,33 @@ export class FormularioTicket {
       : '';
   }
   enviar() {
-    if (this.enviando() || this.cargandoCategorias() || this.errorCategorias()) return;
+    if (
+      this.enviando() ||
+      this.cargandoCategorias() ||
+      this.errorCategorias() ||
+      this.errorImagen()
+    )
+      return;
     this.formulario.markAllAsTouched();
     if (this.formulario.invalid) return;
     const v = this.formulario.getRawValue();
     this.enviando.set(true);
     this.error.set('');
     this.api
-      .crear({ ...v, subject: v.subject.trim(), description: v.description.trim() })
+      .crear(
+        { ...v, subject: v.subject.trim(), description: v.description.trim() },
+        this.imagen() ?? undefined,
+      )
       .pipe(
         takeUntilDestroyed(this.destruir),
         finalize(() => this.enviando.set(false)),
       )
       .subscribe({
-        next: (t) => this.creado.emit(t),
+        next: (t) => {
+          this.quitarImagen();
+          this.formulario.reset();
+          this.creado.emit(t);
+        },
         error: (e) => {
           const f = interpretarError(e);
           this.error.set(f.message);

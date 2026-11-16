@@ -30,6 +30,7 @@ import { Selector } from '../../shared/ui/selector';
 import { Confirmacion } from '../../shared/ui/confirmacion';
 import { Paginador } from '../../shared/ui/paginador';
 import { AreaTexto } from '../../shared/ui/area-texto';
+import { ImagenAdjunta } from './imagen-adjunta';
 import { estados } from '../../shared/ui/insignia-estado';
 import { Avisos, AvisoFlotante } from '../../shared/ui/aviso-flotante';
 @Component({
@@ -49,6 +50,7 @@ import { Avisos, AvisoFlotante } from '../../shared/ui/aviso-flotante';
     Confirmacion,
     Paginador,
     AreaTexto,
+    ImagenAdjunta,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './detalle-ticket.html',
@@ -352,10 +354,7 @@ export class DetalleTicket {
           )
             return;
           this.cargandoContacto.set(false);
-          if (
-            contacto.available &&
-            /^https:\/\/t\.me\/[A-Za-z][A-Za-z0-9_]{4,31}$/.test(contacto.url)
-          )
+          if (contacto.available && this.esContactoSeguro(contacto.url))
             this.urlTelegram = contacto.url;
           this.mensajeContacto = contacto.available
             ? 'No se pudo abrir Telegram.'
@@ -378,6 +377,22 @@ export class DetalleTicket {
     if (!this.permisos().telegramVisible || this.cargandoContacto()) return;
     if (this.urlTelegram) window.open(this.urlTelegram, '_blank', 'noopener,noreferrer');
     else this.avisoContacto.set(this.mensajeContacto);
+  }
+  private esContactoSeguro(value: string) {
+    try {
+      const url = new URL(value);
+      return (
+        url.origin === 'https://t.me' &&
+        !url.username &&
+        !url.password &&
+        !url.hash &&
+        /^\/[A-Za-z][A-Za-z0-9_]{4,31}$/.test(url.pathname) &&
+        [...url.searchParams.keys()].every((key) => key === 'text') &&
+        url.searchParams.getAll('text').length <= 1
+      );
+    } catch {
+      return false;
+    }
   }
   confirmar() {
     const p = this.pendiente();
