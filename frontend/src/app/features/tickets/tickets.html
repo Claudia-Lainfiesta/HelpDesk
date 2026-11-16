@@ -1,115 +1,186 @@
 <section aria-labelledby="titulo-tickets">
-  <div class="flex flex-wrap items-center justify-between gap-5">
-    <h1 id="titulo-tickets">Tickets</h1>
-    <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-      <app-campo-texto
-        identificador="buscar-tickets"
-        etiqueta="Buscar tickets por número o asunto"
-        [ocultarEtiqueta]="true"
-        tipo="search"
-        icono="buscar"
-        marcador="Buscar por número o asunto"
-        [formControl]="busqueda"
-        class="w-full sm:w-[300px]"
-      /><app-boton icono="mas" (accion)="nuevoAbierto.set(true)">Nuevo ticket</app-boton>
-    </div>
-  </div>
-  <div class="mt-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar tickets por estado">
-    <app-filtro [activo]="!filtros().status" (seleccionado)="filtrar({ status: undefined })"
-      >Todos</app-filtro
-    >
-    @for (estado of estados; track estado.codigo) {
-      <app-filtro
-        [activo]="filtros().status === estado.codigo"
-        (seleccionado)="filtrar({ status: estado.codigo })"
-        >{{ estado.etiqueta }}</app-filtro
-      >
-    }
-  </div>
-  <div class="my-5 grid max-w-2xl gap-4 sm:grid-cols-2">
-    <app-selector
-      identificador="categoria-tickets"
-      etiqueta="Categoría"
-      [opciones]="opcionesCategorias()"
-      [formControl]="categoria"
-    />
-    <app-selector
-      identificador="prioridad-tickets"
-      etiqueta="Prioridad"
-      [opciones]="opcionesPrioridad"
-      [formControl]="prioridad"
-    />
-  </div>
-  @if (errorCategorias()) {
-    <div class="mb-4">
-      <app-alerta variante="aviso">{{ errorCategorias() }}</app-alerta
-      ><app-boton variante="fantasma" (accion)="cargarCategorias()"
-        >Reintentar categorías</app-boton
-      >
-    </div>
-  }
-  @if (!cargando() && !error() && !tickets().length) {
-    <app-tarjeta
-      ><div class="p-10 text-center" role="status">
-        <p class="mb-4 font-semibold">
-          {{
-            tieneFiltros()
-              ? 'No hay tickets que coincidan con los filtros.'
-              : 'Todavía no hay tickets.'
-          }}
-        </p>
-        @if (tieneFiltros()) {
-          <app-boton variante="secundario" (accion)="limpiar()">Limpiar filtros</app-boton>
-        } @else {
-          <app-boton (accion)="nuevoAbierto.set(true)">Crear mi primer ticket</app-boton>
+  <h1 id="titulo-tickets" class="mb-5">Tickets</h1>
+  <div
+    class="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+  >
+    <div [class.hidden]="!!seleccionado()" class="min-w-0 lg:block">
+      <fieldset [disabled]="gestionando()" class="min-w-0">
+        <legend class="sr-only">Buscar y filtrar tickets</legend>
+        <div class="flex flex-wrap items-center justify-between gap-5">
+          <div class="flex w-full flex-wrap items-center gap-3 lg:w-full">
+            <app-campo-texto
+              identificador="buscar-tickets"
+              etiqueta="Buscar tickets por número o asunto"
+              [ocultarEtiqueta]="true"
+              tipo="search"
+              icono="buscar"
+              marcador="Buscar por número o asunto"
+              [formControl]="busqueda"
+              class="w-full min-w-0 sm:w-auto sm:flex-1"
+            /><app-boton icono="mas" (accion)="nuevoAbierto.set(true)">Nuevo ticket</app-boton>
+          </div>
+        </div>
+        <div class="mt-5 flex flex-wrap gap-2" role="group" aria-label="Filtrar tickets por estado">
+          <app-filtro [activo]="!filtros().status" (seleccionado)="filtrar({ status: undefined })"
+            >Todos</app-filtro
+          >
+          @for (estado of estados; track estado.codigo) {
+            <app-filtro
+              [activo]="filtros().status === estado.codigo"
+              (seleccionado)="filtrar({ status: estado.codigo })"
+              >{{ estado.etiqueta }}</app-filtro
+            >
+          }
+        </div>
+        <div class="my-5 grid min-w-0 gap-3 sm:grid-cols-2">
+          <app-selector
+            identificador="categoria-tickets"
+            etiqueta="Categoría"
+            [opciones]="opcionesCategorias()"
+            [formControl]="categoria"
+          />
+          <app-selector
+            identificador="prioridad-tickets"
+            etiqueta="Prioridad"
+            [opciones]="opcionesPrioridad"
+            [formControl]="prioridad"
+          />
+        </div>
+        @if (errorCategorias()) {
+          <div class="mb-4">
+            <app-alerta variante="aviso">{{ errorCategorias() }}</app-alerta
+            ><app-boton variante="fantasma" (accion)="cargarCategorias()"
+              >Reintentar categorías</app-boton
+            >
+          </div>
         }
-      </div></app-tarjeta
-    >
-  } @else {
-    <app-tabla-paginada
-      nombre="tickets"
-      [columnas]="columnas"
-      [rejilla]="rejilla"
-      [cargando]="cargando()"
-      [error]="error()"
-      (reintentar)="recargar.next()"
-    >
-      @for (ticket of tickets(); track ticket.id) {
-        <app-tarjeta role="row" class="fila-responsive grid"
-          ><a
-            role="cell"
-            [routerLink]="['/tickets', ticket.id]"
-            class="campo-numero rounded-boton font-semibold text-primario underline underline-offset-4"
-            >{{ ticket.number }}</a
-          ><span role="cell" class="campo-principal font-medium">{{ ticket.subject }}</span
-          ><span role="cell" class="text-texto-suave"
-            ><span class="etiqueta-celda">Categoría</span>{{ ticket.category.name }}</span
-          ><span role="cell" class="campo-estado"
-            ><app-insignia-estado [codigo]="ticket.status" /></span
-          ><span role="cell"
-            ><span class="etiqueta-celda">Prioridad</span
-            ><app-insignia-prioridad [prioridad]="ticket.priority" /></span
-          ><span role="cell" class="text-texto-suave"
-            ><span class="etiqueta-celda">Agente</span
-            >{{ ticket.assignedAgent?.fullName || 'Sin asignar' }}</span
-          ><span role="cell" class="text-xs text-texto-suave"
-            ><span class="etiqueta-celda">Fecha</span>{{ ticket.createdAt | fechaLocal }}</span
-          ></app-tarjeta
+      </fieldset>
+      @if (!cargando() && !error() && !tickets().length) {
+        <app-tarjeta
+          ><div class="p-10 text-center" role="status">
+            <p class="mb-4 font-semibold">
+              {{
+                tieneFiltros()
+                  ? 'No hay tickets que coincidan con los filtros.'
+                  : 'Todavía no hay tickets.'
+              }}
+            </p>
+            @if (tieneFiltros()) {
+              <app-boton variante="secundario" (accion)="limpiar()">Limpiar filtros</app-boton>
+            } @else {
+              <app-boton (accion)="nuevoAbierto.set(true)">Crear mi primer ticket</app-boton>
+            }
+          </div></app-tarjeta
         >
+      } @else if (cargando()) {
+        <p
+          role="status"
+          class="rounded-tarjeta border border-linea bg-superficie p-6 text-texto-suave"
+        >
+          Cargando tickets…
+        </p>
+      } @else if (error()) {
+        <app-alerta variante="peligro">{{ error() }}</app-alerta>
+        <app-boton variante="secundario" (accion)="recargar.next()">Reintentar</app-boton>
+      } @else {
+        <ul
+          aria-label="Lista de tickets"
+          class="divide-y divide-linea overflow-hidden rounded-tarjeta border border-linea bg-superficie"
+        >
+          @for (ticket of tickets(); track ticket.id) {
+            <li>
+              <button
+                type="button"
+                [attr.data-ticket]="ticket.id"
+                [attr.aria-label]="'Ver ticket ' + ticket.number + ': ' + ticket.subject"
+                [attr.aria-pressed]="seleccionado() === ticket.id"
+                aria-controls="panel-vista-ticket"
+                [disabled]="gestionando()"
+                [class]="
+                  'block w-full border-l-3 p-4 text-left lg:py-3 break-words focus-visible:-outline-offset-4 disabled:cursor-wait ' +
+                  (seleccionado() === ticket.id
+                    ? 'border-primario bg-fondo'
+                    : 'border-transparent hover:bg-superficie-suave')
+                "
+                (click)="seleccionar(ticket.id)"
+              >
+                <span class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                  <span class="font-semibold text-primario">{{ ticket.number }}</span>
+                  <app-insignia-estado [codigo]="ticket.status" />
+                </span>
+                <span class="mt-1.5 block font-semibold text-texto">{{ ticket.subject }}</span>
+                <span class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <span class="min-w-0 text-texto-suave"
+                    ><span class="sr-only">Categoría: </span>{{ ticket.category.name }}</span
+                  >
+                  <span class="text-right"
+                    ><span class="sr-only">Prioridad: </span
+                    ><app-insignia-prioridad [prioridad]="ticket.priority"
+                  /></span>
+                  <span class="min-w-0 text-texto-suave"
+                    ><span class="sr-only">Agente: </span
+                    >{{ ticket.assignedAgent?.fullName || 'Sin asignar' }}</span
+                  >
+                  <time class="text-right text-texto-suave" [attr.datetime]="ticket.createdAt"
+                    ><span class="sr-only">Fecha: </span>{{ ticket.createdAt | fechaLocal }}</time
+                  >
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
       }
-    </app-tabla-paginada>
-  }
-  @if (!error()) {
-    <app-paginador
-      [pagina]="filtros().page"
-      [tamano]="filtros().pageSize"
-      [total]="total()"
-      [cargando]="cargando()"
-      [opcionesTamanos]="[10, 20, 50]"
-      (cambiarPagina)="pagina($event)"
-      (seleccionarTamano)="filtrar({ pageSize: $event })"
-    />
-  }
+      @if (!error()) {
+        <app-paginador
+          [pagina]="filtros().page"
+          [tamano]="filtros().pageSize"
+          [total]="total()"
+          [cargando]="cargando() || gestionando()"
+          [opcionesTamanos]="[10, 20, 50]"
+          (cambiarPagina)="pagina($event)"
+          (seleccionarTamano)="filtrar({ pageSize: $event })"
+        />
+      }
+    </div>
+    <aside
+      #panelVista
+      id="panel-vista-ticket"
+      tabindex="-1"
+      aria-labelledby="titulo-vista-ticket"
+      [class]="
+        'min-w-0 rounded-tarjeta border border-linea bg-superficie lg:sticky lg:top-5 lg:max-h-[calc(100dvh-2.5rem)] lg:overflow-y-auto ' +
+        (!seleccionado() ? 'hidden lg:block' : '')
+      "
+    >
+      <h2 id="titulo-vista-ticket" class="sr-only">Vista previa del ticket</h2>
+      @if (seleccionado()) {
+        <div class="border-b border-linea p-3 lg:hidden">
+          <app-boton
+            variante="fantasma"
+            icono="volver"
+            [deshabilitado]="gestionando()"
+            (accion)="volverALista()"
+            >Volver a la lista</app-boton
+          >
+        </div>
+      }
+      @for (id of seleccionActual(); track id) {
+        <app-vista-previa-ticket
+          [ticketId]="id"
+          (actualizado)="actualizarTicket($event)"
+          (gestionando)="gestionando.set($event)"
+        />
+      } @empty {
+        <div class="flex min-h-80 flex-col items-center justify-center gap-3 p-8 text-center">
+          <app-icono nombre="ticket" [tamano]="32" class="text-texto-suave" />
+          <p class="font-semibold text-primario">Selecciona un ticket</p>
+          <p class="max-w-xs text-texto-suave">
+            Consulta sus detalles y gestiona el seguimiento sin salir de la lista.
+          </p>
+        </div>
+      }
+    </aside>
+  </div>
 </section>
 @if (nuevoAbierto()) {
   <app-formulario-ticket (cerrar)="nuevoAbierto.set(false)" (creado)="creado($event)" />

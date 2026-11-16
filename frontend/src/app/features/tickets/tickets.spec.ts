@@ -66,18 +66,67 @@ describe('Tickets y detalle', () => {
     lista();
     await pagina.fixture.whenStable();
     const e = pagina.routeNativeElement!;
-    expect(e.querySelector('a[href="/tickets/123"]')?.textContent).toContain('TK-000123');
-    expect(e.textContent).toContain('Sin asignar');
-    const filas = e.querySelectorAll('app-tarjeta[role="row"]');
-    expect(filas).toHaveLength(1);
-    expect(filas[0].querySelectorAll('[role="cell"]')).toHaveLength(7);
-    for (const etiqueta of ['Categoría', 'Prioridad', 'Agente', 'Fecha'])
-      expect(
-        Array.from(filas[0].querySelectorAll('.etiqueta-celda')).map((n) => n.textContent),
-      ).toContain(etiqueta);
-    expect(filas[0].getAttribute('style') ?? '').not.toContain('grid-template-columns');
+    const fila = e.querySelector<HTMLButtonElement>('button[data-ticket="123"]')!;
+    expect(fila.getAttribute('aria-label')).toContain('Ver ticket TK-000123');
+    expect(fila.getAttribute('aria-pressed')).toBe('false');
+    expect(fila.getAttribute('aria-controls')).toBe('panel-vista-ticket');
+    for (const texto of ['Impresora', 'Hardware', 'Sin asignar', 'Creado', 'Media'])
+      expect(fila.textContent).toContain(texto);
+    expect(e.querySelector('#panel-vista-ticket')?.textContent).toContain('Selecciona un ticket');
     expect(e.textContent).toContain('Creado');
     expect(e.querySelector('app-insignia-prioridad')?.textContent).toContain('Media');
+  });
+  it('selecciona sin navegar, cambia el panel y vuelve a la lista conservando foco y filtros', async () => {
+    await abrir('/tickets?priority=media&categoryId=8');
+    const otro = { ...ticket, id: '124', number: 'TK-000124', subject: 'Otro asunto' };
+    lista([ticket, otro]);
+    const e = pagina.routeNativeElement!;
+    e.querySelector<HTMLButtonElement>('button[data-ticket="123"]')!.click();
+    await pagina.fixture.whenStable();
+    http.expectOne('/api/tickets/123').flush(ticket);
+    http
+      .expectOne('/api/tickets/123/events?page=1&pageSize=50')
+      .flush({ data: [], total: 0, page: 1, pageSize: 50 });
+    await pagina.fixture.whenStable();
+    expect(e.querySelector('#panel-vista-ticket')?.textContent).toContain(ticket.description);
+    expect(e.querySelector('button[data-ticket="123"]')?.getAttribute('aria-pressed')).toBe('true');
+    expect(TestBed.inject(Router).url).toBe('/tickets?priority=media&categoryId=8');
+    expect(e.querySelector('a[href="/tickets/123"]')?.textContent).toContain(
+      'Abrir detalle completo',
+    );
+    e.querySelector<HTMLButtonElement>('button[data-ticket="124"]')!.click();
+    await pagina.fixture.whenStable();
+    http.expectOne('/api/tickets/124').flush(otro);
+    http
+      .expectOne('/api/tickets/124/events?page=1&pageSize=50')
+      .flush({ data: [], total: 0, page: 1, pageSize: 50 });
+    await pagina.fixture.whenStable();
+    expect(e.querySelector('#panel-vista-ticket')?.textContent).toContain('Otro asunto');
+    expect(e.querySelector('#panel-vista-ticket')?.textContent).not.toContain('TK-000123');
+    c.volverALista();
+    await pagina.fixture.whenStable();
+    expect(c.seleccionado()).toBeNull();
+    expect(document.activeElement).toBe(e.querySelector('button[data-ticket="124"]'));
+    expect(TestBed.inject(Router).url).toContain('priority=media');
+  });
+  it('cancela la lectura de una selección obsoleta y quita la selección si sale del filtro', async () => {
+    await abrir();
+    lista([ticket, { ...ticket, id: '124' }]);
+    c.seleccionar('123');
+    await pagina.fixture.whenStable();
+    const anterior = http.expectOne('/api/tickets/123');
+    c.seleccionar('124');
+    await pagina.fixture.whenStable();
+    expect(anterior.cancelled).toBe(true);
+    http.expectOne('/api/tickets/124').flush({ ...ticket, id: '124' });
+    http
+      .expectOne('/api/tickets/124/events?page=1&pageSize=50')
+      .flush({ data: [], total: 0, page: 1, pageSize: 50 });
+    c.filtrar({ status: 'cerrado' });
+    await pagina.fixture.whenStable();
+    lista([]);
+    await pagina.fixture.whenStable();
+    expect(c.seleccionado()).toBeNull();
   });
   it('distingue vacío de sin coincidencias y permite limpiar filtros', async () => {
     await abrir();

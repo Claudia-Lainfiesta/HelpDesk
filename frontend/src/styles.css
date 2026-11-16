@@ -122,3 +122,22 @@
     @apply col-start-2 row-start-1 text-right xl:col-auto xl:row-auto xl:text-left;
   }
 }
+
+@layer components {
+  .tabla-reporte {
+    @apply block w-full text-left lg:table;
+  }
+  .tabla-reporte tbody {
+    @apply block lg:table-row-group;
+  }
+  .tabla-reporte tr {
+    @apply grid grid-cols-2 gap-4 py-4 lg:table-row lg:py-0;
+  }
+  .tabla-reporte :is(th, td) {
+    @apply block min-w-0 break-words lg:table-cell lg:p-3;
+    overflow-wrap: anywhere;
+  }
+  .tabla-reporte tbody th {
+    @apply col-span-2 lg:col-auto;
+  }
+}

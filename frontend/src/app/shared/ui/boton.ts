@@ -23,7 +23,7 @@ import { Icono, NombreIcono } from './icono';
       ></span
       ><span class="sr-only">Procesando. </span>
     } @else if (icono(); as nombre) {
-      <app-icono [nombre]="nombre" [tamano]="18" />
+      <app-icono [nombre]="nombre" [tamano]="18" [class.text-peligro]="iconoPeligro()" />
     }
     <ng-content />
   </button>`,
@@ -37,6 +37,7 @@ export class Boton {
   readonly anchoCompleto = input(false);
   readonly icono = input<NombreIcono>();
   readonly soloIcono = input(false);
+  readonly iconoPeligro = input(false);
   readonly etiquetaAccesible = input('');
   readonly ayuda = input('');
   readonly accion = output<void>();

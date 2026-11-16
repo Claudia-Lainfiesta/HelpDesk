@@ -1,0 +1,234 @@
+@if (cargando()) {
+  <p role="status" class="p-6 text-texto-suave">Cargando ticket…</p>
+} @else if (error()) {
+  <div class="space-y-4 p-6">
+    <app-alerta variante="peligro">{{ error() }}</app-alerta>
+    @if (!noEncontrado()) {
+      <app-boton variante="secundario" (accion)="recargar.next()">Reintentar</app-boton>
+    }
+  </div>
+} @else if (ticket(); as t) {
+  <header class="space-y-4 border-b border-linea p-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class="font-semibold text-primario">{{ t.number }}</p>
+      <a
+        [routerLink]="['/tickets', t.id]"
+        class="rounded-boton py-2 font-semibold text-primario underline underline-offset-4"
+        >Abrir detalle completo</a
+      >
+    </div>
+    <h2 class="break-words text-xl font-bold text-primario">{{ t.subject }}</h2>
+    <dl class="grid grid-cols-2 gap-x-4 gap-y-3 break-words">
+      <div>
+        <dt class="text-xs font-semibold text-texto-suave">Categoría</dt>
+        <dd class="mt-1">{{ t.category.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold text-texto-suave">Estado</dt>
+        <dd class="mt-1"><app-insignia-estado [codigo]="t.status" /></dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold text-texto-suave">Prioridad</dt>
+        <dd class="mt-1"><app-insignia-prioridad [prioridad]="t.priority" /></dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold text-texto-suave">Agente asignado</dt>
+        <dd class="mt-1">{{ t.assignedAgent?.fullName || 'Sin asignar' }}</dd>
+      </div>
+      <div class="col-span-2">
+        <dt class="text-xs font-semibold text-texto-suave">Fecha de creación</dt>
+        <dd class="mt-1">
+          <time [attr.datetime]="t.createdAt">{{ t.createdAt | fechaLocal }}</time>
+        </dd>
+      </div>
+    </dl>
+  </header>
+  @if (
+    permisos().asignacion !== 'ninguna' ||
+    permisos().prioridadEditable ||
+    permisos().acciones.length
+  ) {
+    <section
+      aria-label="Acciones rápidas"
+      class="grid grid-cols-1 gap-4 border-b border-linea bg-superficie-suave p-5 xl:grid-cols-2"
+    >
+      <h3 class="font-semibold text-primario xl:col-span-2">Acciones rápidas</h3>
+      @if (permisos().asignacion === 'propia') {
+        <app-boton tamano="sm" [cargando]="ocupada()" (accion)="asignarme()">Asignarme</app-boton>
+      }
+      @if (permisos().asignacion === 'gestionar') {
+        <div class="space-y-2">
+          <app-selector
+            identificador="previa-agente"
+            etiqueta="Cambiar agente asignado"
+            [formControl]="agente"
+            [opciones]="opcionesAgentes()"
+          />
+          @if (errorAgentes()) {
+            <app-alerta variante="peligro">{{ errorAgentes() }}</app-alerta>
+            <app-boton variante="fantasma" (accion)="cargarAgentes()">Reintentar agentes</app-boton>
+          }
+          @if (cargandoAgentes()) {
+            <p role="status" class="text-sm text-texto-suave">Cargando agentes…</p>
+          }
+          <app-boton
+            variante="secundario"
+            tamano="sm"
+            [cargando]="ocupada()"
+            [deshabilitado]="
+              cargandoAgentes() || !!errorAgentes() || agente.value === (t.assignedAgent?.id || '')
+            "
+            (accion)="guardarAsignacion()"
+            >Guardar asignación</app-boton
+          >
+        </div>
+      }
+      @if (permisos().prioridadEditable) {
+        <div class="space-y-2">
+          <app-selector
+            identificador="previa-prioridad"
+            etiqueta="Nueva prioridad"
+            [formControl]="prioridad"
+            [opciones]="opcionesPrioridad"
+          />
+          <app-boton
+            variante="secundario"
+            tamano="sm"
+            [cargando]="ocupada()"
+            [deshabilitado]="prioridad.value === t.priority"
+            (accion)="guardarPrioridad()"
+            >Cambiar prioridad</app-boton
+          >
+        </div>
+      }
+      @if (permisos().acciones.length) {
+        <div class="flex flex-wrap gap-2 xl:col-span-2" role="group" aria-label="Cambiar estado">
+          @for (accion of permisos().acciones; track accion) {
+            <app-boton
+              tamano="sm"
+              [variante]="accion === 'cancel' ? 'peligro' : 'primario'"
+              [deshabilitado]="ocupada()"
+              (accion)="actuar(accion)"
+              >{{ etiquetaAccion(accion) }}</app-boton
+            >
+          }
+        </div>
+      }
+    </section>
+  }
+  @if (errorAccion()) {
+    <app-alerta class="m-5 block" variante="peligro">{{ errorAccion() }}</app-alerta>
+  }
+  <div
+    class="flex border-b border-linea px-5"
+    role="group"
+    aria-label="Contenido de la vista previa"
+  >
+    <button
+      type="button"
+      class="min-h-11 rounded-boton border-b-2 px-3 font-semibold"
+      [class.border-primario]="bloque() === 'detalles'"
+      [class.border-transparent]="bloque() !== 'detalles'"
+      [class.text-primario]="bloque() === 'detalles'"
+      [class.text-texto-suave]="bloque() !== 'detalles'"
+      [attr.aria-pressed]="bloque() === 'detalles'"
+      aria-controls="previa-contenido"
+      (click)="bloque.set('detalles')"
+    >
+      Detalles
+    </button>
+    <button
+      type="button"
+      class="min-h-11 rounded-boton border-b-2 px-3 font-semibold"
+      [class.border-primario]="bloque() === 'actividad'"
+      [class.border-transparent]="bloque() !== 'actividad'"
+      [class.text-primario]="bloque() === 'actividad'"
+      [class.text-texto-suave]="bloque() !== 'actividad'"
+      [attr.aria-pressed]="bloque() === 'actividad'"
+      aria-controls="previa-contenido"
+      (click)="bloque.set('actividad')"
+    >
+      Actividad
+    </button>
+  </div>
+  <section
+    id="previa-contenido"
+    [attr.aria-label]="bloque() === 'detalles' ? 'Detalles del ticket' : 'Actividad del ticket'"
+    class="space-y-5 p-5 break-words"
+  >
+    @if (bloque() === 'detalles') {
+      <div>
+        <h3 class="mb-3 font-semibold text-texto-suave">Descripción</h3>
+        <p class="whitespace-pre-wrap leading-relaxed">{{ t.description }}</p>
+      </div>
+      @if (t.attachment) {
+        <p class="text-sm text-texto-suave">
+          Este ticket tiene una imagen adjunta. Puedes verla en el detalle completo.
+        </p>
+      }
+      @if (permisos().telegramVisible) {
+        <app-boton icono="telegram" [cargando]="cargandoContacto()" (accion)="hablarPorTelegram()"
+          >Hablar por Telegram</app-boton
+        >
+        @if (avisoContacto()) {
+          <app-alerta variante="info">{{ avisoContacto() }}</app-alerta>
+          <app-boton variante="fantasma" (accion)="cargarContacto()">Actualizar contacto</app-boton>
+        }
+      }
+    } @else {
+      @if (cargandoActividad()) {
+        <p role="status">Cargando actividad…</p>
+      } @else if (errorActividad()) {
+        <app-alerta variante="peligro">{{ errorActividad() }}</app-alerta
+        ><app-boton variante="secundario" (accion)="cargarActividad()"
+          >Reintentar actividad</app-boton
+        >
+      } @else {
+        <ol class="space-y-4 border-l border-linea pl-4">
+          @for (evento of actividad(); track evento.id) {
+            @if (evento.type === 'note_added' && evento.note && permisos().notasVisibles) {
+              <li class="space-y-2 bg-superficie-suave p-3">
+                <p class="font-semibold">{{ evento.actor.fullName }} · Nota interna</p>
+                <time class="text-xs text-texto-suave" [attr.datetime]="evento.createdAt">{{
+                  evento.createdAt | fechaLocal
+                }}</time>
+                <p class="whitespace-pre-wrap">{{ evento.note.body }}</p>
+              </li>
+            } @else if (evento.type !== 'note_added') {
+              <li>
+                <p>{{ textoEvento(evento) }}</p>
+                <time class="text-xs text-texto-suave" [attr.datetime]="evento.createdAt">{{
+                  evento.createdAt | fechaLocal
+                }}</time>
+              </li>
+            }
+          } @empty {
+            <li>No hay actividad registrada.</li>
+          }
+        </ol>
+      }
+      @if (!errorActividad()) {
+        <app-paginador
+          [pagina]="paginaEventos()"
+          [tamano]="tamanoEventos()"
+          [total]="totalEventos()"
+          [cargando]="cargandoActividad()"
+          [opcionesTamanos]="[20, 50, 100]"
+          (cambiarPagina)="cargarActividad($event)"
+          (seleccionarTamano)="tamanoActividad($event)"
+        />
+      }
+    }
+  </section>
+}
+@if (pendiente(); as p) {
+  <app-confirmacion
+    [titulo]="p.titulo"
+    [mensaje]="p.mensaje"
+    [etiqueta]="p.titulo"
+    [peligro]="p.accion === 'cancel'"
+    [cargando]="ocupada()"
+    (confirmar)="confirmar()"
+    (cancelar)="pendiente.set(null)"
+  />
+}

@@ -147,7 +147,8 @@ Node debe ser >=22.23.1; `.nvmrc` fija 22.23.1. Con nvm usa `nvm install` y `nvm
 Para revisar visualmente: compara acceso y tickets con el PDF; prueba Tab y
 Escape, foco visible, errores de formulario, filtro y búsqueda; comprueba la
 navegación de cada rol y el ancho de 1024 px. Por debajo de ese ancho la
-navegación se colapsa y la lista se desplaza horizontalmente.
+navegación se colapsa y Tickets muestra lista o vista previa en una sola columna,
+sin desplazamiento horizontal. Reportes apila también las filas de métricas.
 
 Abre `frontend/` como carpeta de VS Code para usar `.vscode/`, o añade ambos
 proyectos a un espacio de trabajo. Consulta la [guía de contribución](../Documentacion/Guia-de-contribucion.md)
@@ -181,7 +182,9 @@ la pestaña oculta y se limpia al salir. Requiere aplicar la migración 0018 en 
 Los avisos operativos al grupo Telegram se configuran exclusivamente en la API;
 no sustituyen el deep-link personal ni envían notas o seguimiento.
 
-Las listas de Tickets, Usuarios y Categorías cambian de columnas a tarjetas bajo
-1280 px, sin ocultar datos. Estados y prioridades son texto semántico, las acciones
+Tickets usa lista y vista previa desde 1024 px; en móvil alterna entre ambas
+sin perder filtros ni paginación. Usuarios y Categorías cambian de columnas a
+tarjetas bajo 1280 px, sin ocultar datos. Reportes apila sus métricas y filas
+en móvil, sin desplazamiento lateral. Estados y prioridades son texto semántico, las acciones
 de administración son iconos accesibles y el cierre de sesión pide confirmación.
 Consulta los patrones en [diseño](docs/diseno.md) y `/guia-ui` en desarrollo.

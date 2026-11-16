@@ -11,7 +11,7 @@ export interface OpcionSelector {
   selector: 'app-selector',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'block min-w-0' },
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => Selector), multi: true }],
   template: `<label
       [for]="identificador()"
@@ -25,7 +25,7 @@ export interface OpcionSelector {
       [attr.aria-invalid]="error() ? 'true' : null"
       (blur)="tocar()"
       (change)="escribir($event)"
-      class="h-[46px] w-full rounded-boton border border-linea bg-superficie-suave px-4 text-texto disabled:opacity-60"
+      class="h-[46px] w-full min-w-0 rounded-boton border border-linea bg-superficie-suave px-4 text-texto disabled:opacity-60"
     >
       @for (opcion of opciones(); track opcion.valor) {
         <option

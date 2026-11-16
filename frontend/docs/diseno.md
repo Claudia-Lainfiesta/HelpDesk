@@ -189,7 +189,7 @@ debe continuar usando variables semánticas y pasar revisión.
 La barra superior adapta enlaces al rol y el avatar abre cambio de contraseña
 más cierre de sesión. A partir de 1024 px la navegación está visible; por debajo
 usa un botón. El contenido útil tiene aproximadamente 1180 px de ancho máximo.
-Las listas de Tickets, Usuarios y Categorías se adaptan sin scroll horizontal:
+Las listas de Usuarios y Categorías se adaptan sin scroll horizontal:
 por debajo de `xl` (1280 px) cada fila es una tarjeta con dos columnas de metadata,
 etiquetas visibles y campos principales de ancho completo. Desde `xl` se muestra
 la rejilla tabular y sus encabezados. `fila-responsive`, `campo-principal` y
@@ -201,7 +201,7 @@ Filtros y paginación también envuelven; no se oculta información en móvil.
 Tickets, categorías y usuarios consumen sus APIs reales. Tickets incorpora
 paginación, filtros en la URL y modal de creación; mantiene filas en tarjetas,
 etiquetas semánticas y descripción en texto plano. Reportes consume métricas
-reales; sus tablas mantienen desplazamiento interno sin ensanchar la página. Consulta [los flujos de tickets](tickets.md).
+reales; sus tablas apilan las métricas por fila en móvil, sin scroll lateral. Consulta [los flujos de tickets](tickets.md).
 
 Las diferencias intencionales respecto del PDF son los SVG propios, Figtree,
 los tamaños y radios semánticos pedidos, la paginación y las opciones
@@ -228,7 +228,7 @@ y del estado del ticket, sin concederlo por propiedad.
 
 Usuarios y Categorías usan `app-acciones-fila`, con botones iconográficos visibles,
 `aria-label` y `title` que incluyen el nombre del registro. `app-boton` admite
-`soloIcono`, `etiquetaAccesible` y `ayuda`; el área de pulsación es de al menos
+`soloIcono`, `iconoPeligro`, `etiquetaAccesible` y `ayuda`; el área de pulsación es de al menos
 44 × 44 px. `app-menu-acciones` sigue disponible para agrupaciones que realmente
 lo necesiten, pero no se usa en estas dos listas ni en la guía.
 
@@ -249,3 +249,21 @@ superficie, fondo y superficie-suave; el mínimo de la paleta actual es 5.45:1.
 La imagen adjunta es un enlace nativo accesible por teclado a su Blob, con foco
 visible y apertura segura en otra pestaña; no lleva un enlace de texto duplicado.
 El contacto Telegram conserva texto y añade el SVG local `telegram`.
+
+## Lista y vista previa de tickets
+
+Desde `lg` (1024 px), Tickets usa dos paneles: lista compacta con filtros a la
+izquierda y panel de trabajo a la derecha. La selección tiene borde primario,
+fondo suave y `aria-pressed`, sin pastillas nuevas ni sombras fuertes. La vista
+previa agrupa encabezado, metadatos, acciones y Detalles/Actividad. Comparte
+lógica con el detalle y ofrece un enlace explícito para abrirlo completo.
+
+Bajo `lg` solo se muestra lista o vista previa; el botón «Volver a la lista»
+conserva el contexto y devuelve el foco. No se montan dos versiones del listado.
+Reportes también usa `lg` para pasar de métricas apiladas a tablas; etiquetas
+visibles en móvil sustituyen la necesidad de desplazar columnas horizontalmente.
+
+Las acciones iconográficas de peligro usan el botón fantasma: fondo transparente
+o neutro al pasar el puntero y solo `app-icono` con `text-peligro`. La variante
+sólida de peligro se conserva para confirmar operaciones destructivas en diálogos.
+`aria-label`, `title`, foco visible y áreas de 44 × 44 px permanecen vigentes.

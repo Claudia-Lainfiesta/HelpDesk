@@ -19,7 +19,8 @@ export interface AccionIconografica extends AccionFila {
   >
     @for (accion of acciones(); track accion.codigo) {
       <app-boton
-        [variante]="accion.peligro ? 'peligro' : 'fantasma'"
+        variante="fantasma"
+        [iconoPeligro]="accion.peligro ?? false"
         [icono]="accion.icono"
         [soloIcono]="true"
         [etiquetaAccesible]="accion.etiqueta + ' ' + nombre()"

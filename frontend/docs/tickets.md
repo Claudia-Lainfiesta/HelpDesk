@@ -207,10 +207,31 @@ Consulta también la [guía de notificaciones](notificaciones.md) para destinata
 
 ## Pulido visual y móvil
 
-El listado tiene un solo conjunto de filas. Desde `xl` (1280 px) mantiene sus siete
-columnas; por debajo muestra tarjetas con número y estado arriba, asunto completo
-y metadata etiquetada: categoría, prioridad, agente y fecha. Filtros y paginación
-envuelven sin scroll horizontal. Los textos largos pueden partirse.
+`/tickets` es una vista dividida desde `lg` (1024 px): la lista compacta, búsqueda,
+estados, filtros y paginación quedan a la izquierda; la vista previa permanece a
+la derecha mientras se recorre la lista. La selección usa un botón con
+`aria-pressed`, borde de marca y fondo suave, sin navegar ni cambiar la URL.
+Inicialmente se invita a seleccionar un ticket; no se consulta un detalle arbitrario.
+
+En móvil y tablet vertical se presenta una sola columna. Seleccionar reemplaza
+visualmente la lista por la vista previa y mueve el foco al panel. «Volver a la
+lista» restaura los filtros, la página y el foco del ticket seleccionado. Un solo
+DOM de la lista conserva número, asunto, categoría, estado, prioridad, agente y
+fecha. Textos largos y filtros envuelven sin desplazamiento horizontal.
+
+La vista previa incluye descripción en texto plano, metadatos, Detalles/Actividad,
+contacto Telegram cuando procede y las acciones permitidas de estado, asignación
+y prioridad. `GestionTicket` comparte lectura, permisos, peticiones y confirmaciones
+con el detalle completo: no existe una segunda implementación de reglas. Mientras
+se envía una acción se bloquean selección, filtros y paginación; el éxito actualiza
+la fila y vuelve a consultar el listado para respetar los filtros. Las selecciones
+obsoletas cancelan su lectura; salir de la página filtrada retira la selección.
+
+«Abrir detalle completo» conserva `/tickets/:id` para ver la imagen inicial o
+agregar notas internas. Crear un ticket mantiene el flujo de apertura del detalle.
+El panel no añade endpoints ni operaciones. Las notas de Actividad siguen las
+mismas restricciones de visibilidad y los estados terminales conservan solo sus
+acciones permitidas.
 
 El solicitante ve al agente en el resumen; la tarjeta Asignación solo aparece si
 ofrece controles reales. Telegram conserva su deep-link y añade un icono local.

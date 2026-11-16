@@ -12,7 +12,7 @@
       class="space-y-4"
       aria-label="Filtros de reportes"
     >
-      <div class="grid gap-4 md:grid-cols-3">
+      <div class="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
         <app-selector
           identificador="reportes-rango"
           etiqueta="Rango"
@@ -32,7 +32,9 @@
           formControlName="to"
         />
       </div>
-      <div class="grid items-end gap-4 md:grid-cols-[1fr_1fr_auto]">
+      <div
+        class="grid min-w-0 grid-cols-1 items-end gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+      >
         <app-selector
           identificador="reportes-categoria"
           etiqueta="Categoría"
@@ -62,7 +64,10 @@
     <app-alerta variante="peligro">{{ error() }}</app-alerta>
     <app-boton variante="secundario" (accion)="recargar.next()">Reintentar</app-boton>
   } @else if (datos(); as r) {
-    <section aria-label="Indicadores generales" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section
+      aria-label="Indicadores generales"
+      class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+    >
       <app-tarjeta class="p-5"
         ><h2 class="text-sm text-texto-suave">Tickets creados</h2>
         <p class="mt-2 text-3xl font-bold text-primario">
@@ -145,26 +150,35 @@
           Por {{ granularidad() }}, en {{ r.trend.timeZone }}. Cada serie usa su fecha de evento;
           los extremos pueden ser períodos parciales.
         </p>
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-[650px] text-left">
+        <div class="min-w-0">
+          <table class="tabla-reporte" role="table" aria-label="Evolución de tickets">
             <caption class="sr-only">
               Eventos del período: cantidades y barras comparables. Los períodos sin eventos tienen
               valor cero.
             </caption>
-            <thead class="border-b border-linea text-xs uppercase text-texto-suave">
-              <tr>
-                <th scope="col" class="p-3">Inicio del período</th>
+            <thead
+              class="sr-only border-b border-linea text-xs uppercase text-texto-suave lg:not-sr-only"
+            >
+              <tr role="row">
+                <th scope="col" role="columnheader">Inicio del período</th>
                 @for (serie of series; track serie.clave) {
-                  <th scope="col" class="p-3">{{ serie.etiqueta }}</th>
+                  <th scope="col" role="columnheader">{{ serie.etiqueta }}</th>
                 }
               </tr>
             </thead>
             <tbody>
               @for (item of r.trend.items; track item.bucket) {
-                <tr class="border-b border-linea">
-                  <th scope="row" class="p-3 font-medium">{{ fechaBucket(item.bucket) }}</th>
+                <tr role="row" class="border-b border-linea">
+                  <th scope="row" role="rowheader" class="font-semibold text-primario">
+                    {{ fechaBucket(item.bucket) }}
+                  </th>
                   @for (serie of series; track serie.clave) {
-                    <td class="p-3">
+                    <td role="cell">
+                      <span
+                        class="mb-1 block text-xs font-semibold text-texto-suave lg:hidden"
+                        aria-hidden="true"
+                        >{{ serie.etiqueta }}</span
+                      >
                       <span>{{ item[serie.clave] }}</span>
                       <div class="mt-1 h-2 rounded-boton bg-fondo" aria-hidden="true">
                         <div
@@ -188,33 +202,59 @@
         no mide la complejidad del trabajo. Telegram y notas no se cuentan.
       </p>
       @if (r.agents.items.length) {
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-[700px] text-left">
+        <div class="min-w-0">
+          <table class="tabla-reporte" role="table" aria-label="Actividad por agente">
             <caption class="sr-only">
               Carga actual y eventos en el rango por agente
             </caption>
-            <thead class="border-b border-linea text-xs uppercase text-texto-suave">
-              <tr>
-                <th scope="col" class="p-3">Agente</th>
-                <th scope="col" class="p-3">Asignados actualmente</th>
-                <th scope="col" class="p-3">Resueltos</th>
-                <th scope="col" class="p-3">Cerrados</th>
-                <th scope="col" class="p-3">Tiempo medio de resolución</th>
+            <thead
+              class="sr-only border-b border-linea text-xs uppercase text-texto-suave lg:not-sr-only"
+            >
+              <tr role="row">
+                <th scope="col" role="columnheader">Agente</th>
+                <th scope="col" role="columnheader">Asignados actualmente</th>
+                <th scope="col" role="columnheader">Resueltos</th>
+                <th scope="col" role="columnheader">Cerrados</th>
+                <th scope="col" role="columnheader">Tiempo medio de resolución</th>
               </tr>
             </thead>
             <tbody>
               @for (item of r.agents.items; track item.agent.id) {
-                <tr class="border-b border-linea">
-                  <th scope="row" class="p-3 font-medium">
+                <tr role="row" class="border-b border-linea">
+                  <th scope="row" role="rowheader" class="font-semibold text-primario">
                     {{ item.agent.fullName }}
                     @if (!item.agent.isActive) {
                       <span class="text-xs text-texto-suave">(Inactivo)</span>
                     }
                   </th>
-                  <td class="p-3">{{ item.assignedNow }}</td>
-                  <td class="p-3">{{ item.resolvedInRange }}</td>
-                  <td class="p-3">{{ item.closedInRange }}</td>
-                  <td class="p-3">{{ duracion(item.averageResolutionMinutes) }}</td>
+                  <td role="cell">
+                    <span
+                      class="mb-1 block text-xs font-semibold text-texto-suave lg:hidden"
+                      aria-hidden="true"
+                      >Asignados actualmente</span
+                    >{{ item.assignedNow }}
+                  </td>
+                  <td role="cell">
+                    <span
+                      class="mb-1 block text-xs font-semibold text-texto-suave lg:hidden"
+                      aria-hidden="true"
+                      >Resueltos</span
+                    >{{ item.resolvedInRange }}
+                  </td>
+                  <td role="cell">
+                    <span
+                      class="mb-1 block text-xs font-semibold text-texto-suave lg:hidden"
+                      aria-hidden="true"
+                      >Cerrados</span
+                    >{{ item.closedInRange }}
+                  </td>
+                  <td role="cell">
+                    <span
+                      class="mb-1 block text-xs font-semibold text-texto-suave lg:hidden"
+                      aria-hidden="true"
+                      >Tiempo medio de resolución</span
+                    >{{ duracion(item.averageResolutionMinutes) }}
+                  </td>
                 </tr>
               }
             </tbody>

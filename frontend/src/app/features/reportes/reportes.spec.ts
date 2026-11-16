@@ -66,6 +66,13 @@ describe('Pantalla Reportes', () => {
     expect(e.querySelectorAll('app-barras-reporte li')).toHaveLength(12);
     expect(e.querySelectorAll('table caption')).toHaveLength(2);
     expect(e.querySelectorAll('th[scope="col"]')).toHaveLength(10);
+    for (const tabla of e.querySelectorAll('table')) {
+      expect(tabla.classList.contains('tabla-reporte')).toBe(true);
+      expect(tabla.className).not.toMatch(/min-w-/);
+      for (const celda of tabla.querySelectorAll('tbody td'))
+        expect(celda.querySelector('span[aria-hidden="true"]')?.textContent?.trim()).toBeTruthy();
+    }
+    expect(e.querySelector('.overflow-x-auto')).toBeNull();
     for (const select of e.querySelectorAll('select'))
       expect(e.querySelector(`label[for="${select.id}"]`)).not.toBeNull();
     const dates = e.querySelectorAll('input[type=date]');

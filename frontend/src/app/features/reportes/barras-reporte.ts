@@ -13,7 +13,7 @@ export interface BarraReporte {
       <li>
         <div class="mb-1 flex justify-between gap-4">
           <span>{{ item.etiqueta }}</span
-          ><strong>{{ item.cantidad }}</strong>
+          ><strong class="shrink-0">{{ item.cantidad }}</strong>
         </div>
         <div class="h-2 overflow-hidden rounded-boton bg-fondo" aria-hidden="true">
           <div

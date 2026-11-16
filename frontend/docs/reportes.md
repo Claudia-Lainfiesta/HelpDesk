@@ -75,8 +75,13 @@ actual por agente. Los promedios sin datos se presentan explícitamente.
 No se añade una librería gráfica: HTML semántico, listas con cantidades y tablas
 con encabezados y captions constituyen también la alternativa textual. Las
 barras decorativas tienen `aria-hidden`; nada depende solo del color. Formularios
-con etiquetas enlazadas, foco global visible y tablas desplazables por debajo
-del ancho necesario. No se añaden animaciones.
+con etiquetas enlazadas y foco global visible. Evolución y Actividad por agente
+usan tablas adaptables con un solo conjunto de datos: bajo `lg` (1024 px), cada
+fila se apila con su fecha o agente y una rejilla de métricas etiquetadas; desde
+`lg` vuelve la tabla. Ningún bloque requiere desplazamiento horizontal.
+Los encabezados y captions siguen disponibles para lectores de pantalla. Los
+filtros se apilan en móvil y los siete KPIs ocupan una columna, dos desde `sm`
+y cuatro desde `lg`. Los nombres largos envuelven sin cortar información. No se añaden animaciones.
 
 Se reutilizan `app-tarjeta`, `app-boton`, `app-selector`, `app-campo-fecha` (ahora
 admite `tipo="date"`, conservando `datetime-local` por defecto) y `app-alerta`.

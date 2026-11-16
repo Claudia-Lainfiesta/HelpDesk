@@ -130,3 +130,8 @@ y envuelve en pantallas estrechas. Desde `xl` (1280 px) las listas usan columnas
 por debajo muestran tarjetas con etiquetas y todos los datos, sin desplazamiento
 horizontal. Las acciones son iconos directos, sin menú de puntos. Los avisos son
 tarjetas compactas de superficie neutra con icono, título, mensaje y cierre X.
+
+Desactivar usa un botón fantasma: solo el icono toma `text-peligro`, sin fondo
+rojo sólido. Se conservan nombre accesible, ayuda, foco y confirmación. La misma
+regla se aplica a acciones equivalentes de `app-acciones-fila`; el botón de
+confirmación del diálogo puede seguir usando la variante sólida de peligro.

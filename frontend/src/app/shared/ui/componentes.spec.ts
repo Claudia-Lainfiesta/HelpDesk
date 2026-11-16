@@ -172,6 +172,24 @@ describe('Pulido de componentes compartidos', () => {
     boton.click();
     expect(elegir).toHaveBeenCalledWith('editar');
   });
+  it('una acción destructiva usa fondo fantasma y solo el icono de peligro', () => {
+    const f = TestBed.createComponent(AccionesFila);
+    f.componentRef.setInput('nombre', 'categoría Hardware');
+    f.componentRef.setInput('acciones', [
+      { codigo: 'desactivar', etiqueta: 'Desactivar', icono: 'encendido', peligro: true },
+    ]);
+    const elegido = vi.fn();
+    f.componentInstance.seleccionado.subscribe(elegido);
+    f.detectChanges();
+    const boton = f.nativeElement.querySelector('button');
+    expect(boton.className).toContain('bg-transparent');
+    expect(boton.className).not.toContain('bg-peligro');
+    expect(boton.querySelector('app-icono').className).toContain('text-peligro');
+    expect(boton.getAttribute('aria-label')).toBe('Desactivar categoría Hardware');
+    expect(boton.title).toBe('Desactivar categoría Hardware');
+    boton.click();
+    expect(elegido).toHaveBeenCalledWith('desactivar');
+  });
   it.each([false, true])(
     'toast error=%s anuncia mensaje y permite cierre iconográfico',
     (error) => {

@@ -1,4 +1,8 @@
 import {
+  afterNextRender,
+  ElementRef,
+  Injector,
+  viewChild,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -6,7 +10,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -32,13 +36,14 @@ import { Selector } from '../../shared/ui/selector';
 import { Filtro } from '../../shared/ui/filtro';
 import { InsigniaEstado, estados, EstadoTicket } from '../../shared/ui/insignia-estado';
 import { Tarjeta } from '../../shared/ui/tarjeta';
-import { TablaPaginada } from '../../shared/ui/tabla-paginada';
 import { Paginador } from '../../shared/ui/paginador';
 import { Avisos, AvisoFlotante } from '../../shared/ui/aviso-flotante';
 import { Alerta } from '../../shared/ui/alerta';
 import { InsigniaPrioridad } from '../../shared/ui/insignia-prioridad';
 import { esPrioridad, opcionesPrioridad } from '../../core/tickets/prioridad';
 import { FormularioTicket } from './formulario-ticket';
+import { VistaPreviaTicket } from './vista-previa-ticket';
+import { Icono } from '../../shared/ui/icono';
 export function leerFiltrosTickets(p: { get: (k: string) => string | null }): FiltrosTickets {
   const status = p.get('status');
   const priority = p.get('priority');
@@ -58,8 +63,8 @@ export function leerFiltrosTickets(p: { get: (k: string) => string | null }): Fi
 @Component({
   selector: 'app-tickets',
   standalone: true,
+  host: { class: 'block min-w-0' },
   imports: [
-    RouterLink,
     ReactiveFormsModule,
     Boton,
     CampoTexto,
@@ -68,7 +73,8 @@ export function leerFiltrosTickets(p: { get: (k: string) => string | null }): Fi
     InsigniaEstado,
     InsigniaPrioridad,
     Tarjeta,
-    TablaPaginada,
+    VistaPreviaTicket,
+    Icono,
     Paginador,
     FechaLocal,
     FormularioTicket,
@@ -79,6 +85,42 @@ export function leerFiltrosTickets(p: { get: (k: string) => string | null }): Fi
   templateUrl: './tickets.html',
 })
 export class Tickets {
+  private readonly elemento: ElementRef<HTMLElement> = inject(ElementRef);
+  private readonly inyector = inject(Injector);
+  private readonly panelVista = viewChild<ElementRef<HTMLElement>>('panelVista');
+  readonly seleccionado = signal<string | null>(null);
+  readonly seleccionActual = computed(() => (this.seleccionado() ? [this.seleccionado()!] : []));
+  readonly gestionando = signal(false);
+  seleccionar(id: string) {
+    if (this.gestionando()) return;
+    this.seleccionado.set(id);
+    afterNextRender(
+      () => {
+        if (!window.matchMedia?.('(min-width: 1024px)').matches)
+          this.panelVista()?.nativeElement.focus();
+      },
+      { injector: this.inyector },
+    );
+  }
+  volverALista() {
+    if (this.gestionando()) return;
+    const id = this.seleccionado();
+    this.seleccionado.set(null);
+    afterNextRender(
+      () => {
+        Array.from(
+          this.elemento.nativeElement.querySelectorAll<HTMLButtonElement>('button[data-ticket]'),
+        )
+          .find((b) => b.dataset['ticket'] === id)
+          ?.focus();
+      },
+      { injector: this.inyector },
+    );
+  }
+  actualizarTicket(ticket: Ticket) {
+    this.tickets.update((lista) => lista.map((t) => (t.id === ticket.id ? ticket : t)));
+    this.recargar.next();
+  }
   private readonly api = inject(TicketsApi);
   private readonly categoriasApi = inject(CategoriasApi);
   private readonly ruta = inject(ActivatedRoute);
@@ -99,8 +141,6 @@ export class Tickets {
   readonly categorias = signal<Categoria[]>([]);
   readonly errorCategorias = signal('');
   readonly nuevoAbierto = signal(false);
-  readonly columnas = ['Ticket', 'Asunto', 'Categoría', 'Estado', 'Prioridad', 'Agente', 'Fecha'];
-  readonly rejilla = '110px minmax(190px, 1fr) 140px 125px 95px 130px 145px';
   readonly estados = Object.entries(estados).map(([codigo, v]) => ({
     codigo: codigo as EstadoTicket,
     etiqueta: v.etiqueta,
@@ -153,6 +193,8 @@ export class Tickets {
       .subscribe((r) => {
         this.tickets.set(r.data);
         this.total.set(r.total);
+        if (this.seleccionado() && !r.data.some((t) => t.id === this.seleccionado()))
+          this.seleccionado.set(null);
         if (!r.data.length && r.total > 0 && r.page > 1)
           this.pagina(Math.max(1, Math.ceil(r.total / r.pageSize)));
       });
@@ -179,12 +221,15 @@ export class Tickets {
       });
   }
   filtrar(cambios: Partial<FiltrosTickets>) {
+    if (this.gestionando()) return;
     this.navegar({ ...this.filtros(), ...cambios, page: 1 });
   }
   pagina(page: number) {
+    if (this.gestionando()) return;
     this.navegar({ ...this.filtros(), page });
   }
   limpiar() {
+    if (this.gestionando()) return;
     this.navegar({ page: 1, pageSize: this.filtros().pageSize });
   }
   private navegar(f: FiltrosTickets) {

@@ -16,6 +16,7 @@ const trazos = {
   candado: ['M5 10h14v11H5Z', 'M8 10V7a4 4 0 0 1 8 0v3'],
   salir: ['M9 3H4v18h5', 'M9 12h12m-4-4 4 4-4 4'],
   llave: ['M8 14a5 5 0 1 1 5-5l8 0v4h-3v3h-4v-3Z'],
+  volver: ['m15 6-6 6 6 6', 'M9 12h12'],
   desplegar: ['m6 9 6 6 6-6'],
   cerrar: ['M6 6l12 12M6 18 18 6'],
   copiar: ['M9 9h12v12H9Z', 'M15 9V3H3v12h6'],
