@@ -4,6 +4,19 @@ export const roleSchema = z.enum(['solicitante', 'agente', 'supervisor', 'admini
 const fullName = z.string().trim().min(1).max(200);
 const notes = z.string().trim().max(2000).nullable();
 const expiresAt = z.iso.datetime({ offset: true }).nullable();
+const telegramUsername = z
+  .string()
+  .trim()
+  .transform((value) => value.replace(/^@/, '').toLowerCase())
+  .pipe(
+    z
+      .string()
+      .regex(
+        /^[a-z][a-z0-9_]{4,31}$/,
+        'Escribe un usuario público de Telegram de 5 a 32 caracteres, sin enlaces.',
+      ),
+  )
+  .nullable();
 
 export const createUserSchema = z
   .object({
@@ -13,6 +26,7 @@ export const createUserSchema = z
     temporary: z.boolean().default(false),
     expiresAt: expiresAt.optional(),
     notes: notes.optional(),
+    telegramUsername: telegramUsername.optional(),
   })
   .strict();
 
@@ -22,6 +36,7 @@ export const updateUserSchema = z
     roleCode: roleSchema.optional(),
     expiresAt: expiresAt.optional(),
     notes: notes.optional(),
+    telegramUsername: telegramUsername.optional(),
   })
   .strict()
   .refine((value) => Object.keys(value).length > 0);

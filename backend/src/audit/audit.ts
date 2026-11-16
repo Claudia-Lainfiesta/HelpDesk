@@ -20,13 +20,16 @@ const metadataSchema = z
       .regex(/^[1-9]\d*$/)
       .optional(),
     fromPriority: prioritySchema.optional(),
+    noteId: idSchema.optional(),
     toPriority: prioritySchema.optional(),
     fromStatus: statusSchema.optional(),
     toStatus: statusSchema.optional(),
     fromAgentId: idSchema.nullable().optional(),
     toAgentId: idSchema.nullable().optional(),
     isActive: z.boolean().optional(),
-    changedFields: z.array(z.enum(['fullName', 'notes', 'name', 'description'])).optional(),
+    changedFields: z
+      .array(z.enum(['fullName', 'notes', 'name', 'description', 'telegramUsername']))
+      .optional(),
   })
   .strict();
 
@@ -37,6 +40,7 @@ export type AuditAction =
   | 'ticket.unassigned'
   | 'ticket.status_changed'
   | 'ticket.priority_changed'
+  | 'ticket.note_added'
   | 'auth.recovery_requested'
   | 'users.created'
   | 'users.updated'

@@ -12,9 +12,72 @@ import {
   checkAssignment,
   checkTransition,
   checkPriority,
+  checkNoteCreation,
   type CurrentTicket,
 } from './policy.js';
 import type { TransitionAction, TicketPriority } from './validation.js';
+
+export function telegramContact(id: string, user: UserProfile) {
+  return transaction(async (client) => {
+    const actor = await currentActor(client, user);
+    const ticket = await lockedTicket(client, id, actor);
+    if (ticket.requesterId !== actor.id || ticket.agentId === actor.id)
+      throw ticketError('TICKET_ACTION_FORBIDDEN');
+    if (ticket.status === 'cerrado' || ticket.status === 'cancelado')
+      throw ticketError('TICKET_CONTACT_UNAVAILABLE');
+    if (!ticket.agentId)
+      return {
+        available: false as const,
+        message: 'Este ticket todavía no tiene un agente asignado.',
+      };
+    const agent = await client.query<{ telegram_username: string | null; available: boolean }>(
+      `SELECT u.telegram_username, r.code='agente' AND u.is_active
+         AND (u.expires_at IS NULL OR u.expires_at>clock_timestamp()) AS available
+       FROM users u JOIN roles r ON r.id=u.role_id WHERE u.id=$1 FOR SHARE OF u`,
+      [ticket.agentId],
+    );
+    const row = agent.rows[0];
+    if (!row?.available || !row.telegram_username)
+      return {
+        available: false as const,
+        message: 'El agente asignado no tiene Telegram disponible.',
+      };
+    return { available: true as const, url: `https://t.me/${row.telegram_username}` };
+  });
+}
+
+export function addTicketNote(id: string, body: string, user: UserProfile, ip?: string) {
+  return transaction(async (client) => {
+    const actor = await currentActor(client, user);
+    const ticket = await lockedTicket(client, id, actor);
+    checkNoteCreation(ticket, actor);
+    const result = await client.query<{ id: string; body: string; created_at: Date }>(
+      `INSERT INTO ticket_notes(ticket_id,author_user_id,body) VALUES($1,$2,$3)
+       RETURNING id::text,body,created_at`,
+      [id, actor.id, body],
+    );
+    const note = result.rows[0]!;
+    await recordActivity(client, {
+      ticketId: id,
+      type: 'note_added',
+      actorId: actor.id,
+      noteId: note.id,
+    });
+    await recordAudit(client, {
+      actor: { userId: actor.id, ...(ip ? { ip } : {}) },
+      action: 'ticket.note_added',
+      targetType: 'ticket',
+      targetId: id,
+      metadata: { noteId: note.id },
+    });
+    return {
+      id: note.id,
+      body: note.body,
+      author: { id: actor.id, fullName: actor.fullName },
+      createdAt: note.created_at.toISOString(),
+    };
+  });
+}
 
 async function lockedTicket(client: PoolClient, id: string, user: UserProfile) {
   // Bloquea solo la fila base: un JOIN al estado puede perder la fila al

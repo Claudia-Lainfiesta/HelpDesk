@@ -14,7 +14,7 @@ import type { CreateUserInput, UpdateUserInput } from './validation.js';
 const columns = `u.id::text, u.full_name, u.email, r.code AS role,
   u.is_active, u.must_change_password, u.expires_at, u.created_by::text, u.notes,
   u.is_temporary, u.created_at, u.updated_at, u.failed_login_attempts, u.locked_until,
-  u.last_login_at, u.password_changed_at`;
+  u.last_login_at, u.password_changed_at, u.telegram_username`;
 interface ManagedUser {
   id: string;
   full_name: string;
@@ -25,6 +25,7 @@ interface ManagedUser {
   expires_at: Date | null;
   created_by: string | null;
   notes: string | null;
+  telegram_username: string | null;
   is_temporary: boolean;
   created_at: Date;
   updated_at: Date;
@@ -47,6 +48,7 @@ function view(user: ManagedUser) {
     expirationRequired: user.is_temporary,
     createdBy: user.created_by,
     notes: user.notes,
+    telegramUsername: user.telegram_username,
     createdAt: user.created_at.toISOString(),
     updatedAt: user.updated_at.toISOString(),
     failedLoginAttempts: user.failed_login_attempts,
@@ -229,8 +231,8 @@ export async function createUser(input: CreateUserInput, actor: AuditActor, conf
       const passwordHash = await hashPassword(password);
       const result = await client.query<{ id: string }>(
         `INSERT INTO users
-        (full_name, email, role_id, password_hash, must_change_password, expires_at, notes, created_by, is_temporary, created_at)
-        VALUES ($1, $2, $3, $4, true, $5, $6, $7, $8, $9) RETURNING id::text`,
+        (full_name, email, role_id, password_hash, must_change_password, expires_at, notes, created_by, is_temporary, created_at, telegram_username)
+        VALUES ($1, $2, $3, $4, true, $5, $6, $7, $8, $9, $10) RETURNING id::text`,
         [
           input.fullName,
           input.email,
@@ -241,6 +243,7 @@ export async function createUser(input: CreateUserInput, actor: AuditActor, conf
           actor.userId,
           input.temporary,
           now,
+          input.telegramUsername ?? null,
         ],
       );
       const id = result.rows[0]!.id;
@@ -285,13 +288,14 @@ export async function updateUser(
       await protectAdministrator(client, user, { role, isActive: user.is_active, expiresAt });
     }
     await client.query(
-      `UPDATE users SET full_name = $2, role_id = $3, expires_at = $4, notes = $5 WHERE id = $1`,
+      `UPDATE users SET full_name = $2, role_id = $3, expires_at = $4, notes = $5, telegram_username = $6 WHERE id = $1`,
       [
         id,
         input.fullName ?? user.full_name,
         await roleId(client, role),
         expiresAt,
         input.notes === undefined ? user.notes : input.notes,
+        input.telegramUsername === undefined ? user.telegram_username : input.telegramUsername,
       ],
     );
     if (role !== user.role)
@@ -313,10 +317,12 @@ export async function updateUser(
           expiresAt: expiresAt?.toISOString() ?? null,
         },
       });
-    const changedFields: ('fullName' | 'notes')[] = [];
+    const changedFields: ('fullName' | 'notes' | 'telegramUsername')[] = [];
     if (input.fullName !== undefined && input.fullName !== user.full_name)
       changedFields.push('fullName');
     if (input.notes !== undefined && input.notes !== user.notes) changedFields.push('notes');
+    if (input.telegramUsername !== undefined && input.telegramUsername !== user.telegram_username)
+      changedFields.push('telegramUsername');
     if (changedFields.length)
       await recordAudit(client, {
         actor,

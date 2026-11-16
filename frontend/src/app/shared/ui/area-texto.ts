@@ -23,6 +23,7 @@ import { ControlCampo } from './control-campo';
       (blur)="tocar()"
       (input)="escribir($event)"
       [attr.maxlength]="maximo()"
+      [attr.placeholder]="marcador() || null"
       rows="3"
       class="min-h-24 py-3 w-full rounded-boton border border-linea bg-superficie-suave px-4 text-texto disabled:opacity-60"
     ></textarea>
@@ -37,4 +38,5 @@ import { ControlCampo } from './control-campo';
 })
 export class AreaTexto extends ControlCampo {
   readonly maximo = input(2000);
+  readonly marcador = input('');
 }

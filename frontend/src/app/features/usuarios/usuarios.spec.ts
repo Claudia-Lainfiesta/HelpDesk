@@ -300,4 +300,20 @@ describe('Formulario de usuario', () => {
     expect(r.request.body).toEqual({ fullName: 'Nombre nuevo' });
     r.flush(cuentaPrueba());
   });
+
+  it('administrador configura @usuario normalizado, puede quitarlo y rechaza URLs/IDs', () => {
+    const f = crear(cuentaPrueba());
+    const c = f.componentInstance;
+    for (const value of ['https://t.me/usuario', '1234567', 'abc']) {
+      c.formulario.controls.telegramUsername.setValue(value);
+      c.enviar();
+      http.expectNone('/api/users/25');
+      expect(c.campo('telegramUsername')).toContain('público');
+    }
+    c.formulario.controls.telegramUsername.setValue(' @Agente_Prueba ');
+    c.enviar();
+    const r = http.expectOne('/api/users/25');
+    expect(r.request.body).toEqual({ telegramUsername: 'agente_prueba' });
+    r.flush(cuentaPrueba({ telegramUsername: 'agente_prueba' }));
+  });
 });

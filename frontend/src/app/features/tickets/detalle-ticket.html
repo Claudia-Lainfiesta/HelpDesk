@@ -51,6 +51,30 @@
       </div></app-tarjeta
     >
 
+    @if (permisos().telegramVisible) {
+      <app-tarjeta class="mt-6 block">
+        <section class="space-y-4 p-7" aria-labelledby="contacto-ticket">
+          <h2 id="contacto-ticket" class="text-xl font-bold text-primario">
+            Contacto con el agente
+          </h2>
+          <p class="text-texto-suave">
+            La conversación ocurre directamente en Telegram. HelpDesk no recibe ni guarda esos
+            mensajes.
+          </p>
+          <app-boton [cargando]="cargandoContacto()" (accion)="hablarPorTelegram()"
+            >Hablar por Telegram</app-boton
+          >
+          @if (avisoContacto()) {
+            <app-alerta variante="info">{{ avisoContacto() }}</app-alerta>
+          }
+          @if (avisoContacto() && t.assignedAgent) {
+            <app-boton variante="secundario" (accion)="cargarContacto()"
+              >Actualizar contacto</app-boton
+            >
+          }
+        </section>
+      </app-tarjeta>
+    }
     <app-tarjeta class="mt-6 block"
       ><section class="space-y-4 p-7" aria-labelledby="asignacion-ticket">
         <h2 id="asignacion-ticket" class="text-xl font-bold text-primario">Asignación</h2>
@@ -135,6 +159,34 @@
     <app-tarjeta class="mt-6 block"
       ><section class="p-7" aria-labelledby="actividad-ticket">
         <h2 id="actividad-ticket" class="mb-5 text-xl font-bold text-primario">Actividad</h2>
+        @if (permisos().seguimientoEditable) {
+          <form class="mb-7 space-y-4" [formGroup]="formularioNota" (ngSubmit)="agregarNota()">
+            <app-area-texto
+              identificador="nota-interna"
+              etiqueta="Agregar nota interna"
+              [formControl]="nota"
+              [maximo]="5000"
+              marcador="Resume aquí la información relevante del seguimiento realizado."
+              ayuda="Las notas internas solo son visibles para el personal de soporte autorizado."
+              [error]="
+                nota.touched && nota.invalid
+                  ? 'Escribe entre 1 y 5000 caracteres, sin contar espacios en los extremos.'
+                  : ''
+              "
+            />
+            @if (errorNota()) {
+              <app-alerta variante="peligro">{{ errorNota() }}</app-alerta>
+            }
+            <app-boton tipo="submit" [cargando]="guardandoNota()" [deshabilitado]="ocupada()"
+              >Agregar nota</app-boton
+            >
+          </form>
+        } @else if (permisos().notasVisibles) {
+          <p class="mb-5 text-sm text-texto-suave">
+            Este ticket está {{ t.status === 'cancelado' ? 'cancelado' : 'cerrado' }} y sus notas
+            son de solo lectura.
+          </p>
+        }
         @if (cargandoActividad()) {
           <p role="status">Cargando actividad…</p>
         } @else if (errorActividad()) {
@@ -146,10 +198,23 @@
           <ol class="space-y-5 border-l border-linea pl-5">
             @for (evento of actividad(); track evento.id) {
               <li>
-                <p class="font-medium">{{ textoEvento(evento) }}</p>
-                <time class="text-sm text-texto-suave" [attr.datetime]="evento.createdAt">{{
-                  evento.createdAt | fechaLocal
-                }}</time>
+                @if (evento.type === 'note_added' && evento.note && permisos().notasVisibles) {
+                  <div class="rounded-tarjeta border border-linea bg-superficie-suave p-4">
+                    <p class="font-semibold text-primario">{{ evento.actor.fullName }}</p>
+                    <p class="mb-3 text-sm text-texto-suave">
+                      Nota interna ·
+                      <time [attr.datetime]="evento.createdAt">{{
+                        evento.createdAt | fechaLocal
+                      }}</time>
+                    </p>
+                    <p class="whitespace-pre-wrap break-words">{{ evento.note.body }}</p>
+                  </div>
+                } @else if (evento.type !== 'note_added') {
+                  <p class="font-medium">{{ textoEvento(evento) }}</p>
+                  <time class="text-sm text-texto-suave" [attr.datetime]="evento.createdAt">{{
+                    evento.createdAt | fechaLocal
+                  }}</time>
+                }
               </li>
             } @empty {
               <li>No hay actividad registrada.</li>

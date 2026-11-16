@@ -8,7 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { Modal } from '../../shared/ui/modal';
@@ -69,6 +69,13 @@ export class FormularioUsuario implements OnInit {
     temporary: [false],
     expiresAt: [''],
     notes: ['', Validators.maxLength(2000)],
+    telegramUsername: [
+      '',
+      (control: AbstractControl<string>) =>
+        !control.value.trim() || /^@?[a-z][a-z0-9_]{4,31}$/i.test(control.value.trim())
+          ? null
+          : { telegram: true },
+    ],
   });
   ngOnInit() {
     const cuenta = this.cuenta();
@@ -76,6 +83,7 @@ export class FormularioUsuario implements OnInit {
       this.formulario.patchValue({
         ...cuenta,
         notes: cuenta.notes ?? '',
+        telegramUsername: cuenta.telegramUsername ?? '',
         expiresAt: fechaParaCampo(cuenta.expiresAt),
       });
       this.formulario.controls.email.disable();
@@ -94,6 +102,8 @@ export class FormularioUsuario implements OnInit {
     if (!campo.touched || !campo.invalid) return '';
     if (nombre === 'email') return 'Escribe un correo válido de hasta 254 caracteres.';
     if (nombre === 'fullName') return 'Escribe el nombre completo (hasta 200 caracteres).';
+    if (nombre === 'telegramUsername')
+      return 'Escribe el @usuario público de Telegram (5 a 32 caracteres), sin enlaces ni ID numérico.';
     return 'Revisa este campo y su longitud máxima.';
   }
   enviar(confirmado = false) {
@@ -116,12 +126,14 @@ export class FormularioUsuario implements OnInit {
       return;
     }
     const cambios: CambioCuenta = {};
+    const telegramUsername = valor.telegramUsername.trim().replace(/^@/, '').toLowerCase() || null;
     if (cuenta) {
       if (valor.fullName.trim() !== cuenta.fullName) cambios.fullName = valor.fullName.trim();
       if (valor.roleCode !== cuenta.roleCode) cambios.roleCode = valor.roleCode;
       if (cambioFecha)
         cambios.expiresAt = valor.expiresAt ? new Date(valor.expiresAt).toISOString() : null;
       if ((valor.notes.trim() || null) !== cuenta.notes) cambios.notes = valor.notes.trim() || null;
+      if (telegramUsername !== cuenta.telegramUsername) cambios.telegramUsername = telegramUsername;
       if (!Object.keys(cambios).length) {
         this.cerrar.emit();
         return;
@@ -137,6 +149,7 @@ export class FormularioUsuario implements OnInit {
       roleCode: valor.roleCode,
       temporary: valor.temporary,
       notes: valor.notes.trim() || null,
+      telegramUsername,
       ...(valor.temporary && valor.expiresAt
         ? { expiresAt: new Date(valor.expiresAt).toISOString() }
         : {}),

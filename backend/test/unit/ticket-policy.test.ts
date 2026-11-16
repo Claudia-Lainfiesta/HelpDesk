@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { checkTransition, checkAssignment, type CurrentTicket } from '../../src/tickets/policy.js';
+import {
+  checkTransition,
+  checkAssignment,
+  checkNoteCreation,
+  canReadNotes,
+  type CurrentTicket,
+} from '../../src/tickets/policy.js';
 import { ticketStatuses, transitionActions } from '../../src/tickets/validation.js';
 import type { UserProfile } from '../../src/auth/types.js';
 const user: UserProfile = {
@@ -51,4 +57,21 @@ describe('máquina exacta de estados', () => {
       ),
     ).toThrow();
   });
+  for (const role of ['solicitante', 'agente', 'supervisor', 'administrador'] as const)
+    for (const status of ticketStatuses)
+      it(`notas ${role}/${status}: propiedad no amplía visibilidad`, () => {
+        const actor = { ...user, role };
+        const t: CurrentTicket = { id: '10', status, requesterId: '1', agentId: '3' };
+        const allowed = role === 'supervisor' || role === 'administrador';
+        expect(canReadNotes(t, actor)).toBe(allowed);
+        if (allowed && !['cerrado', 'cancelado'].includes(status))
+          expect(() => checkNoteCreation(t, actor)).not.toThrow();
+        else
+          expect(() => checkNoteCreation(t, actor)).toThrow(
+            expect.objectContaining({
+              code: allowed ? 'TICKET_NOTES_READ_ONLY' : 'TICKET_NOTE_FORBIDDEN',
+            }),
+          );
+        expect(canReadNotes({ ...t, agentId: '1' }, { ...user, role: 'agente' })).toBe(true);
+      });
 });

@@ -2,6 +2,12 @@ import { ApiError } from '../auth/errors.js';
 const definitions = {
   TICKET_NOT_FOUND: [404, 'No se encontró el ticket.'],
   TICKET_ACTION_FORBIDDEN: [403, 'No tienes permiso para realizar esta acción.'],
+  TICKET_NOTE_FORBIDDEN: [403, 'No tienes permiso para agregar notas internas a este ticket.'],
+  TICKET_NOTES_READ_ONLY: [409, 'Las notas de un ticket cerrado o cancelado son de solo lectura.'],
+  TICKET_CONTACT_UNAVAILABLE: [
+    409,
+    'El contacto por Telegram no está disponible en tickets cerrados o cancelados.',
+  ],
   TICKET_PRIORITY_UNCHANGED: [409, 'El ticket ya tiene esa prioridad.'],
   TICKET_PRIORITY_NOT_EDITABLE: [
     409,

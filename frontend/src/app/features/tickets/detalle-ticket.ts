@@ -25,10 +25,11 @@ import {
 } from '../../core/tickets/prioridad';
 import { AuthService } from '../../core/auth/auth.service';
 import { AccionTicket, accionesTicket, permisosTicket } from '../../core/tickets/permisos-ticket';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Selector } from '../../shared/ui/selector';
 import { Confirmacion } from '../../shared/ui/confirmacion';
 import { Paginador } from '../../shared/ui/paginador';
+import { AreaTexto } from '../../shared/ui/area-texto';
 import { estados } from '../../shared/ui/insignia-estado';
 import { Avisos, AvisoFlotante } from '../../shared/ui/aviso-flotante';
 @Component({
@@ -47,6 +48,7 @@ import { Avisos, AvisoFlotante } from '../../shared/ui/aviso-flotante';
     Selector,
     Confirmacion,
     Paginador,
+    AreaTexto,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './detalle-ticket.html',
@@ -61,7 +63,14 @@ export class DetalleTicket {
   readonly permisos = computed(() =>
     this.ticket()
       ? permisosTicket(this.ticket()!, this.auth.usuario())
-      : { asignacion: 'ninguna', acciones: [] as AccionTicket[], prioridadEditable: false },
+      : {
+          asignacion: 'ninguna',
+          acciones: [] as AccionTicket[],
+          prioridadEditable: false,
+          notasVisibles: false,
+          seguimientoEditable: false,
+          telegramVisible: false,
+        },
   );
   readonly agentes = signal<PersonaTicket[]>([]);
   readonly errorAgentes = signal('');
@@ -84,6 +93,23 @@ export class DetalleTicket {
   });
   readonly ocupada = signal(false);
   readonly errorAccion = signal('');
+  readonly nota = new FormControl('', {
+    nonNullable: true,
+    validators: [
+      (control) => {
+        const longitud = String(control.value).trim().length;
+        return longitud < 1 || longitud > 5000 ? { longitud: true } : null;
+      },
+    ],
+  });
+  readonly errorNota = signal('');
+  readonly formularioNota = new FormGroup({ body: this.nota });
+  readonly guardandoNota = signal(false);
+  readonly cargandoContacto = signal(false);
+  readonly avisoContacto = signal('');
+  private contactoLectura = 0;
+  private urlTelegram: string | null = null;
+  private mensajeContacto = '';
   readonly pendiente = signal<{
     titulo: string;
     mensaje: string;
@@ -112,6 +138,10 @@ export class DetalleTicket {
           this.ticket.set(null);
           this.actividad.set([]);
           this.pendiente.set(null);
+          this.nota.reset();
+          this.errorNota.set('');
+          this.urlTelegram = null;
+          this.avisoContacto.set('');
           return this.api.obtener(p.get('id') ?? '').pipe(
             catchError((e) => {
               const f = interpretarError(e);
@@ -129,6 +159,7 @@ export class DetalleTicket {
         this.agente.setValue(t.assignedAgent?.id ?? '');
         this.prioridad.setValue(t.priority);
         this.cargarActividad(1);
+        this.cargarContacto();
         if (
           this.auth.usuario()?.role === 'supervisor' ||
           this.auth.usuario()?.role === 'administrador'
@@ -193,6 +224,8 @@ export class DetalleTicket {
     switch (e.type) {
       case 'created':
         return `${nombre} creó el ticket.`;
+      case 'note_added':
+        return `${nombre} agregó una nota interna.`;
       case 'assigned':
         return e.actor.id === e.toAgent?.id
           ? `${nombre} se asignó el ticket.`
@@ -262,6 +295,90 @@ export class DetalleTicket {
       return;
     this.ejecutar({ titulo: 'Cambiar prioridad', mensaje: '', prioridad: priority });
   }
+  agregarNota() {
+    this.nota.markAsTouched();
+    const id = this.ticket()?.id;
+    if (!id || this.ocupada() || !this.permisos().seguimientoEditable || this.nota.invalid) return;
+    this.ocupada.set(true);
+    this.guardandoNota.set(true);
+    this.errorNota.set('');
+    this.nota.disable();
+    this.agente.disable();
+    this.prioridad.disable();
+    this.api
+      .agregarNota(id, this.nota.value.trim())
+      .pipe(
+        takeUntilDestroyed(this.destruir),
+        finalize(() => {
+          this.ocupada.set(false);
+          this.guardandoNota.set(false);
+          this.nota.enable();
+          this.agente.enable();
+          this.prioridad.enable();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          if (this.ticket()?.id !== id) return;
+          this.nota.reset();
+          this.cargarActividad(1);
+          this.avisos.mostrar('Nota interna agregada.');
+        },
+        error: (e) => {
+          if (this.ticket()?.id !== id) return;
+          this.errorNota.set(interpretarError(e).message);
+        },
+      });
+  }
+  cargarContacto() {
+    const lectura = ++this.contactoLectura;
+    this.cargandoContacto.set(false);
+    this.urlTelegram = null;
+    this.avisoContacto.set('');
+    this.mensajeContacto = 'Este ticket todavía no tiene un agente asignado.';
+    const id = this.ticket()?.id;
+    if (!id || !this.permisos().telegramVisible || !this.ticket()?.assignedAgent) return;
+    const agente = this.ticket()!.assignedAgent!.id;
+    this.cargandoContacto.set(true);
+    this.api
+      .contactoTelegram(id)
+      .pipe(takeUntilDestroyed(this.destruir))
+      .subscribe({
+        next: (contacto) => {
+          if (
+            this.ticket()?.id !== id ||
+            this.ticket()?.assignedAgent?.id !== agente ||
+            lectura !== this.contactoLectura
+          )
+            return;
+          this.cargandoContacto.set(false);
+          if (
+            contacto.available &&
+            /^https:\/\/t\.me\/[A-Za-z][A-Za-z0-9_]{4,31}$/.test(contacto.url)
+          )
+            this.urlTelegram = contacto.url;
+          this.mensajeContacto = contacto.available
+            ? 'No se pudo abrir Telegram.'
+            : contacto.message;
+        },
+        error: (error) => {
+          if (
+            this.ticket()?.id !== id ||
+            this.ticket()?.assignedAgent?.id !== agente ||
+            lectura !== this.contactoLectura
+          )
+            return;
+          this.cargandoContacto.set(false);
+          this.mensajeContacto = interpretarError(error).message;
+          this.avisoContacto.set(this.mensajeContacto);
+        },
+      });
+  }
+  hablarPorTelegram() {
+    if (!this.permisos().telegramVisible || this.cargandoContacto()) return;
+    if (this.urlTelegram) window.open(this.urlTelegram, '_blank', 'noopener,noreferrer');
+    else this.avisoContacto.set(this.mensajeContacto);
+  }
   confirmar() {
     const p = this.pendiente();
     if (p) this.ejecutar(p);
@@ -301,6 +418,7 @@ export class DetalleTicket {
           this.ticket.set(t);
           this.agente.setValue(t.assignedAgent?.id ?? '');
           this.prioridad.setValue(t.priority);
+          this.cargarContacto();
           this.pendiente.set(null);
           this.cargarActividad(1);
           const mensaje = p.prioridad

@@ -81,4 +81,19 @@ describe('TicketsApi', () => {
     expect(r.request.body).toEqual({ priority: 'urgente' });
     r.flush({});
   });
+  it('publica solo el texto de nota y consulta contacto sin aceptar destinos del cliente', () => {
+    api.agregarNota('123', 'Seguimiento').subscribe();
+    const r = http.expectOne('/api/tickets/123/notes');
+    expect(r.request.method).toBe('POST');
+    expect(r.request.body).toEqual({ body: 'Seguimiento' });
+    r.flush({});
+    api.contactoTelegram('123').subscribe();
+    const contacto = http.expectOne('/api/tickets/123/telegram-contact');
+    expect(contacto.request.method).toBe('GET');
+    expect(contacto.request.params.keys()).toEqual([]);
+    contacto.flush({
+      available: false,
+      message: 'El agente asignado no tiene Telegram disponible.',
+    });
+  });
 });

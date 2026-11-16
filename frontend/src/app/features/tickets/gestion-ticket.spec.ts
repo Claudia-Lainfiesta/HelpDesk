@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { DetalleTicket } from './detalle-ticket';
 import { AuthService } from '../../core/auth/auth.service';
 import { usuarioPrueba } from '../../pruebas/usuario';
-import { Ticket, EventoTicket } from '../../core/tickets/tickets-api';
+import { Ticket, EventoTicket, ContactoTelegram } from '../../core/tickets/tickets-api';
 import { permisosTicket } from '../../core/tickets/permisos-ticket';
 import { Avisos } from '../../shared/ui/aviso-flotante';
 import { Usuario } from '../../core/auth/modelos';
@@ -68,6 +68,10 @@ describe('derechos combinados de tickets', () => {
           ...((owner || admin) && propietario[i] ? propietario[i].split(',') : []),
         ];
         expect(actual.acciones).toEqual(expected);
+        expect(actual.notasVisibles).toBe(support);
+        expect(actual.seguimientoEditable).toBe(
+          support && !['cerrado', 'cancelado'].includes(status),
+        );
         expect(actual.prioridadEditable).toBe(
           support && !['cerrado', 'cancelado'].includes(status),
         );
@@ -99,13 +103,20 @@ describe('operaciones del detalle', () => {
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => http.verify());
-  function abrir(u: Usuario = { ...usuarioPrueba, id: '7', role: 'agente' }, t: Ticket = ticket) {
+  function abrir(
+    u: Usuario = { ...usuarioPrueba, id: '7', role: 'agente' },
+    t: Ticket = ticket,
+    contacto: ContactoTelegram = {
+      available: false,
+      message: 'El agente asignado no tiene Telegram disponible.',
+    },
+  ) {
     TestBed.inject(AuthService).cargarSesion().subscribe();
     http.expectOne('/api/auth/me').flush(u);
     const f = TestBed.createComponent(DetalleTicket);
     f.detectChanges();
     http.expectOne('/api/tickets/123').flush(t);
-    actividad();
+    actividad(undefined, contacto);
     if (['supervisor', 'administrador'].includes(u.role))
       http
         .expectOne('/api/tickets/assignable-agents')
@@ -113,10 +124,17 @@ describe('operaciones del detalle', () => {
     f.detectChanges();
     return f;
   }
-  function actividad(data: EventoTicket[] = [evento]) {
+  function actividad(
+    data: EventoTicket[] = [evento],
+    contacto: ContactoTelegram = {
+      available: false,
+      message: 'El agente asignado no tiene Telegram disponible.',
+    },
+  ) {
     http
       .expectOne('/api/tickets/123/events?page=1&pageSize=50')
       .flush({ data, page: 1, pageSize: 50, total: data.length });
+    for (const r of http.match('/api/tickets/123/telegram-contact')) r.flush(contacto);
   }
   it('agente se asigna sin confirmación, mantiene Creado y actualiza actividad', () => {
     const f = abrir();
@@ -421,5 +439,183 @@ describe('operaciones del detalle', () => {
     expect(c.ticket()?.priority).toBe('urgente');
     expect(f.nativeElement.querySelector('#prioridad-ticket-selector')).toBeNull();
     expect(f.nativeElement.textContent).toContain('El ticket ya está cerrado.');
+  });
+
+  const nota: EventoTicket = {
+    ...evento,
+    id: '44',
+    type: 'note_added',
+    actor: { id: '7', fullName: 'Juan', role: 'agente' },
+    note: { id: '99', body: '<script>alert(1)</script>\nSeguimiento interno' },
+  };
+  it.each(['agente', 'supervisor', 'administrador'] as const)(
+    '%s agrega nota sin doble envío ni modificar el ticket, y muestra texto escapado',
+    (role) => {
+      const f = abrir(
+        { ...usuarioPrueba, id: role === 'agente' ? '7' : '9', role },
+        { ...ticket, status: 'en_proceso', assignedAgent: agente },
+      );
+      const c = f.componentInstance;
+      const anterior = c.ticket();
+      expect(f.nativeElement.querySelector('#nota-interna')?.getAttribute('placeholder')).toContain(
+        'Resume aquí',
+      );
+      c.nota.setValue('  ' + nota.note!.body + '  ');
+      c.agregarNota();
+      c.agregarNota();
+      f.detectChanges();
+      expect(c.nota.disabled).toBe(true);
+      const r = http.expectOne('/api/tickets/123/notes');
+      expect(r.request.method).toBe('POST');
+      expect(r.request.body).toEqual({ body: nota.note!.body });
+      r.flush({ id: '99', body: nota.note!.body, author: nota.actor, createdAt: nota.createdAt });
+      actividad([nota, evento]);
+      f.detectChanges();
+      expect(c.ticket()).toEqual(anterior);
+      expect(c.nota.value).toBe('');
+      expect(c.nota.enabled).toBe(true);
+      expect(TestBed.inject(Avisos).aviso()?.mensaje).toBe('Nota interna agregada.');
+      expect(f.nativeElement.textContent).toContain(nota.note!.body);
+      expect(f.nativeElement.querySelector('script')).toBeNull();
+      expect(f.nativeElement.textContent).toContain('Nota interna ·');
+    },
+  );
+  it.each(['solicitante', 'agente'] as const)(
+    '%s propietario sin asignación no ve notas, formulario ni indicios',
+    (role) => {
+      const f = abrir({ ...usuarioPrueba, role }, { ...ticket, assignedAgent: agente });
+      const c = f.componentInstance;
+      expect(f.nativeElement.querySelector('#nota-interna')).toBeNull();
+      expect(f.nativeElement.textContent).not.toContain('Nota interna');
+      expect(f.nativeElement.textContent).not.toContain('notas');
+      c.nota.setValue('Texto');
+      c.agregarNota();
+      http.expectNone('/api/tickets/123/notes');
+    },
+  );
+  it.each(['cerrado', 'cancelado'] as const)(
+    'en %s conserva notas para soporte sin formulario',
+    (status) => {
+      const f = abrir(undefined, { ...ticket, status, assignedAgent: agente });
+      f.componentInstance.actividad.set([nota]);
+      f.detectChanges();
+      expect(f.nativeElement.querySelector('#nota-interna')).toBeNull();
+      expect(f.nativeElement.textContent).toContain('solo lectura');
+      expect(f.nativeElement.textContent).toContain(nota.note!.body);
+      f.componentInstance.nota.setValue('Texto');
+      f.componentInstance.agregarNota();
+      http.expectNone('/api/tickets/123/notes');
+    },
+  );
+  it('valida trim/longitud, conserva texto ante error y permite reintentar', () => {
+    const f = abrir(undefined, { ...ticket, assignedAgent: agente });
+    const c = f.componentInstance;
+    for (const invalid of ['', '  \n ', 'x'.repeat(5001)]) {
+      c.nota.setValue(invalid);
+      c.agregarNota();
+      http.expectNone('/api/tickets/123/notes');
+      expect(c.nota.invalid).toBe(true);
+    }
+    c.nota.setValue('Seguimiento');
+    c.agregarNota();
+    http
+      .expectOne('/api/tickets/123/notes')
+      .flush(
+        { error: { code: 'UNAVAILABLE', message: 'Inténtalo más tarde.' } },
+        { status: 503, statusText: 'Unavailable' },
+      );
+    f.detectChanges();
+    expect(c.nota.value).toBe('Seguimiento');
+    expect(c.ocupada()).toBe(false);
+    expect(f.nativeElement.textContent).toContain('Inténtalo más tarde.');
+    c.agregarNota();
+    http.expectOne('/api/tickets/123/notes').flush({ id: '99' });
+    actividad([nota]);
+    expect(c.nota.value).toBe('');
+  });
+
+  it('solo propietario abre el @usuario configurado, sin bot ni estado ni actividad extra', () => {
+    const destino = 'https://t.me/agente_prueba';
+    const abrirTelegram = vi.spyOn(window, 'open').mockReturnValue(null);
+    const f = abrir(
+      usuarioPrueba,
+      { ...ticket, assignedAgent: agente },
+      { available: true, url: destino },
+    );
+    const c = f.componentInstance;
+    const anterior = c.ticket();
+    expect(f.nativeElement.textContent).toContain('Hablar por Telegram');
+    c.hablarPorTelegram();
+    expect(abrirTelegram).toHaveBeenCalledWith(destino, '_blank', 'noopener,noreferrer');
+    expect(c.ticket()).toEqual(anterior);
+    http.expectNone('/api/tickets/123/notes');
+    abrirTelegram.mockRestore();
+  });
+  it('sin @usuario muestra mensaje claro y permite actualizar el contacto', () => {
+    const f = abrir(usuarioPrueba, { ...ticket, assignedAgent: agente });
+    f.componentInstance.hablarPorTelegram();
+    f.detectChanges();
+    expect(f.nativeElement.textContent).toContain(
+      'El agente asignado no tiene Telegram disponible.',
+    );
+    f.componentInstance.cargarContacto();
+    http
+      .expectOne('/api/tickets/123/telegram-contact')
+      .flush({ available: false, message: 'El agente asignado no tiene Telegram disponible.' });
+  });
+  it.each([
+    ['agente asignado', { ...usuarioPrueba, id: '7', role: 'agente' }, 'creado'],
+    ['otro agente', { ...usuarioPrueba, id: '8', role: 'agente' }, 'creado'],
+    ['supervisor ajeno', { ...usuarioPrueba, id: '9', role: 'supervisor' }, 'creado'],
+    ['administrador ajeno', { ...usuarioPrueba, id: '9', role: 'administrador' }, 'creado'],
+    ['propietario cerrado', usuarioPrueba, 'cerrado'],
+    ['propietario cancelado', usuarioPrueba, 'cancelado'],
+  ] as const)('%s no ve contacto ni lo consulta', (_nombre, u, status) => {
+    const f = abrir(u, { ...ticket, assignedAgent: agente, status });
+    expect(f.nativeElement.textContent).not.toContain('Hablar por Telegram');
+    f.componentInstance.hablarPorTelegram();
+    http.expectNone('/api/tickets/123/telegram-contact');
+  });
+  it('agente que atiende su propio ticket no ofrece contacto consigo mismo', () => {
+    const f = abrir(
+      { ...usuarioPrueba, id: '7', role: 'agente' },
+      { ...ticket, requester: { ...ticket.requester, id: '7' }, assignedAgent: agente },
+    );
+    expect(f.nativeElement.textContent).not.toContain('Hablar por Telegram');
+    expect(f.componentInstance.permisos().notasVisibles).toBe(true);
+  });
+  it('sin agente informa sin construir un destino; nunca abre una URL arbitraria', () => {
+    const abrirTelegram = vi.spyOn(window, 'open').mockReturnValue(null);
+    const f = abrir(usuarioPrueba, ticket);
+    f.componentInstance.hablarPorTelegram();
+    f.detectChanges();
+    expect(f.nativeElement.textContent).toContain('todavía no tiene un agente');
+    expect(abrirTelegram).not.toHaveBeenCalled();
+    abrirTelegram.mockRestore();
+  });
+  it('rechaza destino externo incluso ante respuesta inesperada', () => {
+    const abrirTelegram = vi.spyOn(window, 'open').mockReturnValue(null);
+    const f = abrir(
+      usuarioPrueba,
+      { ...ticket, assignedAgent: agente },
+      { available: true, url: 'https://otro.example.invalid/' },
+    );
+    f.componentInstance.hablarPorTelegram();
+    expect(abrirTelegram).not.toHaveBeenCalled();
+    abrirTelegram.mockRestore();
+  });
+  it('publica una nota al enviar el formulario real, sin invocar el método desde la prueba', () => {
+    const f = abrir(undefined, { ...ticket, assignedAgent: agente });
+    const campo = f.nativeElement.querySelector('#nota-interna') as HTMLTextAreaElement;
+    campo.value = 'Seguimiento desde el formulario';
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
+    f.detectChanges();
+    const formulario = campo.closest('form')!;
+    formulario.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    const r = http.expectOne('/api/tickets/123/notes');
+    expect(r.request.body).toEqual({ body: 'Seguimiento desde el formulario' });
+    r.flush({ id: '99' });
+    actividad();
+    expect(f.componentInstance.nota.value).toBe('');
   });
 });

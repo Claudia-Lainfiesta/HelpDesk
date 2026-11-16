@@ -44,7 +44,14 @@ export interface FiltrosTickets {
 export interface EventoTicket {
   id: string;
   type:
-    'created' | 'assigned' | 'reassigned' | 'unassigned' | 'status_changed' | 'priority_changed';
+    | 'created'
+    | 'assigned'
+    | 'reassigned'
+    | 'unassigned'
+    | 'status_changed'
+    | 'priority_changed'
+    | 'note_added';
+  note?: { id: string; body: string };
   actor: { id: string; fullName: string; role: Rol };
   fromPriority: TicketPriority | null;
   toPriority: TicketPriority | null;
@@ -54,6 +61,14 @@ export interface EventoTicket {
   toAgent: { id: string; fullName: string } | null;
   createdAt: string;
 }
+export interface NotaTicket {
+  id: string;
+  body: string;
+  author: { id: string; fullName: string };
+  createdAt: string;
+}
+export type ContactoTelegram =
+  { available: true; url: string } | { available: false; message: string };
 @Injectable({ providedIn: 'root' })
 export class TicketsApi {
   private readonly http = inject(HttpClient);
@@ -88,5 +103,13 @@ export class TicketsApi {
   }
   crear(datos: CrearTicket) {
     return this.http.post<Ticket>(this.base, datos);
+  }
+  agregarNota(id: string, body: string) {
+    return this.http.post<NotaTicket>(`${this.base}/${encodeURIComponent(id)}/notes`, { body });
+  }
+  contactoTelegram(id: string) {
+    return this.http.get<ContactoTelegram>(
+      `${this.base}/${encodeURIComponent(id)}/telegram-contact`,
+    );
   }
 }

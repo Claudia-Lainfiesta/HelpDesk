@@ -49,7 +49,8 @@ aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
 - `/recuperar-contrasena`: solicita ayuda con aviso administrativo, sin restablecimiento automático.
 - `/tickets`: listado real paginado, búsqueda, filtros y creación.
   Muestra referencias `TK-XXXXXX` recibidas de la API, mínimo seis dígitos.
-- `/tickets/:id`: detalle, asignación, acciones de estado y actividad con autorización.
+- `/tickets/:id`: detalle, asignación, prioridad, acciones de estado y actividad con notas internas autorizadas.
+  El propietario puede abrir Telegram del agente asignado en tickets no terminales.
 - `/categorias` y `/usuarios`: administración real, disponible solo para el administrador.
 - `/reportes`: marcador para supervisor y administrador.
 - `/sin-permiso` y página 404: explican por qué no se puede acceder.
@@ -156,3 +157,8 @@ se filtra con priority. Nace Media. La cambia el agente asignado, supervisor o
 administrador en tickets no terminales, incluido Resuelto. El propietario no gana
 ese permiso. No hay cálculo, escalamiento, SLA ni notificaciones de prioridad.
 Consulta la guía de tickets para el contrato y los controles disponibles.
+
+El administrador puede configurar el @usuario público de Telegram al crear o editar
+una cuenta en Usuarios. El contacto directo no utiliza el bot ni requiere su token.
+Las notas internas solo están disponibles para agente asignado, supervisor y
+administrador; no se editan ni eliminan. Consulta [tickets](docs/tickets.md).

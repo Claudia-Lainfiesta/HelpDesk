@@ -24,12 +24,14 @@ las épicas, historias y calendarios describen también trabajo futuro.
 - Auditoría de operaciones de usuarios, categorías, recuperación elegible y alta
   de tickets y sus cambios de asignación/estado. El historial funcional del ticket
   está separado de la auditoría global; EP-10 completa sigue pendiente.
-- POC independiente de Telegram con sesiones en memoria y pruebas sin red.
+- Notas internas inmutables, visibles solo para soporte autorizado.
+- Contacto directo del propietario con el Telegram público del agente asignado.
+- POC anterior del bot, independiente y opcional; no participa en el contacto actual.
   No está vinculada a usuarios o tickets reales ni envía notificaciones del caso.
 
 Hay asignación/reasignación y nueve transiciones con historial estructurado.
 No hay conversación integrada,
-comentarios, notas internas, adjuntos, SLA, base de conocimiento ni
+comentarios públicos, adjuntos, SLA, base de conocimiento ni
 reportes reales. `/reportes` es un marcador. Los otros cinco estados aparecen
 en el catálogo, las insignias, filtros y datos del seed. Los cambios se ejecutan
 como acciones semánticas autorizadas; Cerrado y Cancelado son terminales.
@@ -49,7 +51,12 @@ mientras ese cambio sea obligatorio.
 | Consultar categorías inactivas | No | No | No | Sí |
 | Administrar usuarios | No | No | No | Sí |
 | Administrar categorías | No | No | No | Sí |
+| Ver/agregar notas internas | No | Solo asignado; agregar solo si no es terminal | Sí; agregar solo si no es terminal | Sí; agregar solo si no es terminal |
+| Hablar por Telegram con agente | Solo ticket propio no terminal | Solo ticket propio no terminal | Solo ticket propio no terminal | Solo ticket propio no terminal |
 | Cambiar la propia contraseña | Sí | Sí | Sí | Sí |
+
+El contacto se oculta si el agente asignado es el propio usuario. Las notas
+históricas conservan sus permisos aunque el ticket sea terminal.
 
 Las guardas y el menú ayudan en la interfaz; la API vuelve a comprobar permisos.
 Las cuentas temporales usan estos mismos cuatro roles, sin un quinto rol.

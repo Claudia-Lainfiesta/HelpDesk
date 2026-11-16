@@ -12,6 +12,7 @@ export function cuentaPrueba(cambios: Partial<Cuenta> = {}): Cuenta {
     expirationRequired: false,
     createdBy: '4',
     notes: null,
+    telegramUsername: null,
     createdAt: '2026-11-01T12:00:00Z',
     updatedAt: '2026-11-01T12:00:00Z',
     failedLoginAttempts: 0,

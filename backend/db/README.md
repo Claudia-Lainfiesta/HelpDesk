@@ -172,16 +172,27 @@ erDiagram
     categories ||--o{ tickets : category_id
     ticket_statuses ||--o{ tickets : status_id
     tickets ||--o{ ticket_events : ticket_id
+    tickets ||--o{ ticket_notes : ticket_id
+    users ||--o{ ticket_notes : author_user_id
+    ticket_notes o|--o{ ticket_events : note_id
     users ||--o{ ticket_events : actor_user_id
     users o|--o{ ticket_events : from_agent_user_id
     users o|--o{ ticket_events : to_agent_user_id
     ticket_statuses o|--o{ ticket_events : from_status
     ticket_statuses o|--o{ ticket_events : to_status
 
+    ticket_notes {
+        bigint id PK
+        bigint ticket_id FK
+        bigint author_user_id FK
+        text body "Texto plano; interno e inmutable"
+        timestamptz created_at
+    }
     ticket_events {
         bigint id PK
         bigint ticket_id FK
-        text event_type "Incluye priority_changed"
+        text event_type "Incluye priority_changed y note_added"
+        bigint note_id FK "Nullable; solo note_added"
         text from_priority "Nullable; solo cambio de prioridad"
         text to_priority "Nullable; solo cambio de prioridad"
         bigint actor_user_id FK
@@ -199,6 +210,7 @@ erDiagram
         text description
     }
     users {
+        text telegram_username "Nullable; @usuario público sin @, configurado por administrador"
         bigint id PK
         text full_name
         text email "UNIQUE lower(email)"
@@ -320,3 +332,23 @@ forma exige ambos diferentes para ese tipo y null para los demás. La API modifi
 prioridad, actividad y auditoría en una transacción, solo con permiso de soporte y
 fuera de Cerrado/Cancelado. El seed varía prioridades iniciales únicamente de los
 ejemplos insertados; no restablece los existentes. Consulta [tickets](../docs/tickets.md).
+
+## Notas internas y contacto
+
+0015_ticket_notes.sql crea ticket_notes (identity bigint, ticket_id y author_user_id
+FK RESTRICT, body no vacío de hasta 5000 caracteres, created_at timestamptz), con
+índice (ticket_id, created_at). ticket_events incorpora note_added y note_id FK;
+el CHECK de forma exige referencia solo para notas y mantiene los demás tipos.
+El cuerpo no se duplica en eventos o auditoría. La API no permite editar ni borrar
+notas. Inserción, actividad y ticket.note_added con noteId son atómicos, sin UPDATE
+del ticket. Lectura y total de actividad excluyen notas para quien no tiene permiso.
+
+El seed añade tres notas con eventos únicamente a los ejemplos activos que inserta
+en esa ejecución; repetirlo conserva toda historia existente. No añade notas
+posteriores al cierre o cancelación.
+
+0016_agent_telegram_username.sql añade users.telegram_username nullable con CHECK
+para un usuario convencional de Telegram (5–32 caracteres). Lo administra el
+administrador y permite construir https://t.me/usuario para el propietario del
+ticket. No guarda ID numérico, token, vínculos por bot ni conversaciones Telegram.
+Consulta [contratos y permisos](../docs/tickets.md).

@@ -4,6 +4,7 @@ import { input, idSchema } from '../http/validation.js';
 import {
   createTicketSchema,
   changePrioritySchema,
+  createNoteSchema,
   ticketFiltersSchema,
   assignmentSchema,
   transitionSchema,
@@ -15,6 +16,8 @@ import {
   changeAssignment,
   transitionTicket,
   changePriority,
+  addTicketNote,
+  telegramContact,
 } from './operations.js';
 import { ticketEvents } from './activity.js';
 export function ticketsRouter(): Router {
@@ -58,6 +61,21 @@ export function ticketsRouter(): Router {
         req.ip,
       ),
     );
+  });
+  router.post('/:id/notes', async (req, res) => {
+    res
+      .status(201)
+      .json(
+        await addTicketNote(
+          input(idSchema, req.params.id),
+          input(createNoteSchema, req.body).body,
+          req.auth!.user,
+          req.ip,
+        ),
+      );
+  });
+  router.get('/:id/telegram-contact', async (req, res) => {
+    res.json(await telegramContact(input(idSchema, req.params.id), req.auth!.user));
   });
   router.patch('/:id/assignment', async (req, res) => {
     res.json(

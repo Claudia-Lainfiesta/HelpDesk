@@ -273,3 +273,20 @@ Existen [pantallas de administración](../../frontend/docs/pantallas-administrac
 [recuperación asistida por correo](email-and-recovery.md) y [API de tickets](tickets.md).
 No hay interfaz de consulta de auditoría ni funciones de respaldo. El seed crea
 cuentas con hash obligatorio y categorías idempotentes.
+
+## Usuario público de Telegram
+
+POST/PATCH /api/users admite `telegramUsername` opcional (string o null), y los
+listados/detalles administrativos lo devuelven como string o null. Acepta el
+usuario convencional, con @ opcional al escribir: de 5 a 32 caracteres, comienza
+por letra y solo contiene letras, números o guion bajo. Se guarda en minúsculas
+sin @; null lo quita. No acepta URLs ni un ID numérico. Solo el administrador
+puede configurarlo y debe confirmar el dato con el empleado. No equivale a una
+vinculación verificada con un bot ni añade un proveedor de autenticación.
+
+Si la cuenta es el agente asignado de un ticket no terminal, su propietario puede
+abrir una conversación directa con ese @usuario. No se publica en el perfil de
+sesión ni en la representación general del ticket: la URL se obtiene únicamente
+en el endpoint autorizado de [contacto](tickets.md#contacto-directo-por-telegram).
+Modificarlo genera users.updated con changedFields incluyendo telegramUsername;
+no guarda el valor en metadata. Al crear, lo cubre el evento users.created.

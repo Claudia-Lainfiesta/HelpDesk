@@ -25,7 +25,7 @@ Marcar «Cuenta temporal» muestra el vencimiento. Si se deja
 vacío al crear, el servidor aplica su duración estándar. El frontend no fija
 los días ni el máximo: son configurables en el servidor y la API los valida.
 
-Editar permite nombre, rol, vencimiento y notas. El correo es de solo
+Editar permite nombre, rol, vencimiento, notas y el @usuario público de Telegram. El correo es de solo
 lectura. `expirationRequired` impide quitar el vencimiento de una cuenta que
 nació temporal; el máximo se cuenta desde la creación original. Las fechas sin
 cambios no se reenvían, para poder editar otra información de cuentas vencidas.
@@ -111,3 +111,10 @@ formularios, acciones, diálogos, teclado, claves de una sola visualización y
 protección de tokens, sin red ni backend. `npm run build` y
 `npm run verify:production` comprueban además que `/guia-ui` no se publique.
 La galería contiene ejemplos de todos los nuevos componentes.
+
+El alta y edición incluyen «Usuario público de Telegram (opcional)». Solo el
+administrador lo configura, tras comprobarlo con el empleado. Admite @usuario
+convencional (5–32 caracteres, comienza por letra; letras, números y guion bajo),
+no enlaces ni IDs numéricos. Se normaliza sin @ y en minúsculas; dejarlo vacío al
+editar lo elimina. No es una contraseña ni una vinculación por bot. Si es agente
+asignado, el propietario del ticket puede abrir su Telegram; consulta [tickets](tickets.md).

@@ -78,7 +78,7 @@ El backend sigue siendo la autoridad: el cliente solo envía agentId o action.
 
 Se muestra más reciente primero, con fecha en zona del navegador y nombres,
 sin correo del actor. Paginación inicial 50, opciones 20/50/100. El texto se genera
-a partir de created, assigned, reassigned, unassigned, status_changed y priority_changed; no se guarda
+a partir de created, assigned, reassigned, unassigned, status_changed, priority_changed y note_added; no se guarda
 en SQL ni se interpreta HTML. Distingue autoasignación, reasignación, resolución,
 reapertura, cierre y cancelación. Conserva las referencias TK y la descripción.
 
@@ -87,7 +87,7 @@ Hay pruebas sin red para derechos combinados, controles, confirmaciones, todos l
 tipos de evento, paginación, error 409 y recarga. La matriz exacta y los nueve arcos
 permitidos están en [la documentación de API](../../backend/docs/tickets.md).
 
-No incorpora comentarios, notas, adjuntos, correo/Telegram de tickets,
+No incorpora comentarios públicos, adjuntos, correo de tickets,
 SLA, tiempos de respuesta ni actualizaciones en tiempo real.
 
 ## Prioridad
@@ -121,3 +121,50 @@ Tokens existentes: Baja usa info/info-suave; Media usa superficie-suave,
 texto-suave y linea; Alta usa aviso/aviso-suave; Urgente usa peligro/peligro-suave.
 Todas llevan etiqueta visible y rounded-insignia, sin colores nuevos. La galería
 /guia-ui incluye las cuatro insignias únicamente durante desarrollo.
+
+## Contacto directo por Telegram
+
+Solo el propietario de un ticket no terminal ve «Hablar por Telegram», salvo que
+sea él mismo el agente asignado. El destino es el @usuario público del agente,
+configurado por el administrador en Usuarios. No se usan nombres/correos para
+adivinar contactos ni IDs numéricos para construir enlaces.
+
+TicketsApi.contactoTelegram consulta GET /api/tickets/:id/telegram-contact al
+cargar el detalle autorizado, antes del clic; así se abre la pestaña directamente
+desde una acción del usuario, sin depender de una respuesta asíncrona. El botón
+usa app-boton y window.open con noopener,noreferrer. Solo admite URLs https://t.me
+con el formato esperado. No expone tokens ni inicia el proceso del bot.
+
+Si no hay agente, avisa «Este ticket todavía no tiene un agente asignado.»; si
+no tiene contacto disponible, «El agente asignado no tiene Telegram disponible.».
+Actualizar contacto permite reintentar. Se respetan permisos y errores del backend.
+No se genera actividad, nota, cambio de estado, prioridad o asignación al abrirlo.
+La conversación es externa; HelpDesk no puede saber si se entregó o respondió un mensaje.
+
+## Notas internas en Actividad
+
+El agente asignado, supervisor y administrador ven las notas que devuelve la
+cronología. Solicitante y agente no asignado no reciben los eventos note_added:
+el backend los elimina antes de contar y paginar. La interfaz no anuncia notas
+ocultas. Ser propietario con rol agente no añade permiso interno. Tras reasignar,
+el nuevo agente recibe todo el expediente interno y el anterior deja de recibirlo.
+
+Las notas se distinguen mediante una tarjeta suave, autor, «Nota interna» y fecha,
+con texto interpolado y saltos de línea. No usa innerHTML, Markdown ni burbujas de
+chat. Se conserva la única cronología, más reciente primero, y la paginación existente.
+
+En tickets no terminales, soporte autorizado ve app-area-texto «Agregar nota interna»,
+con ayuda de privacidad y validación de 1–5000 caracteres después de trim. POST
+/api/tickets/:id/notes solo envía body. El envío se bloquea para evitar duplicados;
+el error conserva el borrador. Tras 201 limpia el campo, recarga solo actividad y
+anuncia «Nota interna agregada.». No modifica el ticket ni llama a transiciones.
+
+En Cerrado/Cancelado no hay formulario; soporte sigue viendo el historial y el
+aviso de solo lectura. No existen controles de edición o eliminación de notas.
+No hay GET de notas separado, mensajes públicos, chat interno, adjuntos ni envíos
+automáticos por correo o Telegram.
+
+Para comprobarlo: propietario abre contacto; soporte asignado agrega una nota;
+otro agente y solicitante recargan y no reciben esa nota; supervisor reasigna y
+solo el nuevo agente mantiene acceso. Un texto como `<script>alert(1)</script>`
+debe verse literalmente. Las pruebas usan HttpTestingController y no requieren Telegram.

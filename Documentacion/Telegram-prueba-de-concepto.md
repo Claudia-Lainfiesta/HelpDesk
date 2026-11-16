@@ -1,6 +1,26 @@
 # Telegram: prueba de concepto S0-06 y hallazgos para EP-06
 
-## Estado actual
+## Contacto actual desde tickets
+
+La decisión vigente es contacto **directo** con el agente asignado, sin relevo del
+bot. El administrador configura su @usuario público en Usuarios. Solo el propietario
+puede pulsar «Hablar por Telegram», en tickets no terminales y salvo contacto consigo
+mismo. Se abre https://t.me/usuario con noopener, sin ID numérico, token o destino
+arbitrario. No se crean eventos ni se registra la conversación. Si falta agente o
+contacto, se muestra un mensaje claro. No se verifica el @usuario mediante bot:
+el administrador debe comprobarlo con el empleado.
+
+El agente asignado, supervisor o administrador resume el seguimiento mediante una
+nota interna inmutable. No se envía al solicitante ni se copia automáticamente
+contenido de Telegram. La actividad oculta notas y contadores a solicitantes y
+agentes no asignados. Consulta [API de tickets](../backend/docs/tickets.md) y
+[interfaz de tickets](../frontend/docs/tickets.md).
+
+Lo siguiente describe únicamente la POC anterior, conservada como experimento
+opcional. No se ejecuta ni se utiliza para el contacto actual. Probar dos cuentas
+en ese bot no es requisito del nuevo flujo directo.
+
+## Estado de la POC independiente
 
 La API ya crea y consulta tickets reales en PostgreSQL, pero esta POC sigue
 siendo independiente: escribir una referencia TK no comprueba ni autoriza un

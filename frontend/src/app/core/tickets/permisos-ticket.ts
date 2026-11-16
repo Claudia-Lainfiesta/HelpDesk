@@ -23,6 +23,9 @@ export function permisosTicket(t: Ticket, u: Usuario | null) {
       asignacion: 'ninguna' as const,
       acciones: [] as AccionTicket[],
       prioridadEditable: false,
+      notasVisibles: false,
+      seguimientoEditable: false,
+      telegramVisible: false,
     };
   const gestiona = u.role === 'supervisor' || u.role === 'administrador';
   const propietario = t.requester.id === u.id;
@@ -49,5 +52,9 @@ export function permisosTicket(t: Ticket, u: Usuario | null) {
     asignacion,
     acciones,
     prioridadEditable: !['cerrado', 'cancelado'].includes(t.status) && (gestiona || asignado),
+    notasVisibles: gestiona || asignado,
+    seguimientoEditable: !['cerrado', 'cancelado'].includes(t.status) && (gestiona || asignado),
+    telegramVisible:
+      propietario && !['cerrado', 'cancelado'].includes(t.status) && t.assignedAgent?.id !== u.id,
   };
 }

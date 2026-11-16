@@ -12,6 +12,7 @@ export interface Cuenta {
   expirationRequired: boolean;
   createdBy: string | null;
   notes: string | null;
+  telegramUsername: string | null;
   createdAt: string;
   updatedAt: string;
   failedLoginAttempts: number;
@@ -26,8 +27,11 @@ export interface AltaCuenta {
   temporary?: boolean;
   expiresAt?: string | null;
   notes?: string | null;
+  telegramUsername?: string | null;
 }
-export type CambioCuenta = Partial<Pick<Cuenta, 'fullName' | 'roleCode' | 'expiresAt' | 'notes'>>;
+export type CambioCuenta = Partial<
+  Pick<Cuenta, 'fullName' | 'roleCode' | 'expiresAt' | 'notes' | 'telegramUsername'>
+>;
 export interface CuentaConClave extends Cuenta {
   temporaryPassword?: string;
 }

@@ -80,6 +80,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
     } finally {
       await pool.query('DELETE FROM audit_events');
       await pool.query('DELETE FROM ticket_events');
+      await pool.query('DELETE FROM ticket_notes');
       await pool.query('DELETE FROM tickets');
       await pool.query('DELETE FROM sessions');
       await pool.query('DELETE FROM users');
@@ -699,6 +700,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
         )
       ).rows;
       expect(tickets).toHaveLength(7);
+      expect((await client.query('SELECT count(*)::int AS n FROM ticket_notes')).rows[0].n).toBe(3);
       const seeded = (
         await client.query('SELECT DISTINCT priority FROM tickets ORDER BY priority')
       ).rows.map((r) => r.priority);
@@ -718,6 +720,12 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
           if (e.event_type === 'assigned') {
             expect(agent).toBeNull();
             agent = String(e.to_agent_user_id);
+          } else if (e.event_type === 'note_added') {
+            const note = (await client.query('SELECT * FROM ticket_notes WHERE id=$1', [e.note_id]))
+              .rows[0];
+            expect(String(note.ticket_id)).toBe(t.id);
+            expect(String(note.author_user_id)).toBe(agent);
+            expect(note.created_at).toEqual(e.created_at);
           } else {
             expect(e.from_status).toBe(status);
             expect(validTransitions.some(([f, , to]) => f === status && to === e.to_status)).toBe(
@@ -728,7 +736,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
         }
         expect(status).toBe(t.status);
         expect(agent).toBe(t.agent_id);
-        const last = h.at(-1)!;
+        const last = h.filter((e) => e.event_type !== 'note_added').at(-1)!;
         if (status === 'cerrado') expect(last.created_at).toEqual(t.closed_at);
         if (status === 'resuelto') expect(last.created_at).toEqual(t.resolved_at);
         if (status === 'cancelado') expect(last.created_at).toEqual(t.canceled_at);
@@ -990,5 +998,308 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
           .send('alta')
       ).status,
     ).toBe(415);
+  });
+
+  const addNote = (
+    id: string,
+    actor: Account = agente,
+    body: object = { body: ' Seguimiento interno\nSegunda línea ' },
+  ) =>
+    request(app)
+      .post(`/api/tickets/${id}/notes`)
+      .set('Cookie', actor.cookie)
+      .set('Origin', origin)
+      .send(body);
+  it.each(['agente', 'supervisor', 'administrador'])(
+    '%s agrega nota atómica sin cambiar ningún atributo del ticket',
+    async (role) => {
+      const t = await state('resuelto');
+      const actor = { agente, supervisor, administrador: admin }[role]!;
+      const r = await addNote(t.id, actor);
+      expect(r.status).toBe(201);
+      expect(r.body).toEqual({
+        id: expect.any(String),
+        body: 'Seguimiento interno\nSegunda línea',
+        author: { id: actor.id, fullName: 'Empleado' },
+        createdAt: expect.any(String),
+      });
+      expect((await detail(t.id)).body).toEqual(t);
+      const persisted = (
+        await pool.query('SELECT ticket_id::text,author_user_id::text,body FROM ticket_notes')
+      ).rows[0];
+      expect(persisted).toEqual({ ticket_id: t.id, author_user_id: actor.id, body: r.body.body });
+      const activity = (await events(t.id, actor)).body.data[0];
+      expect(activity).toMatchObject({
+        type: 'note_added',
+        actor: { id: actor.id, role },
+        note: { id: r.body.id, body: r.body.body },
+      });
+      const audit = (
+        await pool.query(
+          "SELECT actor_user_id::text,metadata FROM audit_events WHERE action='ticket.note_added'",
+        )
+      ).rows[0];
+      expect(audit).toEqual({ actor_user_id: actor.id, metadata: { noteId: r.body.id } });
+      expect(JSON.stringify(logs)).not.toContain(r.body.body);
+    },
+  );
+  it('notas requieren sesión definitiva, ticket visible y permisos de soporte, no propiedad', async () => {
+    const t = await state('creado', agente.id, agente2);
+    expect(
+      (
+        await request(app)
+          .post(`/api/tickets/${t.id}/notes`)
+          .set('Origin', origin)
+          .send({ body: 'Texto' })
+      ).status,
+    ).toBe(401);
+    expect((await addNote(t.id, otro)).status).toBe(404);
+    expect((await addNote('999999999', agente)).status).toBe(404);
+    expect((await addNote(t.id, agente2)).body.error.code).toBe('TICKET_NOTE_FORBIDDEN');
+    expect((await addNote(t.id, solicitante)).status).toBe(404);
+    const owned = await state();
+    expect((await addNote(owned.id, solicitante)).status).toBe(403);
+    await pool.query('UPDATE users SET must_change_password=true WHERE id=$1', [agente.id]);
+    expect((await addNote(t.id)).body.error.code).toBe('PASSWORD_CHANGE_REQUIRED');
+  });
+  it.each([
+    {},
+    { body: null },
+    { body: 32 },
+    { body: '' },
+    { body: '   \n ' },
+    { body: 'x'.repeat(5001) },
+    { body: 'Texto', authorId: '1' },
+    { body: 'Texto', createdAt: '2026-01-01' },
+    { body: 'Texto', visibility: 'public' },
+    { body: 'Texto', ticketId: '1' },
+    { body: 'Texto', type: 'created' },
+  ])('rechaza una nota inválida %#', async (body) => {
+    const t = await state();
+    const r = await addNote(t.id, agente, body);
+    expect(r.status).toBe(400);
+    expect(r.body.error.code).toBe('INVALID_INPUT');
+    expect((await pool.query('SELECT count(*)::int AS n FROM ticket_notes')).rows[0].n).toBe(0);
+  });
+  it.each(['creado', 'en_proceso', 'en_espera', 'resuelto'])(
+    'permite notas en %s y hasta 5000 caracteres tras trim',
+    async (status) => {
+      const t = await state(status);
+      expect((await addNote(t.id, agente, { body: ' ' + 'x'.repeat(5000) + ' ' })).status).toBe(
+        201,
+      );
+    },
+  );
+  it('filtra notas antes de paginar y contar; propietario agente no recibe ni cuerpo ni indicios', async () => {
+    const t = await state('creado', agente.id, agente2);
+    for (let i = 0; i < 3; i++)
+      expect((await addNote(t.id, agente, { body: `Contenido reservado ${i}` })).status).toBe(201);
+    for (const actor of [agente2]) {
+      const r = (await events(t.id, actor, '?pageSize=1')).body;
+      expect(r).toMatchObject({ total: 1, page: 1, pageSize: 1 });
+      expect(r.data.map((e: { type: string }) => e.type)).toEqual(['created']);
+      expect(JSON.stringify(r)).not.toMatch(/note|reservado/);
+      expect((await events(t.id, actor, '?pageSize=1&page=2')).body.data).toEqual([]);
+    }
+    for (const actor of [agente, supervisor, admin])
+      expect((await events(t.id, actor)).body.total).toBe(4);
+    const own = await state();
+    await addNote(own.id);
+    const publicEvents = (await events(own.id, solicitante)).body;
+    expect(publicEvents.total).toBe(1);
+    expect(JSON.stringify(publicEvents)).not.toContain('note');
+  });
+  it('reasignar da al nuevo agente todas las notas históricas y las retira al anterior', async () => {
+    const t = await state();
+    await addNote(t.id);
+    expect((await events(t.id, agente)).body.data[0].note).toBeDefined();
+    expect((await assign(t.id, agente2.id, supervisor)).status).toBe(200);
+    expect(
+      (await events(t.id, agente2)).body.data.some(
+        (e: { type: string }) => e.type === 'note_added',
+      ),
+    ).toBe(true);
+    expect(JSON.stringify((await events(t.id, agente)).body)).not.toContain('note');
+    expect((await addNote(t.id, agente)).status).toBe(403);
+    expect((await addNote(t.id, agente2)).status).toBe(201);
+  });
+  it.each(['cerrado', 'cancelado'])(
+    'en %s mantiene lectura autorizada pero rechaza nuevas notas',
+    async (status) => {
+      const t = await state();
+      await addNote(t.id);
+      await pool.query(
+        'UPDATE tickets SET status_id=(SELECT id FROM ticket_statuses WHERE code=$2) WHERE id=$1',
+        [t.id, status],
+      );
+      for (const actor of [agente, supervisor, admin]) {
+        const r = await addNote(t.id, actor);
+        expect(r.status).toBe(409);
+        expect(r.body.error.code).toBe('TICKET_NOTES_READ_ONLY');
+        expect((await events(t.id, actor)).body.data[0].type).toBe('note_added');
+      }
+      expect((await events(t.id, solicitante)).body.total).toBe(1);
+    },
+  );
+  it.each(['ticket_events', 'audit_events'])(
+    'fallo de %s deshace nota, evento y auditoría',
+    async (table) => {
+      const t = await state();
+      const condition =
+        table === 'ticket_events' ? "event_type<>'note_added'" : "action<>'ticket.note_added'";
+      await pool.query(`ALTER TABLE ${table} ADD CONSTRAINT reject_note CHECK(${condition})`);
+      try {
+        expect((await addNote(t.id)).status).toBe(500);
+        expect((await pool.query('SELECT count(*)::int AS n FROM ticket_notes')).rows[0].n).toBe(0);
+        expect((await events(t.id, agente)).body.total).toBe(1);
+        expect((await pool.query('SELECT count(*)::int AS n FROM audit_events')).rows[0].n).toBe(1);
+      } finally {
+        await pool.query(`ALTER TABLE ${table} DROP CONSTRAINT reject_note`);
+      }
+    },
+  );
+  it('PostgreSQL rechaza notas vacías, largas y referencias/eventos incoherentes', async () => {
+    const t = await state();
+    for (const body of ['', '  ', 'x'.repeat(5001)])
+      await expect(
+        pool.query('INSERT INTO ticket_notes(ticket_id,author_user_id,body) VALUES($1,$2,$3)', [
+          t.id,
+          agente.id,
+          body,
+        ]),
+      ).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      pool.query(
+        "INSERT INTO ticket_events(ticket_id,event_type,actor_user_id) VALUES($1,'note_added',$2)",
+        [t.id, agente.id],
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+    const note = await addNote(t.id, agente, { body: '<script>alert(1)</script>\nTexto' });
+    expect(note.status).toBe(201);
+    expect((await events(t.id, agente)).body.data[0].note.body).toBe(
+      '<script>alert(1)</script>\nTexto',
+    );
+    expect(JSON.stringify(logs)).not.toContain('<script>');
+    await expect(
+      pool.query('DELETE FROM ticket_notes WHERE id=$1', [note.body.id]),
+    ).rejects.toMatchObject({ code: '23503' });
+    for (const method of ['put', 'patch', 'delete'] as const)
+      expect(
+        (
+          await request(app)
+            [method](`/api/tickets/${t.id}/notes/${note.body.id}`)
+            .set('Cookie', admin.cookie)
+            .set('Origin', origin)
+            .send({ body: 'Cambio' })
+        ).status,
+      ).toBe(404);
+  });
+
+  const contact = (id: string, actor: Account = solicitante) =>
+    request(app).get(`/api/tickets/${id}/telegram-contact`).set('Cookie', actor.cookie);
+  it('contacto directo usa únicamente @usuario del agente configurado por administrador y no muta el ticket', async () => {
+    const t = await state();
+    const updated = await request(app)
+      .patch(`/api/users/${agente.id}`)
+      .set('Origin', origin)
+      .set('Cookie', admin.cookie)
+      .send({ telegramUsername: ' @Agente_Prueba ' });
+    expect(updated.status).toBe(200);
+    expect(updated.body.telegramUsername).toBe('agente_prueba');
+    const r = await contact(t.id);
+    expect(r.status).toBe(200);
+    expect(r.body).toEqual({ available: true, url: 'https://t.me/agente_prueba' });
+    expect(JSON.stringify(r.body)).not.toMatch(/token|chatId|userId/);
+    expect((await detail(t.id)).body).toEqual(t);
+    expect((await events(t.id, agente)).body.total).toBe(1);
+    expect(
+      (await pool.query("SELECT count(*)::int AS n FROM audit_events WHERE target_type='ticket'"))
+        .rows[0].n,
+    ).toBe(1);
+    expect(
+      (
+        await request(app)
+          .patch(`/api/users/${agente.id}`)
+          .set('Origin', origin)
+          .set('Cookie', admin.cookie)
+          .send({ telegramUsername: null })
+      ).status,
+    ).toBe(200);
+    expect((await contact(t.id)).body).toEqual({
+      available: false,
+      message: 'El agente asignado no tiene Telegram disponible.',
+    });
+  });
+  it('contacto requiere propietario, no rol de soporte; sin agente o Telegram devuelve mensaje no técnico', async () => {
+    const free = await state('creado', null);
+    expect((await contact(free.id)).body).toEqual({
+      available: false,
+      message: 'Este ticket todavía no tiene un agente asignado.',
+    });
+    const t = await state();
+    expect((await request(app).get(`/api/tickets/${t.id}/telegram-contact`)).status).toBe(401);
+    expect((await contact(t.id, otro)).status).toBe(404);
+    for (const actor of [agente, agente2, supervisor, admin])
+      expect((await contact(t.id, actor)).status).toBe(403);
+    expect((await contact(t.id)).body).toEqual({
+      available: false,
+      message: 'El agente asignado no tiene Telegram disponible.',
+    });
+    const own = await state('creado', agente.id, agente);
+    expect((await contact(own.id, agente)).status).toBe(403);
+    for (const owner of [agente2, supervisor, admin]) {
+      const owned = await state('creado', agente.id, owner);
+      expect((await contact(owned.id, owner)).status).toBe(200);
+    }
+  });
+  it.each(['cerrado', 'cancelado'])('contacto no se ofrece en %s', async (status) => {
+    const t = await state(status);
+    const r = await contact(t.id);
+    expect(r.status).toBe(409);
+    expect(r.body.error.code).toBe('TICKET_CONTACT_UNAVAILABLE');
+  });
+  it('un agente inactivo o vencido no se publica como destino', async () => {
+    const t = await state();
+    await pool.query(
+      "UPDATE users SET telegram_username='agente_prueba',is_active=false WHERE id=$1",
+      [agente.id],
+    );
+    expect((await contact(t.id)).body.available).toBe(false);
+    await pool.query(
+      "UPDATE users SET is_active=true,expires_at=now()-interval '1 minute' WHERE id=$1",
+      [agente.id],
+    );
+    expect((await contact(t.id)).body.available).toBe(false);
+  });
+  it('solo administrador configura un @usuario; rechaza enlaces, IDs numéricos y caracteres arbitrarios', async () => {
+    for (const value of [
+      'https://t.me/usuario',
+      '1234567',
+      'abc',
+      'otro/usuario',
+      'usuario?start=secreto',
+    ]) {
+      const r = await request(app)
+        .patch(`/api/users/${agente.id}`)
+        .set('Origin', origin)
+        .set('Cookie', admin.cookie)
+        .send({ telegramUsername: value });
+      expect(r.status).toBe(400);
+      expect(r.body.error.code).toBe('INVALID_INPUT');
+    }
+    expect(
+      (
+        await request(app)
+          .patch(`/api/users/${agente.id}`)
+          .set('Origin', origin)
+          .set('Cookie', agente.cookie)
+          .send({ telegramUsername: 'agente_prueba' })
+      ).status,
+    ).toBe(403);
+    await expect(
+      pool.query("UPDATE users SET telegram_username='https://malicioso.invalid' WHERE id=$1", [
+        agente.id,
+      ]),
+    ).rejects.toMatchObject({ code: '23514' });
   });
 });

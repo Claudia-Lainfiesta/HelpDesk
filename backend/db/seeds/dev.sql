@@ -73,6 +73,22 @@ CROSS JOIN LATERAL (
   UNION ALL SELECT 6,'status_changed','creado','cancelado' WHERE s.code='cancelado'
 ) step ORDER BY t.id,step.minutes;
 
+WITH notes AS (
+  INSERT INTO ticket_notes(ticket_id,author_user_id,body,created_at)
+  SELECT t.id,t.assigned_agent_id,
+    CASE s.code
+      WHEN 'en_proceso' THEN 'Se contactó al solicitante por Telegram. Se está comprobando la instalación de la aplicación.'
+      WHEN 'en_espera' THEN 'Se espera que el solicitante pruebe nuevamente la conexión después de reiniciar el adaptador de red.'
+      WHEN 'resuelto' THEN 'Se restableció el acceso y se comprobó su funcionamiento. Se espera la confirmación del solicitante.'
+    END,
+    t.created_at + CASE s.code WHEN 'en_proceso' THEN 3 WHEN 'en_espera' THEN 4 ELSE 6 END * interval '1 minute'
+  FROM seed_ticket_ids n JOIN tickets t ON t.id=n.id JOIN ticket_statuses s ON s.id=t.status_id
+  WHERE s.code IN ('en_proceso','en_espera','resuelto')
+  RETURNING id,ticket_id,author_user_id,created_at
+)
+INSERT INTO ticket_events(ticket_id,event_type,actor_user_id,note_id,created_at)
+SELECT ticket_id,'note_added',author_user_id,id,created_at FROM notes;
+
 INSERT INTO users (full_name,email,role_id,password_hash,must_change_password,is_temporary,expires_at,notes)
 SELECT 'Auditoría temporal','auditoria.temporal@helpdesk.local',id,
   current_setting('helpdesk.seed_password_hash'),false,true,now()+interval '7 days','Cuenta temporal de desarrollo.'

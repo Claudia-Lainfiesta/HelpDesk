@@ -68,6 +68,14 @@
       [error]="campo('notes')"
       ayuda="Comentario administrativo, hasta 2000 caracteres. No incluyas contraseñas."
     />
+    <app-campo-texto
+      identificador="usuario-telegram"
+      etiqueta="Usuario público de Telegram (opcional)"
+      marcador="@usuario"
+      formControlName="telegramUsername"
+      [error]="campo('telegramUsername')"
+      ayuda="Confirma el @usuario con el empleado. Si es agente asignado, el propietario del ticket podrá abrir su Telegram. No uses un ID numérico ni una URL."
+    />
     @if (confirmando()) {
       <app-alerta variante="aviso"
         >Vas a cambiar el rol o el vencimiento de esta cuenta. El nuevo acceso se aplicará en su

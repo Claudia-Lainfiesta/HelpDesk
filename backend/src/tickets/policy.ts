@@ -18,6 +18,15 @@ export const transitions: Record<TransitionAction, Partial<Record<TicketStatus, 
   cancel: { creado: 'cancelado', en_espera: 'cancelado' },
 };
 export const manages = (user: UserProfile) => ['supervisor', 'administrador'].includes(user.role);
+export function canReadNotes(ticket: Pick<CurrentTicket, 'agentId'>, user: UserProfile) {
+  return manages(user) || (user.role === 'agente' && ticket.agentId === user.id);
+}
+export function checkNoteCreation(ticket: CurrentTicket, user: UserProfile) {
+  assertVisible(ticket, user);
+  if (!canReadNotes(ticket, user)) throw ticketError('TICKET_NOTE_FORBIDDEN');
+  if (ticket.status === 'cerrado' || ticket.status === 'cancelado')
+    throw ticketError('TICKET_NOTES_READ_ONLY');
+}
 export function assertVisible(ticket: CurrentTicket, user: UserProfile) {
   if (user.role === 'solicitante' && ticket.requesterId !== user.id)
     throw ticketError('TICKET_NOT_FOUND');

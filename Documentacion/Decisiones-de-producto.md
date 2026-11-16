@@ -20,10 +20,10 @@ está en [README.md](README.md).
 
 ## Pendientes y consideraciones
 
-- **Validación real de Telegram — PENDIENTE:** probar el relevo en ambos
-  sentidos con dos cuentas reales. La prueba de concepto no se ha validado
-  con una segunda cuenta real; las pruebas automáticas con pasarelas falsas
-  no sustituyen esa comprobación.
+- **Contacto directo de Telegram — PENDIENTE de validación real:** comprobar el
+  @usuario público del agente y la apertura del enlace desde el detalle. El
+  relevo de la POC anterior no participa en este flujo. Las pruebas automáticas
+  no sustituyen la conversación entre cuentas reales.
 - **Cuentas temporales — IMPLEMENTADO:** 7 días por defecto y máximo de 30 días
   desde la creación, configurables con `TEMP_ACCOUNT_DEFAULT_DAYS` y
   `TEMP_ACCOUNT_MAX_DAYS` (enteros de 1 a 365; por defecto ≤ máximo). Las creadas
@@ -66,3 +66,21 @@ La cambia agente asignado, supervisor o administrador; el propietario no gana
 permiso y Cerrado/Cancelado no se editan. Se admite en Resuelto, sin automatismos,
 SLA, escalamiento o notificaciones. Listado, filtro, detalle, actividad y auditoría
 conservan la prioridad. Reemplaza la restricción inicial al supervisor.
+
+
+## Contacto y notas internas · 15-nov-2026
+
+El propietario del ticket abre directamente el Telegram del agente asignado,
+mediante el @usuario público que configura y comprueba el administrador. No se
+usa un ID numérico ni se implementa vinculación por bot. El botón solo aparece
+fuera de Cerrado/Cancelado y se oculta si propietario y agente son la misma
+persona. El bot anterior queda como POC aislada, no como canal del producto.
+
+HelpDesk no lee ni almacena esa conversación. Agente asignado, supervisor y
+administrador pueden agregar notas internas de seguimiento en tickets no
+terminales; solo ellos pueden leerlas, también tras el cierre o cancelación.
+Al reasignar, el nuevo agente obtiene el historial interno y el anterior deja
+de verlo. Las notas son inmutables y no alteran estado, prioridad o asignación.
+La actividad excluye sus eventos y contadores para quien no pueda leerlas.
+Esta decisión sustituye el relevo del bot previsto en EP-06; no crea chat ni
+comentarios públicos. Los contratos actuales están en [tickets](../backend/docs/tickets.md).

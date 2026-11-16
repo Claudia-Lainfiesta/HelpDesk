@@ -13,6 +13,7 @@ export const ticketPriorities = ['baja', 'media', 'alta', 'urgente'] as const;
 export type TicketPriority = (typeof ticketPriorities)[number];
 export const prioritySchema = z.enum(ticketPriorities);
 export const changePrioritySchema = z.object({ priority: prioritySchema }).strict();
+export const createNoteSchema = z.object({ body: z.string().trim().min(1).max(5000) }).strict();
 export const createTicketSchema = z
   .object({
     subject: z.string().trim().min(1).max(160),

@@ -108,7 +108,7 @@ Repetirlo no duplica registros ni restablece contraseñas.
 
 `npm run check` incluye pruebas con PostgreSQL en esquemas privados si se exporta
 `DATABASE_URL`; de lo contrario las integraciones se omiten con mensaje. No
-implementa comentarios, adjuntos, SLA ni Telegram de tickets.
+implementa comentarios públicos, adjuntos ni SLA. Las notas internas y el contacto directo por Telegram se describen abajo.
 
 ## Referencia canónica y auditoría
 
@@ -194,16 +194,19 @@ reabrir o cancelar su ticket en los estados permitidos, aunque otro agente lo
 atienda. No obtiene por eso permiso para iniciar/esperar/resolver; necesita ser
 el agente asignado o tener rol supervisor/administrador.
 
-| Acción                                            | Propietario sin otro permiso | Agente asignado ajeno          | Otro agente            | Supervisor/administrador |
-| ------------------------------------------------- | ---------------------------- | ------------------------------ | ---------------------- | ------------------------ |
-| Ver detalle/actividad                             | Sí                           | Sí                             | Sí                     | Sí                       |
-| Asignarse si está libre y activo                  | Solo si tiene rol agente     | Solo si está libre             | Sí                     | No; asigna a un agente   |
-| Asignar otro / reasignar / desasignar             | No                           | No                             | No                     | Sí, en estados activos   |
-| Iniciar / esperar / reanudar / resolver           | No                           | Sí, según transición           | No                     | Sí, con agente asignado  |
-| Cancelar creado o en_espera                       | Sí                           | Solo si también es propietario | Solo si es propietario | Sí                       |
-| Cancelar en_proceso                               | No                           | No                             | No                     | No                       |
-| Reabrir o cerrar resuelto                         | Sí                           | Solo si también es propietario | Solo si es propietario | Sí                       |
-| Cambiar prioridad (no terminal, incluye Resuelto) | No por ser propietario       | Sí                             | No                     | Sí                       |
+| Acción                                            | Propietario sin otro permiso     | Agente asignado ajeno          | Otro agente            | Supervisor/administrador |
+| ------------------------------------------------- | -------------------------------- | ------------------------------ | ---------------------- | ------------------------ |
+| Ver detalle/actividad                             | Sí                               | Sí                             | Sí                     | Sí                       |
+| Asignarse si está libre y activo                  | Solo si tiene rol agente         | Solo si está libre             | Sí                     | No; asigna a un agente   |
+| Asignar otro / reasignar / desasignar             | No                               | No                             | No                     | Sí, en estados activos   |
+| Iniciar / esperar / reanudar / resolver           | No                               | Sí, según transición           | No                     | Sí, con agente asignado  |
+| Cancelar creado o en_espera                       | Sí                               | Solo si también es propietario | Solo si es propietario | Sí                       |
+| Cancelar en_proceso                               | No                               | No                             | No                     | No                       |
+| Reabrir o cerrar resuelto                         | Sí                               | Solo si también es propietario | Solo si es propietario | Sí                       |
+| Ver notas internas (incluidos terminales)         | No por ser propietario           | Sí                             | No                     | Sí                       |
+| Agregar nota interna (no terminal)                | No por ser propietario           | Sí                             | No                     | Sí                       |
+| Hablar por Telegram con el agente (no terminal)   | Sí, salvo contacto consigo mismo | Solo si es propietario         | Solo si es propietario | Solo si es propietario   |
+| Cambiar prioridad (no terminal, incluye Resuelto) | No por ser propietario           | Sí                             | No                     | Sí                       |
 
 `createdAt` nunca cambia. El trigger actualiza `updatedAt` al mutar. Resolver fija
 `resolvedAt`; reabrir la limpia y conserva agente e historial. Cerrar conserva
@@ -237,7 +240,7 @@ Orden: fecha descendente e ID descendente. Total y datos usan una misma instant�
 }
 ```
 
-Tipos: created, assigned, reassigned, unassigned, status_changed y priority_changed. Las asignaciones
+Tipos: created, assigned, reassigned, unassigned, status_changed, priority_changed y note_added. Las asignaciones
 incluyen `fromAgent`/`toAgent` con ID y nombre o null; estados null. Los cambios de
 estado contienen códigos anterior/nuevo; agentes null. Created no inventa cambios.
 El rol y nombre del actor son los actuales, no una copia histórica; IDs y códigos
@@ -339,3 +342,112 @@ usa ticket.priority_changed con solo fromPriority/toPriority.
 primero. El seed nuevo distribuye las cuatro prioridades como valores iniciales
 ficticios; no inserta priority_changed si no ocurrió un cambio. Repetir seed conserva
 los ejemplos y prioridades existentes, incluyendo los normalizados por migración.
+
+## Notas internas
+
+HelpDesk administra el ticket. La conversación directa ocurre en Telegram y no se
+replica en el sistema. Soporte resume la información relevante mediante notas internas;
+no son comentarios públicos ni se envían al solicitante.
+
+```http
+POST /api/tickets/123/notes
+Origin: http://localhost:4200
+Content-Type: application/json
+```
+
+```json
+{ "body": "Se consultó al solicitante. Se espera una nueva prueba de conexión." }
+```
+
+201 devuelve `{ id, body, author: { id, fullName }, createdAt }`. Solo acepta `body`,
+texto plano de 1 a 5000 caracteres después de trim. Campos adicionales, tipos o
+longitudes inválidas responden 400 INVALID_INPUT. No interpreta HTML, Markdown o
+scripts; conserva saltos de línea. No existen endpoints para editar, borrar u ocultar notas.
+Un error se corrige publicando otra nota.
+
+El agente **actualmente asignado**, supervisor y administrador pueden leerlas.
+También pueden crearlas en Creado, En proceso, En espera y Resuelto. En
+Cerrado/Cancelado solo pueden leer las existentes; crear devuelve 409
+TICKET_NOTES_READ_ONLY. Solicitante propietario y agente no asignado reciben 403
+TICKET_NOTE_FORBIDDEN al intentar crear; solicitante ajeno recibe 404 TICKET_NOT_FOUND.
+Ser propietario con rol agente tampoco concede permisos internos.
+
+`0015_ticket_notes.sql` crea ticket_notes con identity bigint, ticket_id y
+author_user_id obligatorios, FK RESTRICT, body y created_at timestamptz. Índice
+(ticket_id, created_at). Amplía ticket_events con note_added y note_id FK nullable
+para otros eventos; CHECK de forma conserva los tipos anteriores. El cuerpo solo
+se guarda en ticket_notes, nunca en ticket_events ni audit_events.
+
+Actor vigente y ticket se bloquean siguiendo el patrón de las otras operaciones.
+Insertar nota, evento y auditoría `ticket.note_added` con solo `{ noteId }` comparten
+transacción. Cualquier fallo revierte los tres. Agregar una nota no hace UPDATE del
+ticket: tampoco cambia updated_at, estado, prioridad, asignación ni fechas de resolución,
+cierre o cancelación. No envía correo ni Telegram.
+
+Se usa la cronología existente; **no hay GET /notes duplicado**. Ejemplo de evento:
+
+```json
+{
+  "id": "46",
+  "type": "note_added",
+  "actor": { "id": "7", "fullName": "Juan Ejemplo", "role": "agente" },
+  "note": { "id": "9", "body": "Se espera una nueva prueba de conexión." },
+  "fromPriority": null,
+  "toPriority": null,
+  "fromStatus": null,
+  "toStatus": null,
+  "fromAgent": null,
+  "toAgent": null,
+  "createdAt": "2026-11-15T20:00:00.000Z"
+}
+```
+
+GET /events excluye note_added **en SQL antes de contar y paginar** cuando quien
+consulta no es soporte autorizado. No devuelve cuerpos, IDs, eventos ocultos ni
+contadores de notas. Usa la asignación de la misma instantánea que la consulta.
+Tras reasignar A a B, B obtiene todas las notas históricas; A deja de recibirlas en
+su siguiente consulta. Se conserva el orden fecha DESC, id DESC.
+
+El seed añade tres notas ficticias y sus eventos a los nuevos ejemplos En proceso,
+En espera y Resuelto, con autor asignado y fechas coherentes. Repetirlo no duplica
+ni reconstruye notas de ejemplos que ya existían.
+
+## Contacto directo por Telegram
+
+La decisión actual sustituye el relevo del bot para el flujo de tickets. Solo el
+**propietario** puede abrir una conversación con el **agente asignado**, siempre
+que el ticket no sea terminal y no se trate de contactar consigo mismo. Tener rol
+supervisor/administrador no concede esta capacidad en tickets ajenos. Los permisos
+de notas son independientes.
+
+El administrador configura `telegramUsername` en POST/PATCH /api/users: acepta
+@usuario o usuario convencional (5–32 caracteres, comienza por letra; letras,
+números y guion bajo), normaliza sin @ y en minúsculas. null permite quitarlo.
+`0016_agent_telegram_username.sql` añade users.telegram_username nullable con CHECK.
+Es un dato declarado por el administrador, que debe comprobarlo con el empleado;
+no se deriva del correo o nombre ni se verifica mediante el bot. No almacena ID
+numérico de Telegram. El historial de cambios administrativos solo registra el
+nombre del campo, sin copiar el contacto a auditoría.
+
+```http
+GET /api/tickets/123/telegram-contact
+```
+
+Con sesión y permisos devuelve 200 `{ "available": true, "url": "https://t.me/agente_ejemplo" }`.
+La URL se construye únicamente desde el usuario público guardado; el cliente no
+elige destino. Si falta agente: 200 `{ "available": false, "message": "Este ticket todavía no tiene un agente asignado." }`.
+Si falta usuario público, el agente está inactivo, vencido o ya no tiene rol agente:
+200 `{ "available": false, "message": "El agente asignado no tiene Telegram disponible." }`.
+No devuelve chat IDs, token ni información adicional. Ticket terminal: 409
+TICKET_CONTACT_UNAVAILABLE; actor que no es propietario o se contactaría consigo
+mismo: 403 TICKET_ACTION_FORBIDDEN; solicitante ajeno: 404 como en el detalle.
+
+No llama a Telegram, no inicia el bot, no registra actividad ni crea notas. Abrir
+el enlace no garantiza que el agente responda o que Telegram esté disponible.
+Se requiere que el empleado mantenga vigente su usuario público. Los enlaces por
+ID numérico no son un mecanismo general de contacto desde web:
+[enlaces oficiales de Telegram](https://core.telegram.org/api/links).
+
+La antigua POC con grammY permanece aislada y opcional para experimentación; no
+participa en este contacto ni permite leer las notas del ticket. No se implementa
+vinculación por bot, chat interno, copia automática de conversaciones ni notificaciones.

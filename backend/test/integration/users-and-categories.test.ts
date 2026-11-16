@@ -83,6 +83,7 @@ describe.skipIf(!databaseUrl)(
         // Solo objetos del esquema privado creado por esta suite.
         await pool.query('DELETE FROM audit_events');
         await pool.query('DELETE FROM ticket_events');
+        await pool.query('DELETE FROM ticket_notes');
         await pool.query('DELETE FROM tickets');
         await pool.query('DELETE FROM sessions');
         await pool.query('UPDATE users SET created_by = NULL');
