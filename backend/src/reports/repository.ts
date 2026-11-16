@@ -10,6 +10,7 @@ import type {
   Granularity,
   CategoryOption,
   AgentOption,
+  ExportTicket,
 } from './types.js';
 
 // Hasta es inclusivo a precisión de milisegundos; el límite exclusivo incluye también
@@ -27,6 +28,23 @@ const filtered = `SELECT t.*, s.code AS status FROM tickets t
  WHERE ($3::bigint IS NULL OR t.category_id=$3)
  AND ($4::bigint IS NULL OR t.assigned_agent_id=$4)`;
 const pending = `status NOT IN ('cerrado','cancelado')`;
+
+export async function exportTickets(db: PoolClient, f: ReportFilters): Promise<ExportTicket[]> {
+  return (
+    await db.query<ExportTicket>(
+      `WITH filtered AS (${filtered})
+      SELECT t.reference AS number,t.subject,c.name AS category,t.status,t.priority,
+        r.full_name AS requester,a.full_name AS agent,t.created_at AS "createdAt",
+        t.resolved_at AS "resolvedAt",t.closed_at AS "closedAt",t.canceled_at AS "canceledAt",
+        (extract(epoch FROM t.resolved_at-t.created_at)/60)::float8 AS "resolutionMinutes",
+        (extract(epoch FROM t.closed_at-t.created_at)/60)::float8 AS "closeMinutes"
+      FROM filtered t JOIN categories c ON c.id=t.category_id
+      JOIN users r ON r.id=t.requester_id LEFT JOIN users a ON a.id=t.assigned_agent_id
+      WHERE t.created_at >= $1 AND t.created_at < $2 ORDER BY t.created_at DESC,t.id DESC`,
+      params(f),
+    )
+  ).rows;
+}
 
 export async function filterExists(db: PoolClient, f: ReportFilters): Promise<boolean> {
   const result = await db.query<{ valid: boolean }>(

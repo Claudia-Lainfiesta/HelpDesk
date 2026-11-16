@@ -14,3 +14,4 @@ reportsRouter.get('/by-category', controller.byCategory);
 reportsRouter.get('/trend', controller.trend);
 reportsRouter.get('/by-agent', controller.byAgent);
 reportsRouter.get('/options', controller.options);
+reportsRouter.get('/export.csv', controller.exportCsv);

@@ -11,8 +11,7 @@ export class ReportesApi {
     return this.http.get<ReportOptions>(`${this.base}/options`);
   }
   cargar(filters: ReportFilters) {
-    let params = new HttpParams();
-    for (const [key, value] of Object.entries(filters)) if (value) params = params.set(key, value);
+    const params = this.parametros(filters);
     return forkJoin({
       summary: this.http.get<Reports['summary']>(`${this.base}/summary`, { params }),
       statuses: this.http.get<Reports['statuses']>(`${this.base}/by-status`, { params }),
@@ -21,5 +20,17 @@ export class ReportesApi {
       trend: this.http.get<Reports['trend']>(`${this.base}/trend`, { params }),
       agents: this.http.get<Reports['agents']>(`${this.base}/by-agent`, { params }),
     });
+  }
+  exportar(filters: ReportFilters) {
+    return this.http.get(`${this.base}/export.csv`, {
+      params: this.parametros(filters),
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+  private parametros(filters: ReportFilters) {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filters)) if (value) params = params.set(key, value);
+    return params;
   }
 }

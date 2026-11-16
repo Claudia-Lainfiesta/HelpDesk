@@ -394,3 +394,13 @@ created_at. Índice parcial de no leídas por usuario e índice de listado por
 usuario/fecha/ID. No hay borrado, updated_at ni retención automática. Los avisos
 web forman parte de la transacción del ticket; Telegram solo se intenta después
 del commit. Consulta [reglas y endpoints](../docs/notifications.md).
+
+## Cierre v1 y reportes
+
+Las 19 migraciones actuales terminan en `0019_ticket_started_notification.sql`.
+Reportes y exportación CSV consultan en modo solo lectura; no requieren una nueva
+migración ni tabla estadística. El seed solo escribe datos locales y no ejecuta
+las pasarelas de correo/Telegram. La verificación de cierre aplicó las migraciones
+sobre una base desechable y ejecutó el seed dos veces sin duplicar escenarios;
+no se recreó ni se borró la base de desarrollo del usuario.
+[Estado final y limitaciones](../../docs/project-status.md).

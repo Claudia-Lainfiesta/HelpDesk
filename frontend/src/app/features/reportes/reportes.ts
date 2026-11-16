@@ -9,7 +9,8 @@ import {
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, ParamMap } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, catchError, forkJoin, map, merge, of, switchMap, tap } from 'rxjs';
+import { DOCUMENT } from '@angular/common';
+import { Subject, catchError, finalize, forkJoin, map, merge, of, switchMap, tap } from 'rxjs';
 import { ReportesApi } from '../../core/reportes/reportes-api';
 import { Reports, ReportOptions, CategoryItem } from '../../core/reportes/modelos';
 import {
@@ -29,6 +30,7 @@ import { Alerta } from '../../shared/ui/alerta';
 import { Selector } from '../../shared/ui/selector';
 import { CampoFecha } from '../../shared/ui/campo-fecha';
 import { BarrasReporte, BarraReporte } from './barras-reporte';
+import { Avisos, AvisoFlotante } from '../../shared/ui/aviso-flotante';
 
 export function leerVista(params: ParamMap, now = new Date()): VistaReportes {
   const raw = params.get('range');
@@ -65,7 +67,16 @@ export function barrasCategorias(items: CategoryItem[]): BarraReporte[] {
   selector: 'app-reportes',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, Tarjeta, Boton, Alerta, Selector, CampoFecha, BarrasReporte],
+  imports: [
+    ReactiveFormsModule,
+    Tarjeta,
+    Boton,
+    Alerta,
+    Selector,
+    CampoFecha,
+    BarrasReporte,
+    AvisoFlotante,
+  ],
   templateUrl: './reportes.html',
 })
 export class Reportes {
@@ -73,6 +84,9 @@ export class Reportes {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly documento = inject(DOCUMENT);
+  private readonly avisos = inject(Avisos);
+  readonly exportando = signal(false);
   readonly recargar = new Subject<void>();
   readonly datos = signal<Reports | null>(null);
   readonly opciones = signal<ReportOptions>({ categories: [], agents: [] });
@@ -199,6 +213,38 @@ export class Reportes {
           this.opciones.set(resultado.opciones);
         }
         this.cargando.set(false);
+      });
+  }
+  exportar() {
+    if (this.exportando() || this.cargando() || !this.datos()) return;
+    this.exportando.set(true);
+    // Se exporta la vista aplicada, aunque existan cambios pendientes en el formulario.
+    this.api
+      .exportar(filtrosUtc(this.vista()))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.exportando.set(false)),
+      )
+      .subscribe({
+        next: (response) => {
+          if (!response.body) {
+            this.avisos.mostrar('No fue posible exportar el reporte.', true);
+            return;
+          }
+          const filename =
+            /filename="(helpdesk-reporte-\d{4}-\d{2}-\d{2}-a-\d{4}-\d{2}-\d{2}\.csv)"/i.exec(
+              response.headers.get('Content-Disposition') ?? '',
+            )?.[1] ?? 'helpdesk-reporte.csv';
+          const url = URL.createObjectURL(response.body);
+          const enlace = this.documento.createElement('a');
+          enlace.href = url;
+          enlace.download = filename;
+          this.documento.body.append(enlace);
+          enlace.click();
+          enlace.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 0);
+        },
+        error: () => this.avisos.mostrar('No fue posible exportar el reporte.', true),
       });
   }
   aplicar() {

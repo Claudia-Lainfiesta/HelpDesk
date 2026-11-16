@@ -8,6 +8,21 @@ export interface ReportFilters {
   categoryId?: string;
   agentId?: string;
 }
+export interface ExportTicket {
+  number: string;
+  subject: string;
+  category: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  requester: string;
+  agent: string | null;
+  createdAt: Date;
+  resolvedAt: Date | null;
+  closedAt: Date | null;
+  canceledAt: Date | null;
+  resolutionMinutes: number | null;
+  closeMinutes: number | null;
+}
 export interface ReportKpis {
   created: number;
   resolved: number;

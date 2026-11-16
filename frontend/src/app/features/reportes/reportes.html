@@ -47,14 +47,25 @@
           formControlName="agentId"
           [opciones]="agentes()"
         />
-        <app-boton tipo="submit">Aplicar filtros</app-boton>
+        <div class="flex flex-wrap gap-2">
+          <app-boton tipo="submit">Aplicar filtros</app-boton>
+          <app-boton
+            variante="secundario"
+            [cargando]="exportando()"
+            [deshabilitado]="cargando() || !datos()"
+            (accion)="exportar()"
+          >
+            {{ exportando() ? 'Exportando...' : 'Exportar CSV' }}
+          </app-boton>
+        </div>
       </div>
       @if (errorFechas()) {
         <app-alerta variante="peligro">{{ errorFechas() }}</app-alerta>
       }
       <p class="text-xs text-texto-suave">
         Ambas fechas incluidas, en tu zona horaria local. Máximo 365 días. Agente corresponde a la
-        asignación actual del ticket.
+        asignación actual del ticket. El CSV incluye tickets creados en el rango aplicado y expresa
+        sus fechas en UTC.
       </p>
     </form>
   </app-tarjeta>
@@ -268,3 +279,4 @@
     </app-tarjeta>
   }
 </section>
+<app-aviso-flotante />

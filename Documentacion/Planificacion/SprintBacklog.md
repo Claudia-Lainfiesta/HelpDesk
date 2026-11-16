@@ -1,5 +1,7 @@
 # HelpDesk: Sprint Backlog (MVP)
 
+> Alcance real y cierre v1: [Estado del proyecto](../../docs/project-status.md). Este documento conserva planificación; no acredita implementación de sus criterios.
+
 Fuente: `Requerimientos/UserStoryMapping.md` y `Requerimientos/Epics.md`. El MVP son 20 de las 98 historias. Sprints de 2 semanas; las fechas reales se fijan cuando el equipo confirme su disponibilidad.
 
 **Estado de cada ítem:** Por hacer / En curso / Hecho. Responsable: por asignar.

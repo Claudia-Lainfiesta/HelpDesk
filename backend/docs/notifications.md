@@ -81,8 +81,7 @@ CSRF y JSON. Abrir el ticket sigue aplicando sus permisos actuales.
 
 Se usa `fetch` de Node y [sendMessage oficial](https://core.telegram.org/bots/api#sendmessage),
 POST JSON, texto plano sin parse_mode y vistas previas de enlaces desactivadas.
-No se añade SDK. La POC antigua con scripts telegram:dev/check sigue aislada;
-**no hay que ejecutarla para enviar avisos** ni implementar polling/webhook.
+No se añade SDK, runner ni polling.
 
 Variables opcionales en `.env.example`, sin valores secretos:
 
@@ -94,8 +93,7 @@ TELEGRAM_SUPPORT_CHAT_ID=
 El chat ID debe ser el identificador numérico negativo del grupo/supergrupo,
 no un username ni un destino privado. Token e ID juntos habilitan el envío;
 si falta cualquiera, se deshabilita con un mensaje al arrancar, sin repetirlo por
-operación. Formatos inválidos se rechazan sin imprimir su valor. El filtro
-`TELEGRAM_ALLOWED_USER_IDS` pertenece solo a la POC antigua, no a estos avisos.
+operación. Formatos inválidos se rechazan sin imprimir su valor.
 
 Crea/configura el bot con BotFather, añádelo al grupo de soporte y permite que
 publique mensajes. Obtén el ID del grupo mediante la administración/herramienta

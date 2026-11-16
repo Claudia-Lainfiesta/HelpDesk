@@ -22,7 +22,7 @@ está en [README.md](README.md).
 
 - **Contacto directo de Telegram — PENDIENTE de validación real:** comprobar el
   @usuario público del agente y la apertura del enlace desde el detalle. El
-  relevo de la POC anterior no participa en este flujo. Las pruebas automáticas
+  contacto directo no utiliza bot. Las pruebas automáticas
   no sustituyen la conversación entre cuentas reales.
 - **Cuentas temporales — IMPLEMENTADO:** 7 días por defecto y máximo de 30 días
   desde la creación, configurables con `TEMP_ACCOUNT_DEFAULT_DAYS` y
@@ -40,8 +40,7 @@ está en [README.md](README.md).
   amplió el MVP.
 - **Referencia pública — CONFIRMADO 6-nov-2026:** se presenta `TK-000123` y
   se conserva el número completo a partir de `TK-1000000`. El ID interno se usa
-  en las rutas; no se reinicia la secuencia ni se cambian IDs. La POC de Telegram
-  acepta el mismo formato mínimo, sin comprobar que el ticket exista.
+  en las rutas; no se reinicia la secuencia ni se cambian IDs. El ID interno permanece en las rutas de la API.
 
 La autenticación local, la matriz de permisos del núcleo actual y los tiempos
 de sesión ya están implementados; no son decisiones abiertas. Los demás
@@ -64,7 +63,7 @@ El cálculo de primera respuesta sigue fuera de alcance, aunque ya hay historial
 Prioridad manual implementada el 15-nov-2026: baja/media/alta/urgente, default media.
 La cambia agente asignado, supervisor o administrador; el propietario no gana
 permiso y Cerrado/Cancelado no se editan. Se admite en Resuelto, sin automatismos,
-SLA, escalamiento o notificaciones. Listado, filtro, detalle, actividad y auditoría
+SLA ni escalamiento. Urgente genera los avisos definidos en la guía de notificaciones. Listado, filtro, detalle, actividad y auditoría
 conservan la prioridad. Reemplaza la restricción inicial al supervisor.
 
 
@@ -74,7 +73,7 @@ El propietario del ticket abre directamente el Telegram del agente asignado,
 mediante el @usuario público que configura y comprueba el administrador. No se
 usa un ID numérico ni se implementa vinculación por bot. El botón solo aparece
 fuera de Cerrado/Cancelado y se oculta si propietario y agente son la misma
-persona. El bot anterior queda como POC aislada, no como canal del producto.
+persona. El bot de grupo tiene un propósito independiente: avisos generales.
 
 HelpDesk no lee ni almacena esa conversación. Agente asignado, supervisor y
 administrador pueden agregar notas internas de seguimiento en tickets no
@@ -84,3 +83,5 @@ de verlo. Las notas son inmutables y no alteran estado, prioridad o asignación.
 La actividad excluye sus eventos y contadores para quien no pueda leerlas.
 Esta decisión sustituye el relevo del bot previsto en EP-06; no crea chat ni
 comentarios públicos. Los contratos actuales están en [tickets](../backend/docs/tickets.md).
+
+El cierre v1 y sus límites vigentes están en [Estado del proyecto](../docs/project-status.md).

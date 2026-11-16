@@ -30,7 +30,10 @@ El cliente debe enviar las cookies (`credentials: 'include'` o equivalente).
 
 Por defecto una sesión vence tras 30 minutos sin actividad o a las 8 horas de
 crearse. `last_seen_at` se escribe como máximo una vez por minuto, por lo que la
-medición de inactividad tiene esa granularidad. La actividad no extiende el límite
+medición de inactividad tiene esa granularidad. Actividad significa peticiones
+autenticadas, incluido el polling del contador de notificaciones; no mide teclado
+o ratón. Una pestaña visible puede mantener el plazo de inactividad, pero nunca
+el absoluto. La actividad no extiende el límite
 absoluto. Cada petición autenticada comprueba también revocación, usuario activo
 y vencimiento de la cuenta; desactivar o vencer una cuenta invalida su acceso en
 la siguiente petición. Los IDs bigint del perfil se devuelven como cadenas.

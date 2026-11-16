@@ -28,6 +28,7 @@ describe.skipIf(!url)('reportes con PostgreSQL real', () => {
     'trend',
     'by-agent',
     'options',
+    'export.csv',
   ];
   const get = (path: string, query: object = range, role = 'supervisor') =>
     request(app).get(`/api/reports/${path}`).query(query).set('Cookie', users[role]!.cookie);
@@ -194,23 +195,28 @@ describe.skipIf(!url)('reportes con PostgreSQL real', () => {
       averageCloseMinutes: null,
     });
   });
-  it.each(['summary', 'by-status', 'by-priority', 'by-category', 'trend', 'by-agent'])(
-    'valida filtros y fechas: %s',
-    async (path) => {
-      for (const query of [
-        { ...range, agentId: '0' },
-        { ...range, categoryId: '999999999' },
-        { ...range, agentId: users.solicitante!.id },
-        { ...range, from: 'invalido' },
-        { ...range, to: '2025-01-01' },
-        { ...range, to: '2027-01-02' },
-      ]) {
-        const r = await get(path, query);
-        expect(r.status).toBe(400);
-        expect(r.body.error.code).toBe('INVALID_INPUT');
-      }
-    },
-  );
+  it.each([
+    'summary',
+    'by-status',
+    'by-priority',
+    'by-category',
+    'trend',
+    'by-agent',
+    'export.csv',
+  ])('valida filtros y fechas: %s', async (path) => {
+    for (const query of [
+      { ...range, agentId: '0' },
+      { ...range, categoryId: '999999999' },
+      { ...range, agentId: users.solicitante!.id },
+      { ...range, from: 'invalido' },
+      { ...range, to: '2025-01-01' },
+      { ...range, to: '2027-01-02' },
+    ]) {
+      const r = await get(path, query);
+      expect(r.status).toBe(400);
+      expect(r.body.error.code).toBe('INVALID_INPUT');
+    }
+  });
   it('incluye estados/prioridades con cero y agrupa la cohorte creada por atributos actuales', async () => {
     expect((await get('by-status')).body.items).toEqual([
       { status: 'creado', count: 1 },
@@ -328,6 +334,61 @@ describe.skipIf(!url)('reportes con PostgreSQL real', () => {
     });
     for (const item of r.body.agents)
       expect(Object.keys(item).sort()).toEqual(['fullName', 'id', 'isActive']);
+  });
+  it('CSV usa la cohorte creada, filtros combinados, históricos y límites inclusivos; no datos sensibles', async () => {
+    const response = await get('export.csv');
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toBe('text/csv; charset=utf-8');
+    expect(response.headers['content-disposition']).toBe(
+      'attachment; filename="helpdesk-reporte-2026-01-01-a-2026-01-30.csv"',
+    );
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    expect(response.text.startsWith('\uFEFF')).toBe(true);
+    expect(response.text.trim().split('\r\n')).toHaveLength(5);
+    expect(response.text).toContain('"Histórica"');
+    expect(response.text).toContain('"1 d"');
+    for (const secret of [
+      'Descripción privada',
+      'example.invalid',
+      'telegram',
+      'password',
+      'attachment',
+      'note',
+    ])
+      expect(response.text).not.toContain(secret);
+    for (const [filters, count] of [
+      [{ categoryId: category }, 3],
+      [{ agentId: agentB }, 2],
+      [{ categoryId: category, agentId: agentB }, 2],
+      [{ categoryId: inactive, agentId: agentB }, 0],
+      [{ from: '2020-01-01', to: '2020-01-07' }, 0],
+    ] as const) {
+      const csv = await get('export.csv', { ...range, ...filters });
+      expect(csv.status).toBe(200);
+      expect(csv.text.trim().split('\r\n')).toHaveLength(count + 1);
+      const summary = await get('summary', { ...range, ...filters });
+      expect(summary.body.kpis.created).toBe(count);
+    }
+  });
+  it('CSV protege datos controlados por usuarios y conserva acentos, comas, comillas y saltos', async () => {
+    const subject = '=SUM(1,2) "José"\nOtra línea';
+    const {
+      rows: [row],
+    } = await pool.query<{ id: string }>(
+      `INSERT INTO tickets(subject,description,category_id,requester_id,status_id,created_at)
+      VALUES($1,'CUERPO_PRIVADO_CSV',$2,$3,(SELECT id FROM ticket_statuses WHERE code='creado'),'2020-02-01T12:00:00Z') RETURNING id::text`,
+      [subject, category, users.solicitante!.id],
+    );
+    try {
+      const csv = await get('export.csv', { from: '2020-02-01', to: '2020-02-01' });
+      expect(csv.status).toBe(200);
+      expect(csv.text).toContain('"\'=SUM(1,2) ""José""\nOtra línea"');
+      expect(csv.text).not.toContain('CUERPO_PRIVADO_CSV');
+      expect(csv.text).toContain('"2020-02-01 12:00:00 UTC"');
+    } finally {
+      await pool.query('DELETE FROM tickets WHERE id=$1', [row!.id]);
+    }
   });
   it('consultar no altera tickets, eventos, notas ni auditoría; no devuelve contenido privado', async () => {
     const snapshot = async () =>

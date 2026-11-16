@@ -13,6 +13,29 @@ describe('ReportesApi', () => {
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => http.verify());
+  it('exporta los mismos filtros como Blob y conserva headers para el nombre de descarga', () => {
+    const filters = {
+      from: '2026-01-01T00:00:00.000Z',
+      to: '2026-01-07T23:59:59.999Z',
+      timeZone: 'UTC',
+      categoryId: '8',
+      agentId: '7',
+    };
+    const blob = new Blob(['Ticket\r\n'], { type: 'text/csv' });
+    TestBed.inject(ReportesApi)
+      .exportar(filters)
+      .subscribe((response) => {
+        expect(response.body).toBe(blob);
+        expect(response.headers.get('Content-Disposition')).toContain('helpdesk-reporte.csv');
+      });
+    const r = http.expectOne((req) => req.url === '/api/reports/export.csv');
+    expect(r.request.responseType).toBe('blob');
+    for (const [key, value] of Object.entries(filters))
+      expect(r.request.params.get(key)).toBe(value);
+    r.flush(blob, {
+      headers: { 'Content-Disposition': 'attachment; filename="helpdesk-reporte.csv"' },
+    });
+  });
   it('envía fechas UTC, zona y filtros a las seis consultas y agrega respuestas tipadas', () => {
     let resultado: Reports | undefined;
     const f = {

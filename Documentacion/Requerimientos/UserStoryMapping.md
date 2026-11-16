@@ -1,24 +1,22 @@
 # User Story Mapping — HelpDesk interno
 
-## Cobertura actual · 6-nov-2026
+## Cobertura de implementación v1 · 16-nov-2026
 
-Este mapa conserva los identificadores y el alcance objetivo de las historias.
-Los criterios de funciones aún no construidas no describen endpoints disponibles.
-El núcleo implementado es autenticación local mediante correo/contraseña,
-Argon2id y sesiones HttpOnly; administración de cuentas, roles, temporalidad,
-bloqueo y recuperación asistida; categorías; y tickets reales con alta propia,
-listado/búsqueda/filtros/paginación y detalle. La visibilidad actual permite al
-solicitante consultar solo sus tickets; agente, supervisor y administrador ven
-todos. Toda cuenta autenticada puede crear para sí, `creado` y sin agente.
+El alcance ejecutable y su matriz de permisos están en
+[Estado final v1](../../docs/project-status.md). Ya están implementados acceso
+local, administración, tickets, asignación y estados, prioridad, notas internas,
+imagen inicial, contacto directo por Telegram, avisos generales al grupo,
+notificaciones personales, reportes y CSV. No hay relevo privado por bot,
+conversación interna, SLA ni múltiples adjuntos.
 
-Ya hay asignación, nueve transiciones e historial estructurado. No hay archivos, notas, solución
-editable, SLA, artículos o reportes reales. La POC Telegram no se vincula a
-usuarios ni tickets persistidos. La implementación parcial de una épica no da por
-terminadas todas sus historias. [Estado y permisos reales](../README.md).
+Las historias, estimaciones y criterios que siguen son documentos de análisis y
+planificación; no acreditan aceptación formal ni capacidades adicionales del
+producto. Los criterios originales de integración bidireccional del bot quedaron
+fuera de v1; los dos usos actuales están en [Telegram](../Telegram.md).
 
 ## 1. Acerca de este documento
 
-Este documento reúne progresivamente las historias de usuario del proyecto y las organiza según el recorrido de sus usuarios. La fuente de alcance es [Epics.md](Epics.md). Actualmente se desarrollan **EP-01: Registro de solicitudes y portal del solicitante**, **EP-02: Gestión del ciclo de vida y seguimiento del ticket**, **EP-03: Asignación y distribución del trabajo**, **EP-04: Gestión de prioridades, SLA y escalamiento**, **EP-05: Gestión de usuarios, roles y accesos**, **EP-06: Comunicación bidireccional por Telegram y notificaciones**, **EP-07: Base de conocimiento y autoservicio**, **EP-08: Reportes, tableros y satisfacción del solicitante**, **EP-09: Administración y configuración del servicio** y **EP-10: Seguridad, auditoría y recuperación de la información**.
+Este documento reúne progresivamente las historias de usuario del proyecto y las organiza según el recorrido de sus usuarios. La fuente de alcance es [Epics.md](Epics.md). El análisis original contempla **EP-01: Registro de solicitudes y portal del solicitante**, **EP-02: Gestión del ciclo de vida y seguimiento del ticket**, **EP-03: Asignación y distribución del trabajo**, **EP-04: Gestión de prioridades, SLA y escalamiento**, **EP-05: Gestión de usuarios, roles y accesos**, **EP-06: Comunicación bidireccional por Telegram y notificaciones**, **EP-07: Base de conocimiento y autoservicio**, **EP-08: Reportes, tableros y satisfacción del solicitante**, **EP-09: Administración y configuración del servicio** y **EP-10: Seguridad, auditoría y recuperación de la información**.
 
 **Estado:** propuesta para revisión y refinamiento. Las entregas sugeridas no constituyen compromisos de implementación. Las decisiones de S0-08 cerradas el 29-oct-2026 se registran en [Decisiones-de-producto.md](../Decisiones-de-producto.md); los demás pendientes deben resolverse antes de implementar las historias afectadas.
 

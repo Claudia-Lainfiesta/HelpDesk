@@ -144,7 +144,7 @@ describe('avisos operativos de Telegram', () => {
       ),
     ).resolves.toBeUndefined();
   });
-  it('valida ID negativo de grupo y mantiene la POC independiente', () => {
+  it('valida exclusivamente un ID negativo de grupo para avisos generales', () => {
     expect(parseTelegramEnv({ TELEGRAM_SUPPORT_CHAT_ID: '-1001234567890' }).supportChatId).toBe(
       '-1001234567890',
     );

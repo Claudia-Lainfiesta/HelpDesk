@@ -92,3 +92,24 @@ con primario. No hay colores nuevos, almacenamiento local ni datos sensibles.
 `npm run check` cubre servicio HTTP, fechas/duraciones, roles, carga, rangos,
 URL, filtros, cancelación de consultas, KPIs, barras, tendencia, agentes,
 vacío y reintento. Las pruebas frontend no necesitan red ni backend.
+
+## Exportar CSV
+
+«Exportar CSV», junto a «Aplicar filtros», descarga mediante Blob sin abrir otra
+pestaña. Solo supervisor/administrador pueden abrir la pantalla y la API vuelve a
+autorizarlos. Se exporta la **vista aplicada**, no cambios pendientes del formulario.
+Durante la descarga muestra «Exportando...» y bloquea envíos duplicados. Un fallo
+muestra el toast «No fue posible exportar el reporte.» sin perder las métricas.
+El ObjectURL se libera después de iniciar la descarga; el nombre proviene del
+Content-Disposition validado, con respaldo `helpdesk-reporte.csv`.
+
+Incluye tickets creados en el rango con categoría/agente actuales: coincide con
+la cohorte de distribuciones, no necesariamente con totales de resolución/cierre
+ni pendientes actuales. Trece columnas operativas; fechas explícitas en UTC,
+duraciones legibles, BOM UTF-8 y defensa contra fórmulas. Sin datos descarga solo
+encabezados. No exporta correos, descripción, notas ni imágenes. Véase el
+[contrato CSV](../../backend/docs/reports.md#exportación-csv).
+
+Las descargas protegidas conservan el manejo de sesión: el interceptor interpreta
+errores JSON aunque HttpClient los reciba como Blob, incluyendo cambio obligatorio
+de contraseña.

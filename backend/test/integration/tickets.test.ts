@@ -35,7 +35,6 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
     isolated.searchParams.set('options', `-csearch_path=${schema},pg_catalog`);
     vi.stubEnv('DATABASE_URL', isolated.toString());
     vi.stubEnv('TELEGRAM_BOT_TOKEN', '');
-    vi.stubEnv('TELEGRAM_ALLOWED_USER_IDS', '');
     ({ pool } = await import('../../src/db/pool.js'));
     const { env } = await import('../../src/config/env.js');
     const { createApp } = await import('../../src/app.js');

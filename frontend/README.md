@@ -52,7 +52,7 @@ aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
 - `/tickets/:id`: detalle, asignación, prioridad, acciones de estado y actividad con notas internas autorizadas.
   El propietario puede abrir Telegram del agente asignado en tickets no terminales.
 - `/categorias` y `/usuarios`: administración real, disponible solo para el administrador.
-- `/reportes`: [reportes operativos reales](docs/reportes.md) para supervisor y administrador, con rangos locales, KPIs, distribuciones, tendencia y carga por agente.
+- `/reportes`: [reportes operativos reales](docs/reportes.md) para supervisor y administrador, con rangos locales, KPIs, distribuciones, tendencia y carga por agente, con exportación CSV del contexto aplicado.
 - `/sin-permiso` y página 404: explican por qué no se puede acceder.
 
 Al arrancar se consulta `/api/auth/me` antes de resolver rutas. Así, refrescar
@@ -188,3 +188,10 @@ con divisores, apiladas bajo 1280 px sin ocultar datos ni crear tarjetas por reg
 en móvil, sin desplazamiento lateral. Estados y prioridades son texto semántico, las acciones
 de administración son iconos accesibles y el cierre de sesión pide confirmación.
 Consulta los patrones en [diseño](docs/diseno.md) y `/guia-ui` en desarrollo.
+
+## Estado v1
+
+Consulta [el informe de cierre](../docs/project-status.md) para alcance, permisos,
+verificaciones y límites. `/reportes` permite descargar CSV con filtros aplicados,
+fechas UTC y protección contra fórmulas; [detalle](docs/reportes.md#exportar-csv).
+Las rutas reales de acceso son `/iniciar-sesion` y `/cambiar-contrasena`.

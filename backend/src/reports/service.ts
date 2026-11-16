@@ -39,3 +39,4 @@ export const trend = (f: ReportFilters) =>
     return { granularity, timeZone: f.timeZone, items: await repository.trend(db, f, granularity) };
   }, f);
 export const options = () => read(repository.options);
+export const exportTickets = (f: ReportFilters) => read((db) => repository.exportTickets(db, f), f);

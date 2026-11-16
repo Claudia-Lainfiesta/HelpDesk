@@ -457,9 +457,8 @@ Se requiere que el empleado mantenga vigente su usuario público. Los enlaces po
 ID numérico no son un mecanismo general de contacto desde web:
 [enlaces oficiales de Telegram](https://core.telegram.org/api/links).
 
-La antigua POC con grammY permanece aislada y opcional para experimentación; no
-participa en este contacto ni permite leer las notas del ticket. No se implementa
-vinculación por bot, chat interno, copia automática de conversaciones. Los avisos de grupo son independientes del contacto directo.
+No hay relevo privado, vinculación por bot, chat interno ni copia automática de conversaciones.
+Los avisos de grupo son independientes del contacto directo.
 
 ## Imagen inicial del ticket
 

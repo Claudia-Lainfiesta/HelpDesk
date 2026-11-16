@@ -2,7 +2,7 @@
 
 Solo supervisor y administrador, con sesión válida y contraseña definitiva.
 Agente y solicitante reciben 403 `FORBIDDEN`; sin sesión, 401. Todas las rutas
-son GET, devuelven JSON y `Cache-Control: no-store`. No modifican tickets,
+son GET, devuelven JSON (CSV en export.csv) y `Cache-Control: no-store`. No modifican tickets,
 actividad, notas ni auditoría. La validación habitual de sesión sigue vigente.
 
 ## Endpoints
@@ -100,12 +100,12 @@ nombre e ID para desempatar.
 - Una reapertura puede borrar la resolución anterior: se usa `resolved_at` vigente,
   no la primera resolución histórica. Las cifras pueden cambiar tras reasignar o reabrir.
 - Telegram y notas no forman parte de métricas de productividad.
-- No hay exportación, escrituras, tablas estadísticas ni filtros persistidos en DB.
+- No hay escrituras, tablas estadísticas ni filtros persistidos en DB.
 - Cada endpoint consulta en una transacción de solo lectura con snapshot consistente;
   distintas peticiones pueden observar cambios concurrentes entre ellas.
 
 Las agregaciones se ejecutan en PostgreSQL con parámetros; no se cargan tickets
-individuales en Node. Se conservan los índices de creación, categoría y agente
+individuales en Node para las métricas. El CSV sí carga únicamente las filas del rango filtrado. Se conservan los índices de creación, categoría y agente
 existentes. No se añaden índices especulativos sobre las otras fechas para el
 volumen local; conviene medir planes y tiempos si el volumen crece.
 
@@ -113,3 +113,35 @@ Las pruebas crean un esquema privado, aplican las migraciones y usan fechas
 fijas para límites, promedios, filtros, snapshots, roles, granularidades y DST.
 No modifican los datos de desarrollo. Necesitan `DATABASE_URL` exportada para
 correr integración; sin ella se omiten con un mensaje explícito.
+
+## Exportación CSV
+
+`GET /api/reports/export.csv` requiere supervisor o administrador; comparte exactamente
+la validación `from`, `to`, `timeZone`, `categoryId` y `agentId` de reportes (máximo 365 días).
+Lee en transacción de solo lectura. Incluye una fila por ticket **creado en el rango**,
+con categoría y asignación actuales, igual que las distribuciones. No es la unión de
+creaciones/resoluciones/cierres del período ni el snapshot de pendientes. Orden por
+creación descendente e ID para desempatar. No requiere migración ni índices nuevos.
+
+Columnas: Ticket, Asunto, Categoría, Estado, Prioridad, Solicitante, Agente asignado,
+Fecha de creación, Fecha de resolución, Fecha de cierre, Fecha de cancelación,
+Tiempo de resolución y Tiempo de cierre. Estados/prioridades llevan etiquetas en
+español. Fechas `YYYY-MM-DD HH:mm:ss UTC`, con UTC explícito en cada valor;
+duraciones redondeadas a minutos (`2 h 35 min`, `1 d 1 h`), vacío si no hay fecha.
+No contiene descripción, correos, notas, notificaciones, usernames, imágenes,
+nombres de adjuntos ni IDs internos.
+
+Respuesta `text/csv; charset=utf-8`, `Cache-Control: no-store`, `nosniff` y
+`Content-Disposition: attachment; filename="helpdesk-reporte-2026-10-18-a-2026-11-16.csv"`.
+El nombre usa las fechas civiles de `timeZone`; los valores dentro del archivo
+siempre indican UTC. UTF-8 con BOM para hojas de cálculo, separador coma, CRLF
+y todas las celdas entre comillas; comillas internas duplicadas, saltos conservados.
+Se antepone apóstrofo a celdas que empiezan con `=`, `+`, `-` o `@`, también tras
+espacios, controles o marcas Unicode invisibles. Esto neutraliza fórmulas sin
+modificar los datos almacenados. Sin datos se devuelve solo el encabezado.
+
+Generación en memoria proporcional a los tickets del rango filtrado mediante SQL
+parametrizado; no hay exportación Excel/PDF ni descarga de todos los tickets sin filtro.
+La exportación y los reportes son peticiones distintas: cambios concurrentes pueden
+hacer variar sus resultados. Pruebas cubren roles, validación, límites de fecha,
+filtros combinados, privacidad, formato, acentos y neutralización de fórmulas.

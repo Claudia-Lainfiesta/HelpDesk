@@ -38,7 +38,6 @@ describe.skipIf(!databaseUrl)('recuperación asistida con PostgreSQL real y corr
     vi.stubEnv('POSTGRES_PASSWORD', decodeURIComponent(url.password));
     vi.stubEnv('POSTGRES_DB', url.pathname.slice(1));
     vi.stubEnv('TELEGRAM_BOT_TOKEN', '');
-    vi.stubEnv('TELEGRAM_ALLOWED_USER_IDS', '');
     ({ pool } = await import('../../src/db/pool.js'));
     const { env } = await import('../../src/config/env.js');
     const { createApp } = await import('../../src/app.js');

@@ -29,7 +29,6 @@ describe.skipIf(!databaseUrl)(databaseUrl ? 'autenticación contra PostgreSQL re
     vi.stubEnv('POSTGRES_PASSWORD', decodeURIComponent(url.password));
     vi.stubEnv('POSTGRES_DB', url.pathname.slice(1));
     vi.stubEnv('TELEGRAM_BOT_TOKEN', '');
-    vi.stubEnv('TELEGRAM_ALLOWED_USER_IDS', '');
     const { env } = await import('../../src/config/env.js');
     config = {
       ...env,

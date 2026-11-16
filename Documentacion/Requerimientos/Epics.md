@@ -1,18 +1,20 @@
 # Épicas del sistema HelpDesk interno
 
-## Estado de implementación · 6-nov-2026
+> Alcance real y cierre v1: [Estado del proyecto](../../docs/project-status.md). Este documento conserva planificación; no acredita implementación de sus criterios.
 
-Estas épicas describen el alcance objetivo; no son una lista de funciones ya
-entregadas. Hoy funcionan acceso local con sesiones, usuarios, cuentas temporales,
-recuperación asistida por SMTP, categorías y creación/listado/detalle real de
-tickets. Todos crean para sí; solicitante consulta solo los suyos y agente,
-supervisor y administrador consultan todos. Los nuevos nacen `creado`, sin agente.
+## Estado de implementación v1 · 16-nov-2026
 
-Asignación, transiciones e historial estructurado ya funcionan. Comentarios, notas internas,
-adjuntos, prioridad, SLA, conocimiento, reportes, conversación y notificaciones
-integradas están pendientes. Telegram es una POC separada, en memoria. La
-referencia pública es `TK-XXXXXX`, mínimo seis dígitos, sin truncar números largos.
-Consulta [el estado y permisos actuales](../README.md).
+Funcionan acceso local, recuperación asistida, usuarios, categorías y tickets con
+asignación, estados, prioridad, notas internas, imagen inicial, notificaciones,
+Telegram directo y de grupo, reportes y CSV. Nuevos tickets: propios, Creado,
+sin agente y prioridad Media. Referencia TK- con mínimo seis dígitos sin truncar.
+Matriz y limitaciones: [Estado final v1](../../docs/project-status.md).
+
+Las secciones posteriores conservan el análisis y sus identificadores originales.
+Los criterios de equipos, SLA, base de conocimiento, vinculación o relevo privado
+por bot no son funciones disponibles ni requisitos pendientes obligatorios de v1.
+La decisión vigente de Telegram está en [Telegram](../Telegram.md): contacto directo
+mediante username público y avisos generales independientes, sin conversación integrada.
 
 ## 1. Propósito y alcance
 

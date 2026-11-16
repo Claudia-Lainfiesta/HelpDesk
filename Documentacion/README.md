@@ -7,8 +7,8 @@ o administrador. El producto usa autenticación local mediante correo y contrase
 ## Estado funcional · 16-nov-2026
 
 Sprint 1 tiene implementados los núcleos de acceso y administración y Sprint 2
-ya tiene creación, listado, búsqueda, filtros, paginación y detalle de tickets
-persistidos en PostgreSQL. El código y las pruebas son la fuente de verdad;
+ya tiene tickets persistidos con gestión de estados, asignación, prioridades, notas,
+imagen inicial, notificaciones, reportes y CSV. El código y las pruebas son la fuente de verdad;
 las épicas, historias y calendarios describen también trabajo futuro.
 
 - Autenticación con Argon2id, cookie HttpOnly y sesiones en el servidor, bloqueo
@@ -28,8 +28,6 @@ las épicas, historias y calendarios describen también trabajo futuro.
 - Notas internas inmutables, visibles solo para soporte autorizado.
 - Contacto directo del propietario con el Telegram público del agente asignado, con borrador de número y asunto; el usuario decide si envía.
 - Una imagen opcional JPEG/PNG/WebP de hasta 10 MiB al crear el ticket, almacenada en PostgreSQL y visible con los permisos del detalle.
-- POC anterior del bot, independiente y opcional; no participa en el contacto actual.
-  No está vinculada a usuarios o tickets reales ni envía notificaciones del caso.
 
 Hay asignación/reasignación y nueve transiciones con historial estructurado.
 No hay conversación integrada,
@@ -56,7 +54,7 @@ mientras ese cambio sea obligatorio.
 | Administrar categorías | No | No | No | Sí |
 | Ver/agregar notas internas | No | Solo asignado; agregar solo si no es terminal | Sí; agregar solo si no es terminal | Sí; agregar solo si no es terminal |
 | Hablar por Telegram con agente | Solo ticket propio no terminal | Solo ticket propio no terminal | Solo ticket propio no terminal | Solo ticket propio no terminal |
-| Consultar reportes y opciones históricas de categoría/agente | No | No | Sí | Sí |
+| Consultar reportes, CSV y opciones históricas de categoría/agente | No | No | Sí | Sí |
 | Cambiar la propia contraseña | Sí | Sí | Sí | Sí |
 
 El contacto se oculta si el agente asignado es el propio usuario. Las notas
@@ -83,7 +81,7 @@ No hay README ni paquete npm en la raíz. Cada proyecto lleva sus instrucciones:
 - [Guía de contribución y CI](Guia-de-contribucion.md).
 - [Decisiones de producto y pendientes](Decisiones-de-producto.md).
 - [Notificaciones web y grupo Telegram](../backend/docs/notifications.md).
-- [POC de Telegram y límites](Telegram-prueba-de-concepto.md).
+- [Los dos usos actuales de Telegram](Telegram.md).
 - [Épicas](Requerimientos/Epics.md), [historias](Requerimientos/UserStoryMapping.md)
   y [Sprint Backlog](Planificacion/SprintBacklog.md): alcance objetivo y cobertura
   actual separados. Los cuestionarios de `Requerimientos/` son plantillas de
@@ -118,3 +116,5 @@ históricos. El solicitante la ve pero no la decide. Solo agente asignado,
 supervisor o administrador la cambia en tickets no terminales, incluido Resuelto.
 Propiedad no concede este permiso. Listado, filtro URL, detalle, actividad y
 auditoría incluyen prioridad. No hay automatismos, SLA ni escalamiento.
+
+[Estado final v1, permisos y límites](../docs/project-status.md).

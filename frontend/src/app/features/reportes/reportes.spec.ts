@@ -216,6 +216,65 @@ describe('Pantalla Reportes', () => {
     responder();
     await pagina.fixture.whenStable();
     expect(pagina.routeNativeElement!.querySelector('a[href="/reportes"]')).not.toBeNull();
+    expect(pagina.routeNativeElement!.textContent).toContain('Exportar CSV');
+  });
+  it('descarga CSV con filtros aplicados, bloquea duplicados y libera el Blob', async () => {
+    await abrir(
+      '/reportes?range=personalizado&from=2026-01-01&to=2026-01-07&categoryId=9&agentId=10',
+    );
+    responder();
+    c.formulario.controls.categoryId.setValue('99');
+    const crearOriginal = URL.createObjectURL,
+      revocarOriginal = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn(() => 'blob:csv-prueba');
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      expect(this.download).toBe('helpdesk-reporte-2026-01-01-a-2026-01-07.csv');
+      expect(this.href).toBe('blob:csv-prueba');
+    });
+    try {
+      c.exportar();
+      c.exportar();
+      pagina.detectChanges();
+      expect(c.exportando()).toBe(true);
+      const button = Array.from(pagina.routeNativeElement!.querySelectorAll('button')).find((b) =>
+        b.textContent?.includes('Exportando...'),
+      )!;
+      expect(button.disabled).toBe(true);
+      const req = http.expectOne((r) => r.url === '/api/reports/export.csv');
+      expect(req.request.params.get('categoryId')).toBe('9');
+      expect(req.request.params.get('agentId')).toBe('10');
+      req.flush(new Blob(['Ticket\r\n'], { type: 'text/csv' }), {
+        headers: {
+          'Content-Disposition':
+            'attachment; filename="helpdesk-reporte-2026-01-01-a-2026-01-07.csv"',
+        },
+      });
+      expect(c.exportando()).toBe(false);
+      expect(click).toHaveBeenCalledTimes(1);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:csv-prueba');
+      expect(document.querySelector('a[download]')).toBeNull();
+    } finally {
+      URL.createObjectURL = crearOriginal;
+      URL.revokeObjectURL = revocarOriginal;
+      click.mockRestore();
+    }
+  });
+  it('error de exportación conserva los reportes y muestra toast saneado', async () => {
+    await abrir();
+    responder();
+    c.exportar();
+    http
+      .expectOne((r) => r.url === '/api/reports/export.csv')
+      .flush(new Blob(['Error privado']), { status: 500, statusText: 'Error' });
+    await pagina.fixture.whenStable();
+    expect(c.exportando()).toBe(false);
+    expect(c.datos()).not.toBeNull();
+    expect(pagina.routeNativeElement!.textContent).toContain('No fue posible exportar el reporte.');
+    expect(pagina.routeNativeElement!.textContent).not.toContain('Error privado');
   });
   it('normaliza parámetros inválidos y agrupa Otras sin perder cantidades', () => {
     expect(
