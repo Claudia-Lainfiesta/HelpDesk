@@ -314,7 +314,7 @@ diferentes dejan una secuencia anterior/nueva coherente.
 Solo cambia priority y updated_at. Estado, asignación, created_at, resolved_at,
 closed_at y canceled_at se conservan. Tampoco cambian prioridad las asignaciones,
 transiciones, categoría, antigüedad o reaperturas: no hay reglas automáticas, SLA,
-escalamiento, notificaciones ni cálculo de prioridad.
+escalamiento ni cálculo de prioridad. Urgente sí genera los avisos documentados en la guía de notificaciones.
 
 La migración 0014 añade priority TEXT CHECK con default media y normaliza todos
 los tickets existentes a ese valor, sin inferir historia ni generar actividad.
@@ -459,7 +459,7 @@ ID numérico no son un mecanismo general de contacto desde web:
 
 La antigua POC con grammY permanece aislada y opcional para experimentación; no
 participa en este contacto ni permite leer las notas del ticket. No se implementa
-vinculación por bot, chat interno, copia automática de conversaciones ni notificaciones.
+vinculación por bot, chat interno, copia automática de conversaciones. Los avisos de grupo son independientes del contacto directo.
 
 ## Imagen inicial del ticket
 
@@ -539,3 +539,5 @@ Errores de alta: 413 IMAGE_TOO_LARGE, 400 INVALID_IMAGE (vacío, formato o coher
 inválidos), 400 INVALID_MULTIPART (más archivos/campos, archivo de nombre inesperado
 u otro multipart inválido). Se mantienen los errores de texto/categoría y CSRF.
 No hay POST/PUT/PATCH/DELETE /api/tickets/:id/attachment.
+
+Consulta también la [guía de notificaciones](notifications.md) para destinatarios por evento y avisos generales al grupo.

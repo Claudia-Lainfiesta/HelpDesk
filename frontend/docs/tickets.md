@@ -115,7 +115,7 @@ ticket conserva sus tres campos: no ofrece selector ni envía prioridad; nace Me
 El evento estructurado priority_changed se presenta como «Juan Pérez cambió la
 prioridad de Media a Alta.». La frase se genera en la interfaz, sin almacenarla.
 No modifica estado, asignación o fechas de resolución/cierre/cancelación. No hay
-prioridad automática, SLA, escalamiento, notificaciones ni orden por urgencia.
+prioridad automática, SLA, escalamiento ni orden por urgencia. Urgente sí genera avisos según la guía de notificaciones.
 
 Tokens existentes: Baja usa info/info-suave; Media usa superficie-suave,
 texto-suave y linea; Alta usa aviso/aviso-suave; Urgente usa peligro/peligro-suave.
@@ -202,3 +202,5 @@ La imagen inicial no se puede agregar, reemplazar ni quitar después. Se informa
 «Si necesitas compartir más imágenes después de crear el ticket, puedes hacerlo
 por Telegram cuando tengas un agente asignado». No cambia estados, prioridad,
 actividad ni notas. El acceso a la imagen lo comprueba el backend como el detalle.
+
+Consulta también la [guía de notificaciones](notificaciones.md) para destinatarios por evento y avisos generales al grupo.

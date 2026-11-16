@@ -1,3 +1,4 @@
+import { notifyAfterCommit, type SupportNotifier } from '../integrations/telegram/support-group.js';
 import { pool } from '../db/pool.js';
 import { transaction } from '../db/transaction.js';
 import { ApiError } from '../auth/errors.js';
@@ -15,13 +16,14 @@ export function listTickets(filters: TicketFilters, user: UserProfile) {
     return queryTickets(client, filters, user);
   });
 }
-export function createTicket(
+export async function createTicket(
   input: CreateTicketInput,
   user: UserProfile,
   ip?: string,
   image?: TicketImage,
+  support?: SupportNotifier,
 ) {
-  return transaction(async (client) => {
+  const ticket = await transaction(async (client) => {
     // Comparte lock con cambios de categoría: no puede desactivarse durante el alta.
     const category = await client.query<{ is_active: boolean }>(
       'SELECT is_active FROM categories WHERE id=$1 FOR SHARE',
@@ -57,4 +59,11 @@ export function createTicket(
     });
     return ticket;
   });
+  await notifyAfterCommit(support, {
+    type: 'created',
+    number: ticket.number,
+    category: ticket.category.name,
+    priority: ticket.priority,
+  });
+  return ticket;
 }

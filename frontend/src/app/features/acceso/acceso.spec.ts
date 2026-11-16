@@ -1,3 +1,4 @@
+import { notificacionesSinRed } from '../../pruebas/notificaciones';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -29,7 +30,12 @@ describe('Inicio de sesión', () => {
   let navegar: ReturnType<typeof vi.spyOn>;
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        notificacionesSinRed,
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
@@ -102,7 +108,12 @@ describe('Cambio de contraseña', () => {
   let http: HttpTestingController;
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        notificacionesSinRed,
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     TestBed.inject(AuthService).cargarSesion().subscribe();

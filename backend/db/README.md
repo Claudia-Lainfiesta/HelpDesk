@@ -165,6 +165,8 @@ un cierre confirmado. `canceled_at` registra la cancelación del ejemplo; no hay
 erDiagram
     roles ||--o{ users : role_id
     users ||--o{ sessions : user_id
+    users ||--o{ notifications : user_id
+    tickets o|--o{ notifications : ticket_id
     users o|--o{ users : created_by
     users o|--o{ audit_events : actor_user_id
     users ||--o{ tickets : requester_id
@@ -182,6 +184,16 @@ erDiagram
     ticket_statuses o|--o{ ticket_events : from_status
     ticket_statuses o|--o{ ticket_events : to_status
 
+    notifications {
+        bigint id PK
+        bigint user_id FK
+        text type
+        text title
+        text message
+        bigint ticket_id FK
+        timestamptz read_at
+        timestamptz created_at
+    }
     ticket_attachments {
         bigint id PK
         bigint ticket_id FK,UK
@@ -373,3 +385,12 @@ PK y UNIQUE. No modifica tickets previos ni el seed normal; las imágenes de pru
 son fixtures de 2×2 píxeles. Ticket, imagen, evento y auditoría se insertan en una
 transacción. La API solo expone metadata en JSON y ofrece una lectura binaria
 protegida; no hay mutaciones posteriores. Consulta [tickets](../docs/tickets.md).
+
+## Notificaciones personales
+
+0018_notifications.sql añade notifications con destinatario obligatorio, destino
+ticket opcional (ambas FK RESTRICT), tipo cerrado, título, mensaje, read_at y
+created_at. Índice parcial de no leídas por usuario e índice de listado por
+usuario/fecha/ID. No hay borrado, updated_at ni retención automática. Los avisos
+web forman parte de la transacción del ticket; Telegram solo se intenta después
+del commit. Consulta [reglas y endpoints](../docs/notifications.md).

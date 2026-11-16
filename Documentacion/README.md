@@ -4,7 +4,7 @@ HelpDesk es un sistema web interno de mesa de ayuda, desarrollado como proyecto
 personal/local. Cada cuenta tiene un único rol: solicitante, agente, supervisor
 o administrador. El producto usa autenticación local mediante correo y contraseña.
 
-## Estado funcional · 15-nov-2026
+## Estado funcional · 16-nov-2026
 
 Sprint 1 tiene implementados los núcleos de acceso y administración y Sprint 2
 ya tiene creación, listado, búsqueda, filtros, paginación y detalle de tickets
@@ -24,6 +24,7 @@ las épicas, historias y calendarios describen también trabajo futuro.
 - Auditoría de operaciones de usuarios, categorías, recuperación elegible y alta
   de tickets y sus cambios de asignación/estado. El historial funcional del ticket
   está separado de la auditoría global; EP-10 completa sigue pendiente.
+- Notificaciones web personales con campana y lectura; avisos generales al grupo Telegram para creación, asignación/reasignación y Urgente, sin seguimiento ni datos del solicitante.
 - Notas internas inmutables, visibles solo para soporte autorizado.
 - Contacto directo del propietario con el Telegram público del agente asignado, con borrador de número y asunto; el usuario decide si envía.
 - Una imagen opcional JPEG/PNG/WebP de hasta 10 MiB al crear el ticket, almacenada en PostgreSQL y visible con los permisos del detalle.
@@ -81,6 +82,7 @@ No hay README ni paquete npm en la raíz. Cada proyecto lleva sus instrucciones:
 - [Reportes: API y métricas](../backend/docs/reports.md) y [pantalla](../frontend/docs/reportes.md).
 - [Guía de contribución y CI](Guia-de-contribucion.md).
 - [Decisiones de producto y pendientes](Decisiones-de-producto.md).
+- [Notificaciones web y grupo Telegram](../backend/docs/notifications.md).
 - [POC de Telegram y límites](Telegram-prueba-de-concepto.md).
 - [Épicas](Requerimientos/Epics.md), [historias](Requerimientos/UserStoryMapping.md)
   y [Sprint Backlog](Planificacion/SprintBacklog.md): alcance objetivo y cobertura

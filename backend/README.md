@@ -348,7 +348,7 @@ consulta sus tickets; los demás roles ven todos. Incluye asignación, prioridad
 La prioridad operativa (Baja, Media, Alta, Urgente) se muestra en listado/detalle y
 se filtra con priority. Nace Media. La cambia el agente asignado, supervisor o
 administrador en tickets no terminales, incluido Resuelto. El propietario no gana
-ese permiso. No hay cálculo, escalamiento, SLA ni notificaciones de prioridad.
+ese permiso. No hay cálculo, escalamiento ni SLA. El cambio a Urgente genera avisos según la guía de notificaciones.
 Consulta la guía de tickets para el contrato y los controles disponibles.
 
 La imagen inicial es opcional, máximo una y **10 MiB (10485760 bytes)**. El backend
@@ -357,3 +357,15 @@ externo. El ticket y su imagen son atómicos. No hay subida, reemplazo o elimina
 posteriores. Consulta [el contrato y los ejemplos](docs/tickets.md#imagen-inicial-del-ticket).
 Hablar por Telegram prepara solo saludo, número y asunto; el propietario decide
 si envía el mensaje. HelpDesk no almacena ni sincroniza conversaciones.
+
+## Notificaciones
+
+[Notificaciones personales y avisos al grupo](docs/notifications.md): cuatro endpoints
+privados, ocho tipos web y envío Telegram posterior al commit para creación,
+asignación/reasignación y Urgente. La migración 0018 se aplica con `npm run db:migrate`.
+Configura opcionalmente `TELEGRAM_BOT_TOKEN` y `TELEGRAM_SUPPORT_CHAT_ID` (grupo negativo)
+en tu `.env` privado y reinicia la API. Si falta alguno no se envía nada ni falla
+el arranque. No requiere ejecutar los scripts de la POC antigua.
+
+El contacto «Hablar por Telegram» continúa abriendo el deep-link personal del
+agente; el bot de grupo es un canal distinto, sin lectura ni seguimiento.

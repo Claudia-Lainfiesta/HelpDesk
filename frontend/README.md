@@ -156,7 +156,7 @@ para el flujo de ramas y revisiones del equipo.
 La prioridad operativa (Baja, Media, Alta, Urgente) se muestra en listado/detalle y
 se filtra con priority. Nace Media. La cambia el agente asignado, supervisor o
 administrador en tickets no terminales, incluido Resuelto. El propietario no gana
-ese permiso. No hay cálculo, escalamiento, SLA ni notificaciones de prioridad.
+ese permiso. No hay cálculo, escalamiento ni SLA. El cambio a Urgente genera avisos según la guía de notificaciones.
 Consulta la guía de tickets para el contrato y los controles disponibles.
 
 El administrador puede configurar el @usuario público de Telegram al crear o editar
@@ -171,3 +171,12 @@ no existe subida, reemplazo o borrado posterior. Los ObjectURL se liberan y no
 se usa almacenamiento web. Consulta [tickets](docs/tickets.md).
 El enlace Telegram incluye un borrador con número y asunto generado por el backend;
 el usuario decide si pulsa Enviar. HelpDesk no almacena ni sincroniza esa conversación.
+
+## Notificaciones
+
+La campana del header muestra [notificaciones personales](docs/notificaciones.md)
+con contador, panel paginado, lectura individual/todas y navegación al ticket.
+Refresca solo el contador cada 30 segundos, al navegar y tras leer; se pausa con
+la pestaña oculta y se limpia al salir. Requiere aplicar la migración 0018 en backend.
+Los avisos operativos al grupo Telegram se configuran exclusivamente en la API;
+no sustituyen el deep-link personal ni envían notas o seguimiento.

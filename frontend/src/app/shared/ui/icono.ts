@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 const trazos = {
+  campana: ['M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9', 'M10 21h4'],
   ticket: ['M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4Z', 'M16 7v2m0 3v1m0 3v1'],
   etiqueta: ['M3 3h8l10 10-8 8L3 11Z', 'M7 7h.01'],
   usuarios: [

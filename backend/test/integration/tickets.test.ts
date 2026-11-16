@@ -79,6 +79,7 @@ describe.skipIf(!url)('núcleo de tickets con PostgreSQL real', () => {
       for (const secret of sensitive) expect(JSON.stringify(logs)).not.toContain(secret);
     } finally {
       await pool.query('DELETE FROM audit_events');
+      await pool.query('DELETE FROM notifications');
       await pool.query('DELETE FROM ticket_events');
       await pool.query('DELETE FROM ticket_notes');
       await pool.query('DELETE FROM ticket_attachments');

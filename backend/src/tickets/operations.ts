@@ -1,3 +1,9 @@
+import { notifyUser } from '../notifications/events.js';
+import {
+  notifyAfterCommit,
+  type SupportNotifier,
+  type SupportEvent,
+} from '../integrations/telegram/support-group.js';
 import { ticketError } from './errors.js';
 import type { PoolClient } from 'pg';
 import { pool } from '../db/pool.js';
@@ -140,13 +146,14 @@ export async function assignableAgents() {
     WHERE r.code='agente' AND u.is_active AND (u.expires_at IS NULL OR u.expires_at>clock_timestamp()) ORDER BY u.full_name,u.id`);
   return result.rows;
 }
-export function changeAssignment(
+export async function changeAssignment(
   id: string,
   agentId: string | null,
   user: UserProfile,
   ip?: string,
+  support?: SupportNotifier,
 ) {
-  return transaction(async (client) => {
+  const result = await transaction(async (client) => {
     const actor = await currentActor(client, user);
     const ticket = await lockedTicket(client, id, actor);
     checkAssignment(ticket, actor, agentId);
@@ -168,6 +175,15 @@ export function changeAssignment(
       fromAgentId: ticket.agentId,
       toAgentId: agentId,
     });
+
+    const updated = await findTicket(client, id, actor);
+    await notifyUser(client, {
+      type: type === 'reassigned' ? 'ticket_reassigned' : 'ticket_assigned',
+      recipientId: agentId,
+      actorId: actor.id,
+      ticketId: id,
+      number: updated.number,
+    });
     await recordAudit(client, {
       actor: { userId: actor.id, ...(ip ? { ip } : {}) },
       action: `ticket.${type}`,
@@ -175,8 +191,30 @@ export function changeAssignment(
       targetId: id,
       metadata: { fromAgentId: ticket.agentId, toAgentId: agentId },
     });
-    return findTicket(client, id, actor);
+    let groupEvent: SupportEvent | undefined;
+    if (updated.assignedAgent) {
+      if (ticket.agentId) {
+        const previous = await client.query<{ full_name: string }>(
+          'SELECT full_name FROM users WHERE id=$1',
+          [ticket.agentId],
+        );
+        groupEvent = {
+          type: 'reassigned',
+          number: updated.number,
+          fromAgent: previous.rows[0]!.full_name,
+          agent: updated.assignedAgent.fullName,
+        };
+      } else
+        groupEvent = {
+          type: 'assigned',
+          number: updated.number,
+          agent: updated.assignedAgent.fullName,
+        };
+    }
+    return { ticket: updated, groupEvent };
   });
+  if (result.groupEvent) await notifyAfterCommit(support, result.groupEvent);
+  return result.ticket;
 }
 export function transitionTicket(
   id: string,
@@ -202,6 +240,28 @@ export function transitionTicket(
       fromStatus: ticket.status,
       toStatus: target,
     });
+
+    const updated = await findTicket(client, id, actor);
+    const types = {
+      start: 'ticket_started',
+      wait: 'ticket_waiting',
+      resolve: 'ticket_resolved',
+      reopen: 'ticket_reopened',
+      close: 'ticket_closed',
+    } as const;
+    if (action in types) {
+      const type = types[action as keyof typeof types];
+      await notifyUser(client, {
+        type,
+        recipientId:
+          action === 'start' || action === 'wait' || action === 'resolve'
+            ? ticket.requesterId
+            : ticket.agentId,
+        actorId: actor.id,
+        ticketId: id,
+        number: updated.number,
+      });
+    }
     await recordAudit(client, {
       actor: { userId: actor.id, ...(ip ? { ip } : {}) },
       action: 'ticket.status_changed',
@@ -209,17 +269,18 @@ export function transitionTicket(
       targetId: id,
       metadata: { fromStatus: ticket.status, toStatus: target },
     });
-    return findTicket(client, id, actor);
+    return updated;
   });
 }
 
-export function changePriority(
+export async function changePriority(
   id: string,
   priority: TicketPriority,
   user: UserProfile,
   ip?: string,
+  support?: SupportNotifier,
 ) {
-  return transaction(async (client) => {
+  const updated = await transaction(async (client) => {
     const actor = await currentActor(client, user);
     const ticket = await lockedTicket(client, id, actor);
     checkPriority(ticket, actor);
@@ -232,6 +293,16 @@ export function changePriority(
       fromPriority: ticket.priority,
       toPriority: priority,
     });
+
+    const result = await findTicket(client, id, actor);
+    if (priority === 'urgente')
+      await notifyUser(client, {
+        type: 'priority_changed',
+        recipientId: ticket.agentId,
+        actorId: actor.id,
+        ticketId: id,
+        number: result.number,
+      });
     await recordAudit(client, {
       actor: { userId: actor.id, ...(ip ? { ip } : {}) },
       action: 'ticket.priority_changed',
@@ -239,6 +310,9 @@ export function changePriority(
       targetId: id,
       metadata: { fromPriority: ticket.priority, toPriority: priority },
     });
-    return findTicket(client, id, actor);
+    return result;
   });
+  if (priority === 'urgente')
+    await notifyAfterCommit(support, { type: 'urgent', number: updated.number });
+  return updated;
 }

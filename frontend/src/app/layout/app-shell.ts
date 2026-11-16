@@ -15,6 +15,7 @@ import { Rol } from '../core/auth/modelos';
 import { interpretarError } from '../core/auth/fallo-api';
 import { Icono, NombreIcono } from '../shared/ui/icono';
 import { Marca } from '../shared/ui/marca';
+import { Campana } from '../shared/notificaciones/campana';
 import { Alerta } from '../shared/ui/alerta';
 
 interface Enlace {
@@ -37,7 +38,7 @@ const enlaces: Enlace[] = [
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Icono, Marca, Alerta],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, Icono, Marca, Alerta, Campana],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app-shell.html',
   host: { '(document:click)': 'cerrarFuera($event)', '(document:keydown.escape)': 'escapar()' },

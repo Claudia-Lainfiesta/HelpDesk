@@ -1,4 +1,6 @@
 import express from 'express';
+import { notificationsRouter } from './notifications/routes.js';
+import type { SupportNotifier } from './integrations/telegram/support-group.js';
 import { ticketsRouter } from './tickets/routes.js';
 import { reportsRouter } from './reports/routes.js';
 import cors from 'cors';
@@ -22,6 +24,7 @@ import type { MailConfig } from './mail/config.js';
 export function createApp(
   config: AuthConfig & Partial<UserConfig> & { mail?: MailConfig } = env,
   recovery?: RecoveryDependencies,
+  support?: SupportNotifier,
 ) {
   const app = express();
 
@@ -50,7 +53,8 @@ export function createApp(
     }),
   );
   app.use('/api/categories', categoriesRouter);
-  app.use('/api/tickets', ticketsRouter());
+  app.use('/api/tickets', ticketsRouter(support));
+  app.use('/api/notifications', notificationsRouter);
   app.use('/api/reports', reportsRouter);
   app.use(notFound);
   app.use(errorHandler);

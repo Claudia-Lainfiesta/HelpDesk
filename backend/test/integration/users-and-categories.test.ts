@@ -82,6 +82,7 @@ describe.skipIf(!databaseUrl)(
       } finally {
         // Solo objetos del esquema privado creado por esta suite.
         await pool.query('DELETE FROM audit_events');
+        await pool.query('DELETE FROM notifications');
         await pool.query('DELETE FROM ticket_events');
         await pool.query('DELETE FROM ticket_notes');
         await pool.query('DELETE FROM ticket_attachments');

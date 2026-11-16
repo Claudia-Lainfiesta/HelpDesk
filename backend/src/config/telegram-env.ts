@@ -5,6 +5,7 @@ export class TelegramConfigurationError extends Error {}
 
 export interface TelegramConfig {
   token: string | undefined;
+  supportChatId?: string;
   allowedUserIds: readonly number[];
 }
 
@@ -13,6 +14,15 @@ export function parseTelegramEnv(source: NodeJS.ProcessEnv): TelegramConfig {
   if (token && !/^[1-9]\d*:[A-Za-z0-9_-]{30,}$/.test(token)) {
     throw new TelegramConfigurationError(
       'TELEGRAM_BOT_TOKEN tiene un formato inválido. Revisa su valor local sin compartirlo.',
+    );
+  }
+  const supportChatId = source['TELEGRAM_SUPPORT_CHAT_ID']?.trim();
+  if (
+    supportChatId &&
+    (!/^-[1-9]\d*$/.test(supportChatId) || !Number.isSafeInteger(Number(supportChatId)))
+  ) {
+    throw new TelegramConfigurationError(
+      'TELEGRAM_SUPPORT_CHAT_ID debe ser el ID numérico negativo de un grupo o supergrupo.',
     );
   }
   const rawIds = source['TELEGRAM_ALLOWED_USER_IDS']?.trim();
@@ -28,7 +38,11 @@ export function parseTelegramEnv(source: NodeJS.ProcessEnv): TelegramConfig {
         return id;
       })
     : [];
-  return { token, allowedUserIds: [...new Set(allowedUserIds)] };
+  return {
+    token,
+    ...(supportChatId ? { supportChatId } : {}),
+    allowedUserIds: [...new Set(allowedUserIds)],
+  };
 }
 
 export function loadTelegramEnv(): TelegramConfig {

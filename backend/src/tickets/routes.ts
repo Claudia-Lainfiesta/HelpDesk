@@ -1,3 +1,5 @@
+import { telegramNotifications } from '../integrations/telegram/support-default.js';
+import type { SupportNotifier } from '../integrations/telegram/support-group.js';
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../auth/middlewares.js';
 import { input, idSchema } from '../http/validation.js';
@@ -26,7 +28,7 @@ import {
   getTicketImage,
   imageDisposition,
 } from './attachments.js';
-export function ticketsRouter(): Router {
+export function ticketsRouter(support: SupportNotifier = telegramNotifications): Router {
   const router = Router();
   router.use(requireAuth);
   router.use((_req, res, next) => {
@@ -43,6 +45,7 @@ export function ticketsRouter(): Router {
       req.auth!.user,
       req.ip,
       image,
+      support,
     );
     res.location(`/api/tickets/${ticket.id}`).status(201).json(ticket);
   });
@@ -81,6 +84,7 @@ export function ticketsRouter(): Router {
         input(changePrioritySchema, req.body).priority,
         req.auth!.user,
         req.ip,
+        support,
       ),
     );
   });
@@ -106,6 +110,7 @@ export function ticketsRouter(): Router {
         input(assignmentSchema, req.body).agentId,
         req.auth!.user,
         req.ip,
+        support,
       ),
     );
   });
