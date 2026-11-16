@@ -197,3 +197,12 @@ auditoría, conservación íntegra de usuarios/sesiones y fallos SMTP. La pasare
 está simulada en las pruebas y CI nunca contacta Mailpit ni Brevo. CI solo define
 direcciones `@example.invalid`; no contiene credenciales SMTP. Las pruebas
 frontend usan HttpTestingController y no requieren backend.
+
+## Perfil Render + Brevo
+
+Render Free utiliza SMTP_PORT=2525 con SMTP_HOST=smtp-relay.brevo.com,
+SMTP_SECURE=false y SMTP_REQUIRE_TLS=true. El puerto ya es configurable y se exige
+STARTTLS/certificado válido. SMTP_USER es el login SMTP de Brevo y SMTP_PASSWORD
+su clave SMTP. MAIL_FROM es un remitente verificado; RECOVERY_ADMIN_EMAIL sigue
+siendo el destinatario administrativo configurable. No hay direcciones del proyecto
+incrustadas ni nuevas variables de correo. [Despliegue](../../docs/deployment-render-supabase.md).

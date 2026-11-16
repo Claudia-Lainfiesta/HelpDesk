@@ -57,7 +57,11 @@ test('herramientas de base de datos', { timeout: 30000 }, async (t) => {
       async () => {
         for (const command of ['reset', 'seed']) {
           for (const overrides of [
-            { NODE_ENV: 'production', DATABASE_URL: testUrl.toString() },
+            {
+              NODE_ENV: 'production',
+              DATABASE_URL: testUrl.toString(),
+              FRONTEND_ORIGIN: 'https://helpdesk.example.invalid',
+            },
             { NODE_ENV: 'development', DATABASE_URL: 'postgresql://u:p@db.example/helpdesk' },
           ]) {
             const child = spawn(process.execPath, ['--import', 'tsx', 'src/db/cli.ts', command], {

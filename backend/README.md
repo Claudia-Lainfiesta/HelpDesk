@@ -41,7 +41,7 @@ npm run dev
 
 En otra terminal, desde la raíz: `cd frontend` y `npm start`.
 API: http://localhost:3000. Frontend permitido: http://localhost:4200.
-La API escucha solo en `127.0.0.1`; CORS permite credenciales y el origen exacto
+En desarrollo la API escucha en `127.0.0.1`; CORS permite credenciales y el origen exacto
 configurado, sin comodines. Las peticiones POST/PUT/PATCH/DELETE requieren ese
 `Origin` (o un `Referer` del mismo origen si falta). Se exige JSON salvo multipart en POST /api/tickets para su imagen inicial.
 
@@ -65,21 +65,23 @@ Cambiar `POSTGRES_*` en `.env` no cambia las credenciales de un volumen ya inici
 
 ## Variables
 
-| Variable                    | Uso                                            | Valor predeterminado    |
-| --------------------------- | ---------------------------------------------- | ----------------------- |
-| `PORT`                      | Puerto HTTP entre 1 y 65535                    | `3000`                  |
-| `FRONTEND_ORIGIN`           | Origen HTTP(S) exacto, sin ruta ni barra final | `http://localhost:4200` |
-| `DATABASE_URL`              | Conexión PostgreSQL completa                   | Obligatoria             |
-| `POSTGRES_USER`             | Usuario de PostgreSQL                          | Obligatoria             |
-| `POSTGRES_PASSWORD`         | Contraseña de PostgreSQL                       | Obligatoria             |
-| `POSTGRES_DB`               | Base de datos                                  | `helpdesk`              |
-| `NODE_ENV`                  | `development`, `test` o `production`           | `development`           |
-| `TEMP_ACCOUNT_DEFAULT_DAYS` | Duración predeterminada de cuentas temporales  | `7`                     |
-| `TEMP_ACCOUNT_MAX_DAYS`     | Máximo desde la creación de la cuenta temporal | `30`                    |
+| Variable                    | Uso                                              | Valor predeterminado        |
+| --------------------------- | ------------------------------------------------ | --------------------------- |
+| `PORT`                      | Puerto HTTP entre 1 y 65535                      | `3000`                      |
+| `FRONTEND_ORIGIN`           | Origen HTTP(S) exacto, sin ruta ni barra final   | `http://localhost:4200`     |
+| `DATABASE_URL`              | Conexión PostgreSQL completa                     | Obligatoria                 |
+| `POSTGRES_USER`             | Usuario de Compose local, no usado por la API    | Solo desarrollo             |
+| `POSTGRES_PASSWORD`         | Contraseña de Compose local, no usada por la API | Solo desarrollo             |
+| `POSTGRES_DB`               | Base de Compose local                            | `helpdesk`; solo desarrollo |
+| `NODE_ENV`                  | `development`, `test` o `production`             | `development`               |
+| `TEMP_ACCOUNT_DEFAULT_DAYS` | Duración predeterminada de cuentas temporales    | `7`                         |
+| `TEMP_ACCOUNT_MAX_DAYS`     | Máximo desde la creación de la cuenta temporal   | `30`                        |
 
 La aplicación valida estas variables al arrancar y falla con un mensaje claro
-si faltan datos o los valores son inválidos. `.env` se busca junto al
-`package.json` del backend, incluso al ejecutar el servidor desde otra carpeta.
+si faltan datos o los valores son inválidos. En desarrollo `.env` se busca junto
+al package.json del backend. Cuando NODE_ENV=production ya está definido se usan
+solo las variables del proceso (o un --env-file explícito de Node); FRONTEND_ORIGIN
+es obligatorio y HTTPS. POSTGRES_* se valida en Compose, no en la aplicación.
 
 ## Scripts
 
@@ -89,6 +91,7 @@ si faltan datos o los valores son inválidos. `.env` se busca junto al
 | `npm run typecheck`           | Validación TypeScript sin emitir archivos                 |
 | `npm run build`               | Compilar a `dist/`                                        |
 | `npm start`                   | Ejecutar `dist/server.js` después de compilar             |
+| `npm run db:check`            | Comprobar conexión PostgreSQL sin modificar datos         |
 | `npm run db:up`               | Crear/iniciar PostgreSQL y esperar al healthcheck         |
 | `npm run db:down`             | Detener todos los servicios Compose conservando volúmenes |
 | `npm run db:logs`             | Seguir los registros de PostgreSQL                        |
@@ -110,7 +113,7 @@ si faltan datos o los valores son inválidos. `.env` se busca junto al
 | `npm run check`               | Lint, formato, tipos, pruebas y build en orden            |
 
 `SIGINT` y `SIGTERM` cierran el servidor HTTP y el pool de conexiones.
-En producción, ejecuta con `NODE_ENV=production npm start` detrás de HTTPS para
+En producción, utiliza el [build y start de la raíz](../docs/deployment-render-supabase.md) para
 usar la cookie `__Host-hd_session` con `Secure`. Los errores siempre omiten
 stack traces y usan `{ error: { code, message } }`.
 
@@ -301,3 +304,25 @@ exporta descripciones, correos, notas, Telegram ni imágenes.
 
 El [estado final y la matriz de permisos](../docs/project-status.md) describen
 el alcance local, las verificaciones y las limitaciones actuales.
+
+## Render + Supabase PostgreSQL
+
+[Guía de despliegue y pasos concretos](../docs/deployment-render-supabase.md).
+La raíz incorpora npm run build:production y npm run start:production. En producción
+Express sirve Angular desde frontend/dist/HelpDesk/browser después de la API,
+escucha 0.0.0.0 y PORT, y exige FRONTEND_ORIGIN HTTPS. Render usa TRUST_PROXY=1;
+las cookies conservan HttpOnly, Secure y SameSite=Lax, con Origin/CSRF estricto.
+
+DATABASE_URL basta para PostgreSQL; POSTGRES_* solo configura Compose local.
+Producción exige TLS con CA/hostname verificados; usar Session Pooler de Supabase.
+`sslrootcert` en la URI permite una CA del proveedor si es necesaria. No desactivar
+validación TLS. No se introduce Supabase SDK/Auth/Storage ni se usa su Data API.
+
+`npm run db:check` comprueba conexión sin modificar datos. Migración/status/admin
+siguen siendo operaciones explícitas; el start no los ejecuta. No cargar seed de
+desarrollo en Supabase. El administrador inicial se crea con la herramienta de
+entrada oculta existente, sin datos de prueba ni contraseñas en argumentos.
+
+SMTP ya permite Brevo en 2525 con SMTP_SECURE=false y SMTP_REQUIRE_TLS=true;
+MAIL_FROM debe ser remitente verificado y RECOVERY_ADMIN_EMAIL configura el correo
+administrativo real sin incrustarlo en código. Telegram conserva sus dos usos.

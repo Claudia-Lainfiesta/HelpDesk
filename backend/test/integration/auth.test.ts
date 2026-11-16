@@ -160,6 +160,9 @@ describe.skipIf(!databaseUrl)(databaseUrl ? 'autenticación contra PostgreSQL re
   });
 
   it('login de producción usa Host, HttpOnly, Lax y Secure sin Domain', async () => {
+    // Aísla la cookie: el check backend no necesita haber construido Angular.
+    const frontend = await import('../../src/frontend.js');
+    vi.spyOn(frontend, 'serveFrontend').mockImplementation(() => {});
     const account = await user();
     const production = createApp({ ...config, nodeEnv: 'production' });
     const auth = await login(account, production);

@@ -39,8 +39,8 @@ antes de continuar; no edites migraciones aplicadas para saltar la comprobación
 `npm start` usa `proxy.conf.json` para enviar `/api/**` a `http://localhost:3000`.
 El navegador conserva el origen `http://localhost:4200` y añade el encabezado
 Origin en las escrituras; JavaScript no intenta modificar ese encabezado.
-En producción dirige `/api` al backend mediante el servidor web y sirve la
-aplicación por HTTPS. El proxy de Angular se usa únicamente en desarrollo.
+En producción Express sirve el build Angular y `/api` desde el mismo origen
+HTTPS de Render; el frontend conserva la base relativa `/api`. El proxy de Angular se usa únicamente en desarrollo.
 
 ## Rutas y sesión
 
@@ -195,3 +195,11 @@ Consulta [el informe de cierre](../docs/project-status.md) para alcance, permiso
 verificaciones y límites. `/reportes` permite descargar CSV con filtros aplicados,
 fechas UTC y protección contra fórmulas; [detalle](docs/reportes.md#exportar-csv).
 Las rutas reales de acceso son `/iniciar-sesion` y `/cambiar-contrasena`.
+
+## Build integrado para Render
+
+Desde la raíz: npm run build:production instala con los dos lockfiles, compila y
+verifica Angular y compila el backend. npm run start:production arranca únicamente
+Express, que sirve `frontend/dist/HelpDesk/browser/`; nunca ng serve. La ruta está
+fijada en angular.json. [Configuración y variables](../docs/deployment-render-supabase.md).
+Ningún secreto de Supabase/SMTP/Telegram se incorpora al frontend.

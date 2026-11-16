@@ -22,6 +22,30 @@ it('config/env.ts falla claramente si falta DATABASE_URL', async () => {
   vi.stubEnv('DATABASE_URL', undefined);
   await expect(import('../../src/config/env.js')).rejects.toThrow('falta la variable DATABASE_URL');
 });
+it('producción usa PORT/0.0.0.0, HTTPS, proxy explícito y no exige credenciales de Compose', async () => {
+  vi.stubEnv('NODE_ENV', 'production');
+  vi.stubEnv('PORT', '10000');
+  vi.stubEnv('FRONTEND_ORIGIN', 'https://helpdesk.example.invalid');
+  vi.stubEnv('TRUST_PROXY', '1');
+  for (const name of ['POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_DB'])
+    vi.stubEnv(name, undefined);
+  const { env } = await import('../../src/config/env.js');
+  expect(env).toMatchObject({
+    port: 10000,
+    host: '0.0.0.0',
+    frontendOrigin: 'https://helpdesk.example.invalid',
+    trustProxy: 1,
+  });
+  expect(new URL(env.databaseUrl).searchParams.get('sslmode')).toBe('verify-full');
+});
+it.each([undefined, 'http://localhost:4200'])(
+  'producción exige un origen HTTPS explícito: %s',
+  async (origin) => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('FRONTEND_ORIGIN', origin);
+    await expect(import('../../src/config/env.js')).rejects.toThrow('FRONTEND_ORIGIN');
+  },
+);
 
 it('errorHandler omite el stack cuando NODE_ENV=production', async () => {
   vi.stubEnv('NODE_ENV', 'production');

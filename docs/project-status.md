@@ -87,7 +87,8 @@ Se exportan los filtros aplicados, no el borrador del formulario. Sin datos: enc
 
 ## Desarrollo reproducible
 
-No hay paquete npm ni README en la raíz; comandos en sus proyectos respectivos.
+La raíz incorpora README y scripts de build/start de producción; el desarrollo y
+los checks se conservan en backend/ y frontend/.
 Desde backend: npm ci, configurar .env privado según .env.example,
 npm run db:up, npm run db:migrate, npm run db:seed:dev, npm run dev.
 Desde frontend: npm ci y npm start. Rutas reales de acceso /iniciar-sesion y
@@ -150,7 +151,7 @@ que iguala el trabajo de verificación y no es código simulado. Se conserva el 
 console.error frontend de fallo de arranque, con mensaje fijo saneado; no hay logs
 de depuración en flujos normales. No se eliminaron componentes de la guía reutilizable.
 
-## Verificación del cierre
+## Verificación del cierre funcional v1 (anterior al despliegue)
 
 | Comprobación                  | Resultado                                                                                                                                                                           |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -216,6 +217,16 @@ clientes Telegram externos. No hubo commits ni modificación de datos del usuari
 - Binarios: referencia frontend/docs/referencia/HelpDesk-diseno.pdf, logo documental
   y fixtures se conservaron. Son referencia visual/pruebas; no se reconstruyeron
   ni regeneraron arbitrariamente. Los patrones de UI vigentes están en diseno.md.
+
+## Preparación posterior de despliegue
+
+El repositorio incorpora producción en una Web Service Render con Angular servido
+por Express y PostgreSQL Supabase mediante Session Pooler/TLS verificado. No se
+ha desplegado ni se ha conectado a Supabase desde esta revisión. Se conservan las
+decisiones de negocio v1; [guía y pasos](deployment-render-supabase.md).
+La preparación posterior pasó 447 pruebas backend y 309 frontend, build raíz
+exacto, smoke del servidor compilado y arranque Angular con CSP sin violaciones.
+Solo se usó PostgreSQL local desechable; Supabase y Render reales no se han probado.
 
 ## Estado recomendado y pendientes
 

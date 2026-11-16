@@ -268,3 +268,12 @@ No hay recuperación automática por enlaces/códigos ni integración de
 autenticación con Telegram.
 Hay auditoría persistente de administración, solicitudes elegibles de recuperación y creación de tickets; la
 cobertura completa de auditoría y respaldo de EP-10 llegará después.
+
+## Mismo origen en Render
+
+El backend compilado sirve Angular y /api bajo FRONTEND_ORIGIN HTTPS. Render
+termina TLS; TRUST_PROXY=1 permite interpretar su salto de proxy sin confiar en
+cualquier X-Forwarded-For. Se conservan cookies Secure/HttpOnly/SameSite=Lax y
+Origin/Referer estricto. Estáticos y fallback SPA no consultan sesión; las rutas
+/api la siguen exigiendo, incluso para cambio obligatorio. No hay Supabase Auth.
+[Guía de producción](../../docs/deployment-render-supabase.md).

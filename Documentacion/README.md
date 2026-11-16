@@ -65,7 +65,8 @@ Las cuentas temporales usan estos mismos cuatro roles, sin un quinto rol.
 
 ## Organización y documentación
 
-No hay README ni paquete npm en la raíz. Cada proyecto lleva sus instrucciones:
+El [README raíz](../README.md) y su paquete npm orquestan producción; cada proyecto
+conserva sus instrucciones de desarrollo:
 
 - [Backend y endpoints reales](../backend/README.md).
 - [Autenticación y sesiones](../backend/docs/auth.md).
@@ -91,7 +92,8 @@ No hay README ni paquete npm en la raíz. Cada proyecto lleva sus instrucciones:
   disponibilidad del equipo ni aceptación de historias completas.
 
 Para levantar el proyecto usa las instrucciones de backend/frontend. Los comandos
-npm se ejecutan en su carpeta; no existe un `npm start` en la raíz.
+de desarrollo se ejecutan en su carpeta; para producción la raíz ofrece
+`npm run build:production` y `npm run start:production`.
 
 
 ## Gestión de tickets · 6-nov-2026
@@ -118,3 +120,5 @@ Propiedad no concede este permiso. Listado, filtro URL, detalle, actividad y
 auditoría incluyen prioridad. No hay automatismos, SLA ni escalamiento.
 
 [Estado final v1, permisos y límites](../docs/project-status.md).
+
+[Preparación Render + Supabase](../docs/deployment-render-supabase.md): una Web Service, mismo origen y PostgreSQL con TLS; despliegue real pendiente.

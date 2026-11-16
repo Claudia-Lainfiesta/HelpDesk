@@ -404,3 +404,11 @@ las pasarelas de correo/Telegram. La verificación de cierre aplicó las migraci
 sobre una base desechable y ejecutó el seed dos veces sin duplicar escenarios;
 no se recreó ni se borró la base de desarrollo del usuario.
 [Estado final y limitaciones](../../docs/project-status.md).
+
+## Supabase (solo PostgreSQL)
+
+La conexión usa DATABASE_URL con Session Pooler y TLS verificado; no requiere
+POSTGRES_* de Compose. No se ejecuta seed/reset contra Supabase. El build y el
+start no migran automáticamente. Comandos compilados, CA, desactivación de Data API
+y bootstrap del único administrador sin datos de prueba están en la
+[guía Render + Supabase](../../docs/deployment-render-supabase.md).

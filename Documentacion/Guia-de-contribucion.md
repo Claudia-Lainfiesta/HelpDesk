@@ -139,3 +139,11 @@ Una persona administradora debe configurar lo siguiente:
 
 Esta guía y el workflow no activan automáticamente la protección de `main`;
 esos ajustes se realizan en GitHub con permisos de administración.
+
+## Compilación integrada de producción
+
+La raíz contiene scripts de orquestación, sin fusionar dependencias/lockfiles de
+backend y frontend. npm run build:production instala y compila ambos proyectos;
+npm run start:production sirve Angular desde Express. Migraciones/administrador
+son explícitos y nunca se ejecuta seed en producción. Revisar
+[Render + Supabase](../docs/deployment-render-supabase.md) antes de desplegar.

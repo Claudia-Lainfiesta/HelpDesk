@@ -2,10 +2,10 @@ import { app } from './app.js';
 import { env } from './config/env.js';
 import { pool } from './db/pool.js';
 
-const server = app.listen(env.port, '127.0.0.1', (error?: Error) => {
+const server = app.listen(env.port, env.host, (error?: Error) => {
   // Express 5 también invoca este callback ante un fallo al abrir el puerto.
   if (error) return;
-  console.log(`HelpDesk API disponible en http://localhost:${env.port}`);
+  console.log(`HelpDesk API disponible en ${env.host}:${env.port}`);
 });
 
 server.on('error', (error: NodeJS.ErrnoException) => {

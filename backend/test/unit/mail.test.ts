@@ -26,6 +26,18 @@ beforeEach(() => {
 });
 
 describe('Configuración SMTP', () => {
+  it('admite Brevo 2525 con STARTTLS obligatorio, sin SSL implícito', () => {
+    expect(
+      parseMailConfig({
+        SMTP_HOST: 'smtp-relay.brevo.com',
+        SMTP_PORT: '2525',
+        SMTP_SECURE: 'false',
+        SMTP_REQUIRE_TLS: 'true',
+        SMTP_USER: 'login-ficticio',
+        SMTP_PASSWORD: 'valor-ficticio',
+      }),
+    ).toMatchObject({ host: 'smtp-relay.brevo.com', port: 2525, secure: false, requireTLS: true });
+  });
   it('exige direcciones del entorno y no incrusta direcciones reales como valores predeterminados', () => {
     expect(() => parseConfig({})).toThrow('MAIL_FROM');
     expect(() => parseConfig({ MAIL_FROM: 'sender@example.invalid' })).toThrow(
